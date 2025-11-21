@@ -1,0 +1,76 @@
+# SilentID - Git Ignore File
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.pdb
+appsettings.Development.json
+appsettings.Local.json
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.lock
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+postgresql/data/
+
+# Secrets
+*.env
+*.secret
+appsettings.*.json
+!appsettings.json
+*.key
+*.pem
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Node modules (if any)
+node_modules/
+
+# Azure
+.azure/
+
+# Stripe
+stripe_keys.txt
+
+# Claude & MCP Servers (local development only)
+.claude/
+chrome-devtools-mcp/
+claude-context/
+code-executor-MCP/
+code-index-mcp/
+context7/
+github-mcp-server/
+mcp-servers/
+playwright-mcp/
