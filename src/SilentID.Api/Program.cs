@@ -1,4 +1,11 @@
+using Microsoft.EntityFrameworkCore;
+using SilentID.Api.Data;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Add database context
+builder.Services.AddDbContext<SilentIdDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add services to the container
 builder.Services.AddControllers();

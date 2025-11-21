@@ -34,7 +34,7 @@
 - **Frontend:** Flutter (iOS + Android)
 - **Backend:** ASP.NET Core Web API
 - **Database:** PostgreSQL (Local dev, Azure prod later)
-- **Auth:** Passwordless (Email OTP + Passkeys)
+- **Auth:** 100% Passwordless (Apple Sign-In, Google Sign-In, Passkeys, Email OTP)
 - **Identity Verification:** Stripe Identity
 - **Billing:** Stripe Billing
 - **Primary Color:** Royal Purple `#5A3EB8`
@@ -221,7 +221,7 @@ A **portable, evidence-backed trust profile** that works everywhere:
 
 ### 10 Major Modules
 1. **Identity Verification** (Stripe Identity)
-2. **Authentication** (Passwordless + Passkeys)
+2. **Authentication** (100% Passwordless: Apple, Google, Passkeys, Email OTP)
 3. **User Profiles** (Private + Public layers)
 4. **Evidence Collectors** (email receipts, screenshots, public profile scrapers)
 5. **Mutual Transaction Verification**
@@ -465,21 +465,143 @@ A **portable, evidence-backed trust profile** that works everywhere:
 
 ## SECTION 5: CORE FEATURES
 
-### Authentication System (Bank-Grade Passwordless)
-**Supported Methods:**
-1. **Email OTP (Primary):** Enter email → 6-digit code → logged in
-2. **Passkeys (WebAuthn/FIDO2):** Optional setup with Face ID/Touch ID/Windows Hello/Android Biometrics
-3. **Magic Link (Fallback):** Email link for one-time login
+### Authentication & Account Unification (Passwordless, No Duplicates)
 
-**NOT Allowed:**
-- Passwords
-- SMS-only login (SMS allowed as fallback 2FA, not primary)
+**CRITICAL RULE: SilentID is 100% passwordless. NO passwords anywhere in the system.**
 
-**Security:**
-- Short-lived access tokens
-- Refresh tokens in secure local storage
-- Intercept suspicious/repeated OTP attempts
-- Device fingerprinting
+#### Supported Authentication Methods (ONLY these 4):
+
+1. **Apple Sign-In** - Standard Apple OAuth, extracts email, handles private relay
+2. **Google Sign-In** - Standard Google OAuth, extracts email
+3. **Passkeys (WebAuthn/FIDO2)** - Face ID, Touch ID, Windows Hello, Android Biometrics
+4. **Email OTP** - 6-digit one-time code sent to email
+
+#### Explicitly FORBIDDEN:
+
+- ❌ Password creation
+- ❌ Password login
+- ❌ "Set password" or "change password" flows
+- ❌ Password reset / forgot password
+- ❌ Password columns or hashes in database
+- ❌ Any UI fields for passwords
+- ❌ Magic links (removed - use OTP instead)
+- ❌ SMS-only login (SMS allowed as 2FA backup only)
+
+#### Single-Account Rule: One Real Person = One SilentID Account
+
+**Core Principle:** Email address is the primary identity anchor. Each email can belong to ONLY ONE SilentID user.
+
+##### Authentication Flow Logic:
+
+**When Apple/Google/Passkey/OTP returns an email:**
+
+1. **Check if email exists in system:**
+   - **If YES** → Log into existing account (never create duplicate)
+   - **If NO** → Run duplicate detection checks before creating new account
+
+2. **For Apple Private Relay Emails:**
+   - Treat each relay email as unique initially
+   - Monitor device fingerprint + IP patterns
+   - If strong signals suggest same person → offer account merge, not duplicate creation
+
+3. **For Passkey Registration:**
+   - Passkeys always bound to existing user account
+   - If email exists → link passkey to that user
+   - Never create second account for same email
+
+4. **For Email OTP (New User):**
+   - Before creating new user, check:
+     - Device fingerprint matches existing user?
+     - IP patterns match existing user?
+     - Email alias patterns (e.g., user+alias@gmail.com)?
+   - If duplicate signals detected:
+     - **Block creation** with message: "This device is already associated with a SilentID account. Please use your existing login method."
+   - Only create new user if NO duplicate signals
+
+##### Duplicate Prevention System:
+
+**Monitor and cross-reference:**
+- Device fingerprint (SignupDeviceId)
+- Browser/OS fingerprint (stored in AuthDevices)
+- IP patterns (SignupIP)
+- Email alias patterns (gmail+alias detection)
+- Apple User ID (AppleUserId)
+- Google User ID (GoogleUserId)
+- Stripe Identity results (same person verification)
+
+**Anti-Duplicate Actions:**
+- New login appears to be duplicate/alias → DO NOT create second user
+- Either:
+  - Force login to existing account, OR
+  - Block creation and create RiskSignal for admin review
+
+##### Account Merging (Legitimate Users Only):
+
+**When legitimate user has multiple login methods:**
+
+If system detects two accounts likely belong to same person:
+
+1. Offer explicit "Merge Accounts" flow
+2. Require email ownership confirmation on both accounts
+3. After merge:
+   - Keep single unified SilentID user
+   - Consolidate all evidence, TrustScore, login methods
+   - Maintain audit trail of merge
+
+**Merge Conditions:**
+- Both accounts verified via Stripe Identity as same person
+- User explicitly confirms ownership of both emails
+- No fraud flags on either account
+
+##### OAuth Provider Linking:
+
+**Apple Sign-In:**
+- Store AppleUserId in User table
+- Link to existing account if email matches
+- Handle private relay email separately but track for merge detection
+
+**Google Sign-In:**
+- Store GoogleUserId in User table
+- Link to existing account if email matches
+- Never create duplicate for same Google account
+
+**Passkey:**
+- Store in AuthDevices with IsTrusted = true
+- Always link to existing user by email
+- Enable for fast re-authentication
+
+**Email OTP:**
+- Verify email ownership
+- Check for existing user before creation
+- Link to existing account if email verified
+
+##### Security & Session Management:
+
+- Short-lived JWT access tokens (15 minutes)
+- Refresh tokens in secure storage (7 days)
+- Device fingerprinting for all auth methods
+- Rate limiting on OTP requests (max 3 per 5 minutes)
+- Suspicious login detection (new device, new IP, unusual time)
+- Intercept repeated failed OTP attempts
+- Force re-verification on high-risk signals
+
+##### Database Fields (Users Table):
+
+```sql
+Email VARCHAR(255) UNIQUE NOT NULL  -- Primary identity anchor
+AppleUserId VARCHAR(255) NULL       -- Apple Sign-In unique ID
+GoogleUserId VARCHAR(255) NULL      -- Google Sign-In unique ID
+IsEmailVerified BOOLEAN DEFAULT FALSE
+IsPasskeyEnabled BOOLEAN DEFAULT FALSE
+SignupIP VARCHAR(50) NULL           -- For duplicate detection
+SignupDeviceId VARCHAR(200) NULL    -- For duplicate detection
+```
+
+**NEVER store:**
+- Password
+- PasswordHash
+- PasswordSalt
+- Any password-related fields
 
 ### Identity Verification (via Stripe)
 **Two Levels:**
@@ -547,8 +669,13 @@ A **portable, evidence-backed trust profile** that works everywhere:
 **Welcome Screen:**
 - Title: "Welcome to SilentID"
 - Subtitle: "Your portable trust passport."
-- Buttons: "Continue with Email" (primary), "Use a Passkey" (secondary)
+- Buttons:
+  - "Continue with Apple" (Apple Sign-In button, styled per Apple guidelines)
+  - "Continue with Google" (Google Sign-In button, styled per Google guidelines)
+  - "Continue with Email" (Email OTP)
+  - "Use a Passkey" (WebAuthn/FIDO2)
 - Footer: "By continuing, you agree to SilentID's Terms & Privacy Policy."
+- Legal Notice: "SilentID never stores passwords. Your account is secured with modern passwordless authentication."
 
 **Email Input Screen:**
 - Title: "Enter your email"
