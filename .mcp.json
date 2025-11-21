@@ -1,20 +1,20 @@
 {
   "mcpServers": {
     "sequential-thinking": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+      "command": "node",
+      "args": ["C:\\mcp-servers\\modelcontextprotocol-servers\\src\\sequentialthinking\\dist\\index.js"]
     },
     "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"]
+      "command": "node",
+      "args": ["C:\\mcp-servers\\context7\\dist\\index.js"]
     },
     "playwright": {
-      "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"]
+      "command": "node",
+      "args": ["C:\\mcp-servers\\playwright-mcp\\index.js"]
     },
     "code-index": {
-      "command": "uvx",
-      "args": ["code-index-mcp"]
+      "command": "uv",
+      "args": ["--directory", "C:\\mcp-servers\\code-index-mcp", "run", "code-index-mcp"]
     },
     "github": {
       "command": "npx",
