@@ -66,6 +66,7 @@ stripe_keys.txt
 
 # Claude & MCP Servers (local development only)
 .claude/
+.mcp.json
 chrome-devtools-mcp/
 claude-context/
 code-executor-MCP/
