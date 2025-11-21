@@ -1,0 +1,57 @@
+{
+  "mcpServers": {
+    "sequential-thinking": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "description": "Multi-step reasoning and analysis"
+    },
+    "context7": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@upstash/context7-mcp@latest"],
+      "description": "Up-to-date documentation lookup (Stripe, Next.js, React, etc.)"
+    },
+    "playwright": {
+      "command": "cmd",
+      "args": ["/c", "npx", "@playwright/mcp@latest"],
+      "description": "Browser automation and web testing with Playwright"
+    },
+    "code-index": {
+      "command": "uvx",
+      "args": ["code-index-mcp"],
+      "description": "Intelligent code indexing and semantic search"
+    },
+    "github": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": ""
+      },
+      "description": "GitHub integration (repos, issues, PRs)"
+    },
+    "chrome-devtools": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@automatalabs/mcp-server-chrome"],
+      "description": "Chrome DevTools integration for debugging"
+    },
+    "code-executor": {
+      "command": "cmd",
+      "args": ["/c", "npx", "code-executor-mcp"],
+      "description": "Safe code execution environment for testing"
+    },
+    "filesystem": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-filesystem", "C:\\SILENTID"],
+      "description": "File system operations for SilentID project"
+    },
+    "postgres": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-postgres", "postgresql://postgres:password@localhost:5432/silentid_dev"],
+      "description": "PostgreSQL database access for silentid_dev database"
+    },
+    "puppeteer": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-puppeteer"],
+      "description": "Browser automation via Puppeteer (legacy)"
+    }
+  }
+}
