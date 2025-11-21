@@ -22,6 +22,10 @@
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "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"
       }
+    },
+    "puppeteer": {
+      "command": "node",
+      "args": ["C:\\puppeteer-mcp-server\\dist\\index.js"]
     }
   }
 }
