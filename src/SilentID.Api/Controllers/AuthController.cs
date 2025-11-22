@@ -46,6 +46,12 @@ public class AuthController : ControllerBase
             return BadRequest(new { error = "invalid_request", message = "Please provide a valid email address." });
         }
 
+        // Validate email format
+        if (string.IsNullOrWhiteSpace(request.Email) || !IsValidEmail(request.Email))
+        {
+            return BadRequest(new { error = "invalid_email", message = "Invalid email address format." });
+        }
+
         var email = request.Email.ToLowerInvariant();
 
         try
@@ -403,6 +409,22 @@ public class AuthController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+    }
+
+    private bool IsValidEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
 

@@ -1,3 +1,6 @@
+using SendGrid;
+using SendGrid.Helpers.Mail;
+
 namespace SilentID.Api.Services;
 
 public interface IEmailService
@@ -8,46 +11,85 @@ public interface IEmailService
 }
 
 /// <summary>
-/// Development email service that logs to console.
-/// In production, implement with SendGrid, AWS SES, or similar service.
+/// Email service using SendGrid for production-ready email delivery.
+/// Falls back to console logging in development if SendGrid is not configured.
 /// </summary>
 public class EmailService : IEmailService
 {
     private readonly ILogger<EmailService> _logger;
     private readonly IConfiguration _configuration;
+    private readonly ISendGridClient? _sendGridClient;
+    private readonly bool _isSendGridConfigured;
 
     public EmailService(ILogger<EmailService> logger, IConfiguration configuration)
     {
         _logger = logger;
         _configuration = configuration;
+
+        var apiKey = _configuration["SendGrid:ApiKey"];
+        if (!string.IsNullOrEmpty(apiKey))
+        {
+            _sendGridClient = new SendGridClient(apiKey);
+            _isSendGridConfigured = true;
+            _logger.LogInformation("SendGrid email service initialized");
+        }
+        else
+        {
+            _isSendGridConfigured = false;
+            _logger.LogWarning("SendGrid API key not configured - emails will be logged to console only");
+        }
     }
 
-    public Task SendOtpEmailAsync(string toEmail, string otp, int expiryMinutes)
+    public async Task SendOtpEmailAsync(string toEmail, string otp, int expiryMinutes)
     {
-        _logger.LogInformation("📧 EMAIL: Sending OTP to {Email}", toEmail);
-        _logger.LogInformation("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        _logger.LogInformation("To: {Email}", toEmail);
-        _logger.LogInformation("Subject: Your SilentID Verification Code");
-        _logger.LogInformation("");
-        _logger.LogInformation("Your verification code is:");
-        _logger.LogInformation("");
-        _logger.LogInformation("    {Otp}", otp);
-        _logger.LogInformation("");
-        _logger.LogInformation("This code expires in {ExpiryMinutes} minutes.", expiryMinutes);
-        _logger.LogInformation("");
-        _logger.LogInformation("If you didn't request this code, please ignore this email.");
-        _logger.LogInformation("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        // ALWAYS log OTP to console in development for testing purposes
+        _logger.LogInformation("🔐 OTP CODE FOR {Email}: {Otp} (expires in {ExpiryMinutes} minutes)", toEmail, otp, expiryMinutes);
 
-        // TODO: In production, integrate with SendGrid or AWS SES
-        // Example:
-        // await _sendGridClient.SendEmailAsync(
-        //     from: "noreply@silentid.app",
-        //     to: toEmail,
-        //     subject: "Your SilentID Verification Code",
-        //     htmlContent: GenerateOtpEmailHtml(otp, expiryMinutes)
-        // );
+        if (_isSendGridConfigured && _sendGridClient != null)
+        {
+            try
+            {
+                var from = new EmailAddress("noreply@silentid.co.uk", "SilentID");
+                var to = new EmailAddress(toEmail);
+                var subject = "Your SilentID Verification Code";
+                var htmlContent = GenerateOtpEmailHtml(otp, expiryMinutes);
+                var plainTextContent = $"Your SilentID verification code is: {otp}\n\nThis code expires in {expiryMinutes} minutes.\n\nIf you didn't request this code, please ignore this email.";
 
-        return Task.CompletedTask;
+                var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
+                var response = await _sendGridClient.SendEmailAsync(msg);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("OTP email sent successfully to {Email}", toEmail);
+                }
+                else
+                {
+                    _logger.LogError("Failed to send OTP email to {Email}. Status: {Status}", toEmail, response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending OTP email to {Email}", toEmail);
+                throw;
+            }
+        }
+        else
+        {
+            // Development fallback - log to console
+            _logger.LogInformation("📧 EMAIL: Sending OTP to {Email}", toEmail);
+            _logger.LogInformation("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            _logger.LogInformation("To: {Email}", toEmail);
+            _logger.LogInformation("Subject: Your SilentID Verification Code");
+            _logger.LogInformation("");
+            _logger.LogInformation("Your verification code is:");
+            _logger.LogInformation("");
+            _logger.LogInformation("    {Otp}", otp);
+            _logger.LogInformation("");
+            _logger.LogInformation("This code expires in {ExpiryMinutes} minutes.", expiryMinutes);
+            _logger.LogInformation("");
+            _logger.LogInformation("If you didn't request this code, please ignore this email.");
+            _logger.LogInformation("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        }
     }
 
     public Task SendWelcomeEmailAsync(string toEmail, string displayName)

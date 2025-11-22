@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Global Styles for SilentID Landing Page
+ * Based on claude.md Section 2 (Branding & Visual Identity)
+ */
+
+:root {
+  /* SilentID Brand Colors */
+  --color-primary: #5a3eb8;
+  --color-primary-dark: #462f8f;
+  --color-primary-light: #e8e2ff;
+
+  --color-neutral-black: #0a0a0a;
+  --color-neutral-white: #ffffff;
+  --color-neutral-900: #111111;
+  --color-neutral-700: #4c4c4c;
+  --color-neutral-300: #dadada;
+
+  --color-success: #1fbf71;
+  --color-warning: #ffc043;
+  --color-danger: #d04c4c;
+
+  /* Typography */
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Spacing */
+  --spacing-xs: 8px;
+  --spacing-sm: 16px;
+  --spacing-md: 24px;
+  --spacing-lg: 48px;
+  --spacing-xl: 64px;
+
+  /* Button Styles */
+  --button-radius: 12px;
+  --button-height: 52px;
+  --button-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@layer base {
+  * {
+    @apply border-neutral-300;
+  }
+
+  body {
+    @apply bg-white text-neutral-900;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-black leading-tight;
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl font-semibold text-neutral-black leading-tight;
+  }
+
+  h3 {
+    @apply text-2xl md:text-3xl font-semibold text-neutral-900;
+  }
+
+  h4 {
+    @apply text-xl md:text-2xl font-medium text-neutral-900;
+  }
+
+  p {
+    @apply text-base md:text-lg text-neutral-700 leading-relaxed;
+  }
+}
+
+@layer components {
+  /* Primary Button - From claude.md Section 2 */
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-8 py-4 bg-primary text-white font-medium rounded-button h-[52px] transition-all duration-200 hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 shadow-button;
+  }
+
+  /* Secondary Button */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-8 py-4 bg-transparent text-primary font-medium rounded-button h-[52px] border-[1.5px] border-primary transition-all duration-200 hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  }
+
+  /* Container */
+  .container-custom {
+    @apply max-w-[1440px] mx-auto px-5 md:px-10 lg:px-20;
+  }
+
+  /* Section Padding */
+  .section-padding {
+    @apply py-12 md:py-16 lg:py-24;
+  }
+
+  /* Card Styles */
+  .card {
+    @apply bg-white rounded-lg shadow-card p-6 md:p-8 transition-all duration-200 hover:shadow-lg;
+  }
+
+  /* Feature Icon Container */
+  .feature-icon {
+    @apply w-12 h-12 md:w-16 md:h-16 rounded-lg bg-primary-light flex items-center justify-center text-primary;
+  }
+}
+
+@layer utilities {
+  /* Smooth scrolling for anchor links */
+  .scroll-smooth {
+    scroll-behavior: smooth;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-dark;
+  }
+}
+
+/* Accessibility: Focus visible only for keyboard navigation */
+.focus-visible:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Ensure proper link colors and hover states */
+a {
+  @apply transition-colors duration-200;
+}
+
+/* Remove default button styles */
+button {
+  @apply focus:outline-none;
+}

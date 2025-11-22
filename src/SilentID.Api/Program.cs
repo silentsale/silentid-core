@@ -4,18 +4,50 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SilentID.Api.Data;
 using SilentID.Api.Services;
+using SilentID.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure comprehensive logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.SetMinimumLevel(LogLevel.Information);
+
+// Log unhandled exceptions at app domain level
+AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+{
+    var exception = (Exception)args.ExceptionObject;
+    Console.WriteLine($"FATAL UNHANDLED EXCEPTION (AppDomain): {exception}");
+    Console.WriteLine($"Stack Trace: {exception.StackTrace}");
+};
+
+// Log unobserved task exceptions
+TaskScheduler.UnobservedTaskException += (sender, args) =>
+{
+    Console.WriteLine($"UNOBSERVED TASK EXCEPTION: {args.Exception}");
+    args.SetObserved(); // Prevent process termination
+};
+
 // Add database context
-builder.Services.AddDbContext<SilentIdDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (!string.IsNullOrEmpty(connectionString))
+{
+    builder.Services.AddDbContext<SilentIdDbContext>(options =>
+        options.UseNpgsql(connectionString));
+}
+// Note: In testing environment, TestWebApplicationFactory will configure in-memory database
 
 // Add application services
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IOtpService, OtpService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IDuplicateDetectionService, DuplicateDetectionService>();
+builder.Services.AddScoped<IStripeIdentityService, StripeIdentityService>();
+builder.Services.AddScoped<IEvidenceService, EvidenceService>();
+builder.Services.AddScoped<ITrustScoreService, TrustScoreService>();
+builder.Services.AddScoped<IMutualVerificationService, MutualVerificationService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 // Add JWT authentication
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
@@ -56,6 +88,22 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+// Add CORS for Flutter development
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FlutterDevelopment", policy =>
+    {
+        policy.WithOrigins(
+            "http://localhost:*",
+            "http://127.0.0.1:*"
+        )
+        .SetIsOriginAllowedToAllowWildcardSubdomains()
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
+});
+
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -71,6 +119,9 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// CRITICAL: Add global exception handler FIRST in pipeline
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
@@ -83,8 +134,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("FlutterDevelopment");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Make Program class accessible to tests
+public partial class Program { }

@@ -62,5 +62,6 @@ public enum AccountType
 {
     Free,
     Premium,
-    Pro
+    Pro,
+    Admin
 }
