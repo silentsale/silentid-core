@@ -1,0 +1,16 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shield with Keyhole Favicon -->
+  <rect width="64" height="64" rx="12" fill="#5A3EB8"/>
+
+  <!-- Shield shape (simplified) -->
+  <path d="M32 12C32 12 26 14 20 14C14 14 8 12 8 12C8 12 8 28 8 36C8 46 14 52 20 56C26 52 32 46 32 36C32 28 32 12 32 12Z"
+        fill="white" opacity="0.95" transform="translate(12, 4)"/>
+
+  <!-- Keyhole -->
+  <g transform="translate(32, 24)">
+    <!-- Circle part -->
+    <circle cx="0" cy="0" r="4" fill="#5A3EB8"/>
+    <!-- Rectangle part -->
+    <rect x="-2" y="3" width="4" height="8" rx="2" fill="#5A3EB8"/>
+  </g>
+</svg>

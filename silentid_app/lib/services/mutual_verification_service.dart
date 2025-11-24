@@ -25,9 +25,12 @@ class MutualVerificationService {
       final response =
           await _apiService.get('/v1/mutual-verifications/incoming');
 
-      if (response.data is List) {
-        return (response.data as List)
-            .map((json) => MutualVerification.fromJson(json))
+      // Backend returns: { incoming: [...], count: X }
+      final data = response.data;
+      if (data is Map<String, dynamic> && data.containsKey('incoming')) {
+        final incoming = data['incoming'] as List;
+        return incoming
+            .map((json) => _parseIncomingVerification(json))
             .toList();
       }
 
@@ -35,6 +38,27 @@ class MutualVerificationService {
     } catch (e) {
       throw Exception('Failed to load incoming verifications: ${e.toString()}');
     }
+  }
+
+  /// Parse incoming verification response format
+  MutualVerification _parseIncomingVerification(Map<String, dynamic> json) {
+    final from = json['from'] as Map<String, dynamic>;
+
+    return MutualVerification(
+      id: json['id'] as String,
+      userAId: '', // UserA is the requester
+      userBId: '', // UserB is current user
+      item: json['item'] as String,
+      amount: (json['amount'] as num).toDouble(),
+      roleA: json['theirRole'] as String,
+      roleB: json['yourRole'] as String,
+      date: DateTime.parse(json['date'] as String),
+      status: json['status'] as String,
+      fraudFlag: false,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      otherUserName: from['displayName'] as String?,
+      otherUserUsername: from['username'] as String?,
+    );
   }
 
   /// Respond to a verification request (confirm or reject)
@@ -61,9 +85,13 @@ class MutualVerificationService {
     try {
       final response = await _apiService.get('/v1/mutual-verifications');
 
-      if (response.data is List) {
-        return (response.data as List)
-            .map((json) => MutualVerification.fromJson(json))
+      // Backend returns: { verifications: [...], count: X }
+      final data = response.data;
+      if (data is Map<String, dynamic> &&
+          data.containsKey('verifications')) {
+        final verifications = data['verifications'] as List;
+        return verifications
+            .map((json) => _parseVerification(json))
             .toList();
       }
 
@@ -73,11 +101,56 @@ class MutualVerificationService {
     }
   }
 
+  /// Parse verification response format from /v1/mutual-verifications
+  MutualVerification _parseVerification(Map<String, dynamic> json) {
+    final participants = json['participants'] as Map<String, dynamic>;
+    final them = participants['them'] as Map<String, dynamic>;
+    final yourRole = participants['you'] as String;
+    final theirRole = them['role'] as String;
+
+    return MutualVerification(
+      id: json['id'] as String,
+      userAId: json['initiatedByYou'] == true ? '' : '',
+      userBId: '',
+      item: json['item'] as String,
+      amount: (json['amount'] as num).toDouble(),
+      roleA: yourRole,
+      roleB: theirRole,
+      date: DateTime.parse(json['date'] as String),
+      status: json['status'] as String,
+      fraudFlag: false,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      otherUserName: them['displayName'] as String?,
+      otherUserUsername: them['username'] as String?,
+    );
+  }
+
   /// Get specific verification by ID
   Future<MutualVerification> getById(String id) async {
     try {
       final response = await _apiService.get('/v1/mutual-verifications/$id');
-      return MutualVerification.fromJson(response.data);
+
+      // Backend returns full nested structure
+      final json = response.data as Map<String, dynamic>;
+      final participants = json['participants'] as Map<String, dynamic>;
+      final userA = participants['userA'] as Map<String, dynamic>;
+      final userB = participants['userB'] as Map<String, dynamic>;
+
+      return MutualVerification(
+        id: json['id'] as String,
+        userAId: '',
+        userBId: '',
+        item: json['item'] as String,
+        amount: (json['amount'] as num).toDouble(),
+        roleA: userA['role'] as String,
+        roleB: userB['role'] as String,
+        date: DateTime.parse(json['date'] as String),
+        status: json['status'] as String,
+        fraudFlag: false,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        otherUserName: userB['displayName'] as String?,
+        otherUserUsername: userB['username'] as String?,
+      );
     } catch (e) {
       throw Exception('Failed to load verification details: ${e.toString()}');
     }

@@ -267,8 +267,8 @@ class _MutualVerificationHomeScreenState
                     height: 40,
                     decoration: BoxDecoration(
                       color: verification.isConfirmed
-                          ? AppTheme.successGreen.withOpacity(0.1)
-                          : AppTheme.warningAmber.withOpacity(0.1),
+                          ? AppTheme.successGreen.withValues(alpha: 0.1)
+                          : AppTheme.warningAmber.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Icon(
@@ -322,8 +322,8 @@ class _MutualVerificationHomeScreenState
                         ),
                         decoration: BoxDecoration(
                           color: verification.isConfirmed
-                              ? AppTheme.successGreen.withOpacity(0.1)
-                              : AppTheme.warningAmber.withOpacity(0.1),
+                              ? AppTheme.successGreen.withValues(alpha: 0.1)
+                              : AppTheme.warningAmber.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(

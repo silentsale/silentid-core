@@ -147,7 +147,7 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.warningAmber.withOpacity(0.1),
+                color: AppTheme.warningAmber.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppTheme.warningAmber),
               ),

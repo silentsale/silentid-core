@@ -3,6 +3,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../widgets/share_profile_sheet.dart';
+import '../../../models/public_profile.dart';
+import '../../../services/public_profile_service.dart';
+import '../../../services/api_service.dart';
+import '../../../services/storage_service.dart';
 
 class MyPublicProfileScreen extends StatefulWidget {
   const MyPublicProfileScreen({super.key});
@@ -13,63 +17,51 @@ class MyPublicProfileScreen extends StatefulWidget {
 
 class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
   bool _isLoading = true;
-  Map<String, dynamic>? _profileData;
+  PublicProfile? _profile;
+  String? _error;
+  late final PublicProfileService _publicProfileService;
+  final _storage = StorageService();
 
   @override
   void initState() {
     super.initState();
+    _publicProfileService = PublicProfileService(ApiService());
     _loadProfile();
   }
 
   Future<void> _loadProfile() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
     try {
-      // TODO: Replace with actual API call
-      // final response = await ApiService().get('/users/me');
+      // Get current user's username from storage
+      final userId = await _storage.getUserId();
+      if (userId == null) {
+        throw Exception('Not logged in');
+      }
 
-      // Mock data for now
-      await Future.delayed(const Duration(seconds: 1));
+      // TODO: Replace with GET /v1/users/me endpoint to get username
+      // For now, we'll use a mock username or fetch from auth service
+      // In production, we need an endpoint that returns the current user's username
+
+      // Temporary: Use a mock username
+      // In real implementation, this should come from GET /v1/users/me
+      final mockUsername = 'sarah_trusted'; // Replace with real username from API
+
+      final profile = await _publicProfileService.getPublicProfile(mockUsername);
 
       setState(() {
-        _profileData = {
-          'displayName': 'Sarah M.',
-          'username': 'sarahtrusted',
-          'trustScore': 754,
-          'trustLevel': 'High Trust',
-          'badges': [
-            {
-              'icon': Icons.verified_user,
-              'label': 'Identity Verified',
-              'color': AppTheme.successGreen
-            },
-            {
-              'icon': Icons.receipt,
-              'label': '500+ Verified Transactions',
-              'color': AppTheme.primaryPurple
-            },
-            {
-              'icon': Icons.star,
-              'label': 'Excellent Behaviour',
-              'color': AppTheme.warningAmber
-            },
-            {
-              'icon': Icons.handshake,
-              'label': 'Peer-Verified User',
-              'color': AppTheme.primaryPurple
-            },
-          ],
-          'metrics': {
-            'transactionCount': 127,
-            'platforms': ['Vinted', 'eBay', 'Depop'],
-            'accountAgeMonths': 24,
-            'mutualVerifications': 12,
-          },
-        };
+        _profile = profile;
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load profile: $e')),
@@ -79,12 +71,14 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
   }
 
   void _showShareSheet() {
+    if (_profile == null) return;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => ShareProfileSheet(
-        username: _profileData!['username'],
+        username: _profile!.cleanUsername,
       ),
     );
   }
@@ -111,10 +105,10 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppTheme.softLilac.withOpacity(0.5),
+                        color: AppTheme.softLilac.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppTheme.primaryPurple.withOpacity(0.2),
+                          color: AppTheme.primaryPurple.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Row(
@@ -160,7 +154,7 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppTheme.neutralGray300.withOpacity(0.3),
+                        color: AppTheme.neutralGray300.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -200,6 +194,8 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
   }
 
   Widget _buildProfileHeader() {
+    if (_profile == null) return const SizedBox.shrink();
+
     return Column(
       children: [
         // Avatar Placeholder
@@ -211,13 +207,13 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
             gradient: LinearGradient(
               colors: [
                 AppTheme.primaryPurple,
-                AppTheme.primaryPurple.withOpacity(0.7),
+                AppTheme.primaryPurple.withValues(alpha: 0.7),
               ],
             ),
           ),
           child: Center(
             child: Text(
-              _profileData!['displayName'][0].toUpperCase(),
+              _profile!.displayName[0].toUpperCase(),
               style: const TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
@@ -230,7 +226,7 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
         const SizedBox(height: 16),
 
         Text(
-          _profileData!['displayName'],
+          _profile!.displayName,
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -241,7 +237,7 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
         const SizedBox(height: 4),
 
         Text(
-          '@${_profileData!['username']}',
+          _profile!.username,
           style: const TextStyle(
             fontSize: 16,
             color: AppTheme.primaryPurple,
@@ -253,19 +249,21 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
   }
 
   Widget _buildTrustScoreSection() {
+    if (_profile == null) return const SizedBox.shrink();
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
             AppTheme.primaryPurple,
-            AppTheme.primaryPurple.withOpacity(0.8),
+            AppTheme.primaryPurple.withValues(alpha: 0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryPurple.withOpacity(0.3),
+            color: AppTheme.primaryPurple.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -282,7 +280,7 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${_profileData!['trustScore']}',
+            '${_profile!.trustScore}',
             style: const TextStyle(
               fontSize: 56,
               fontWeight: FontWeight.bold,
@@ -291,7 +289,7 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            _profileData!['trustLevel'],
+            _profile!.trustScoreLabel,
             style: const TextStyle(
               fontSize: 16,
               color: Colors.white,
@@ -304,7 +302,7 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
   }
 
   Widget _buildBadgesSection() {
-    final badges = _profileData!['badges'] as List;
+    if (_profile == null || _profile!.badges.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,34 +319,55 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: badges.map((badge) => _buildBadge(badge)).toList(),
+          children: _profile!.badges.map((badge) => _buildBadge(badge)).toList(),
         ),
       ],
     );
   }
 
-  Widget _buildBadge(Map<String, dynamic> badge) {
+  Widget _buildBadge(String badgeText) {
+    IconData icon;
+    Color color;
+
+    // Map badge text to icon and color (same logic as PublicProfileViewerScreen)
+    if (badgeText.contains('Identity Verified')) {
+      icon = Icons.verified_outlined;
+      color = AppTheme.successGreen;
+    } else if (badgeText.contains('transaction')) {
+      icon = Icons.receipt_outlined;
+      color = AppTheme.primaryPurple;
+    } else if (badgeText.contains('behaviour') || badgeText.contains('Excellent')) {
+      icon = Icons.star_outlined;
+      color = AppTheme.warningAmber;
+    } else if (badgeText.contains('Peer-verified')) {
+      icon = Icons.handshake_outlined;
+      color = AppTheme.primaryPurple;
+    } else {
+      icon = Icons.check_circle_outlined;
+      color = AppTheme.primaryPurple;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: (badge['color'] as Color).withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: (badge['color'] as Color).withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            badge['icon'] as IconData,
+            icon,
             size: 16,
-            color: badge['color'] as Color,
+            color: color,
           ),
           const SizedBox(width: 6),
           Text(
-            badge['label'],
-            style: TextStyle(
+            badgeText,
+            style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: AppTheme.neutralGray900,
@@ -360,8 +379,7 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
   }
 
   Widget _buildPublicMetrics() {
-    final metrics = _profileData!['metrics'] as Map<String, dynamic>;
-    final platforms = metrics['platforms'] as List;
+    if (_profile == null) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,22 +404,24 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
             children: [
               _buildMetricRow(
                 'Transaction Count',
-                metrics['transactionCount'].toString(),
+                _profile!.verifiedTransactionCount.toString(),
               ),
               const Divider(height: 24),
               _buildMetricRow(
                 'Platforms Verified',
-                platforms.join(', '),
+                _profile!.verifiedPlatforms.isEmpty
+                    ? 'None yet'
+                    : _profile!.verifiedPlatforms.join(', '),
               ),
               const Divider(height: 24),
               _buildMetricRow(
                 'Account Age',
-                '${metrics['accountAgeMonths']} months',
+                _profile!.accountAge,
               ),
               const Divider(height: 24),
               _buildMetricRow(
                 'Mutual Verifications',
-                metrics['mutualVerifications'].toString(),
+                _profile!.mutualVerificationCount.toString(),
               ),
             ],
           ),

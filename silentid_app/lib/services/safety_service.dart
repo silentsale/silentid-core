@@ -22,18 +22,25 @@ class SafetyService {
   }
 
   /// Upload evidence file for a report
+  /// Note: For now, we're using a placeholder URL since file upload to Azure Blob
+  /// requires additional infrastructure (upload URL generation, Azure connection)
+  /// In production, this should:
+  /// 1. Get signed upload URL from backend
+  /// 2. Upload file to Azure Blob Storage
+  /// 3. Submit fileUrl to backend
   Future<void> uploadEvidence(String reportId, File file) async {
     try {
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
-          file.path,
-          filename: file.path.split('/').last,
-        ),
-      });
+      // TODO: Replace with actual Azure Blob upload
+      // For now, using local file path as placeholder
+      final fileUrl = 'pending-upload://${file.path.split('/').last}';
+      final fileType = file.path.split('.').last;
 
       await _apiService.post(
         '/v1/reports/$reportId/evidence',
-        data: formData,
+        data: {
+          'fileUrl': fileUrl,
+          'fileType': fileType,
+        },
       );
     } catch (e) {
       throw Exception('Failed to upload evidence: ${e.toString()}');
@@ -45,8 +52,9 @@ class SafetyService {
     try {
       final response = await _apiService.get('/v1/reports/mine');
 
-      if (response.data is List) {
-        return (response.data as List)
+      // Backend returns: { reports: [...], count: 5 }
+      if (response.data is Map && response.data['reports'] is List) {
+        return (response.data['reports'] as List)
             .map((json) => SafetyReport.fromJson(json))
             .toList();
       }

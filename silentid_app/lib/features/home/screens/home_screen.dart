@@ -190,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryPurple.withOpacity(0.3),
+                    color: AppTheme.primaryPurple.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -202,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     'Your TrustScore',
                     style: GoogleFonts.inter(
                       fontSize: 16,
-                      color: AppTheme.pureWhite.withOpacity(0.9),
+                      color: AppTheme.pureWhite.withValues(alpha: 0.9),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -219,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     'High Trust',
                     style: GoogleFonts.inter(
                       fontSize: 14,
-                      color: AppTheme.pureWhite.withOpacity(0.8),
+                      color: AppTheme.pureWhite.withValues(alpha: 0.8),
                     ),
                   ),
                   const SizedBox(height: 16),

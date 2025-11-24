@@ -102,7 +102,7 @@ class ShareProfileSheet extends StatelessWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -135,10 +135,10 @@ class ShareProfileSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.softLilac.withOpacity(0.3),
+                  color: AppTheme.softLilac.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.primaryPurple.withOpacity(0.2),
+                    color: AppTheme.primaryPurple.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Row(

@@ -149,7 +149,7 @@ class _VerificationDetailsScreenState extends State<VerificationDetailsScreen> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -169,7 +169,7 @@ class _VerificationDetailsScreenState extends State<VerificationDetailsScreen> {
                 vertical: 10,
               ),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: statusColor, width: 1.5),
               ),
@@ -297,7 +297,7 @@ class _VerificationDetailsScreenState extends State<VerificationDetailsScreen> {
         border: Border.all(color: AppTheme.neutralGray300),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

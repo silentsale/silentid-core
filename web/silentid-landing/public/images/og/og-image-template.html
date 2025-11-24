@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1200, height=630">
+  <title>SilentID Open Graph Image Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 1200px;
+      height: 630px;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #5A3EB8 0%, #462F8F 100%);
+      position: relative;
+    }
+
+    /* Background decoration */
+    .bg-decoration {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.15;
+    }
+
+    .bg-decoration.circle-1 {
+      width: 400px;
+      height: 400px;
+      background: rgba(255, 255, 255, 0.2);
+      top: -100px;
+      right: -100px;
+      filter: blur(80px);
+    }
+
+    .bg-decoration.circle-2 {
+      width: 500px;
+      height: 500px;
+      background: rgba(255, 255, 255, 0.15);
+      bottom: -150px;
+      left: -150px;
+      filter: blur(100px);
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      padding: 80px;
+      text-align: center;
+      color: white;
+    }
+
+    .logo {
+      width: 100px;
+      height: 100px;
+      background: white;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 40px;
+      font-size: 56px;
+      font-weight: 800;
+      color: #5A3EB8;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      font-size: 76px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    .subheadline {
+      font-size: 38px;
+      font-weight: 600;
+      opacity: 0.95;
+      margin-bottom: 40px;
+      letter-spacing: -0.01em;
+    }
+
+    .features {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      margin-top: 40px;
+    }
+
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      padding: 16px 28px;
+      border-radius: 100px;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .feature-icon {
+      width: 28px;
+      height: 28px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+
+    /* Instructions (only visible in browser, not in screenshot) */
+    .instructions {
+      position: fixed;
+      top: 650px;
+      left: 20px;
+      background: white;
+      color: #333;
+      padding: 20px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 14px;
+      max-width: 600px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <!-- Background decoration -->
+  <div class="bg-decoration circle-1"></div>
+  <div class="bg-decoration circle-2"></div>
+
+  <!-- Main content -->
+  <div class="container">
+    <div class="logo">S</div>
+    <h1>Your Digital Trust Passport</h1>
+    <div class="subheadline">Verify once. Trust everywhere.</div>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">✓</div>
+        100% Passwordless
+      </div>
+      <div class="feature">
+        <div class="feature-icon">✓</div>
+        Stripe Verified
+      </div>
+      <div class="feature">
+        <div class="feature-icon">✓</div>
+        GDPR Compliant
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    www.silentid.co.uk
+  </div>
+
+  <!-- Instructions (crop out of screenshot) -->
+  <div class="instructions">
+    <strong>Instructions to generate og-image.png:</strong><br><br>
+    1. Set browser window to exactly 1200x630px<br>
+    2. Press F12 → Device toolbar → Responsive → Enter 1200 x 630<br>
+    3. Hide DevTools (F12 again)<br>
+    4. Take screenshot (Windows: Win+Shift+S, Mac: Cmd+Shift+4)<br>
+    5. Crop to exact 1200x630 (remove this instruction box)<br>
+    6. Save as: public/images/og/og-image.png<br>
+    7. Compress with TinyPNG or similar<br><br>
+    <strong>Alternative:</strong> Use browser screenshot API or Puppeteer to automate.
+  </div>
+</body>
+</html>

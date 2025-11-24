@@ -117,7 +117,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.softLilac.withOpacity(0.3),
+                    color: AppTheme.softLilac.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(

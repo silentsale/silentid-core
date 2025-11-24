@@ -3,12 +3,13 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/screens/welcome_screen.dart';
 import '../../features/auth/screens/email_screen.dart';
 import '../../features/auth/screens/otp_screen.dart';
-import '../../features/home/screens/home_screen.dart';
+import '../../features/home/screens/enhanced_home_screen.dart';
 import '../../features/identity/screens/identity_intro_screen.dart';
 import '../../features/identity/screens/identity_webview_screen.dart';
 import '../../features/identity/screens/identity_status_screen.dart';
 import '../../features/evidence/screens/evidence_overview_screen.dart';
 import '../../features/evidence/screens/receipt_upload_screen.dart';
+import '../../features/evidence/screens/receipt_list_screen.dart';
 import '../../features/evidence/screens/screenshot_upload_screen.dart';
 import '../../features/evidence/screens/profile_link_screen.dart';
 import '../../features/trust/screens/trustscore_overview_screen.dart';
@@ -27,6 +28,10 @@ import '../../features/mutual_verification/screens/verification_details_screen.d
 import '../../features/safety/screens/report_user_screen.dart';
 import '../../features/safety/screens/my_reports_screen.dart';
 import '../../features/safety/screens/report_details_screen.dart';
+import '../../features/subscriptions/screens/subscription_overview_screen.dart';
+import '../../features/subscriptions/screens/upgrade_premium_screen.dart';
+import '../../features/subscriptions/screens/upgrade_pro_screen.dart';
+import '../../features/profile/screens/public_profile_viewer_screen.dart';
 import '../../services/auth_service.dart';
 
 class AppRouter {
@@ -79,7 +84,7 @@ class AppRouter {
       GoRoute(
         path: '/home',
         name: 'home',
-        builder: (context, state) => const HomeScreen(),
+        builder: (context, state) => const EnhancedHomeScreen(),
       ),
       GoRoute(
         path: '/identity/intro',
@@ -103,6 +108,11 @@ class AppRouter {
       ),
       GoRoute(
         path: '/evidence/receipts',
+        name: 'receipt-list',
+        builder: (context, state) => const ReceiptListScreen(),
+      ),
+      GoRoute(
+        path: '/evidence/receipts/upload',
         name: 'receipt-upload',
         builder: (context, state) => const ReceiptUploadScreen(),
       ),
@@ -213,6 +223,34 @@ class AppRouter {
             );
           }
           return ReportDetailsScreen(reportId: id);
+        },
+      ),
+      GoRoute(
+        path: '/subscriptions/overview',
+        name: 'subscription-overview',
+        builder: (context, state) => const SubscriptionOverviewScreen(),
+      ),
+      GoRoute(
+        path: '/subscriptions/premium',
+        name: 'upgrade-premium',
+        builder: (context, state) => const UpgradePremiumScreen(),
+      ),
+      GoRoute(
+        path: '/subscriptions/pro',
+        name: 'upgrade-pro',
+        builder: (context, state) => const UpgradeProScreen(),
+      ),
+      GoRoute(
+        path: '/profile/view/:username',
+        name: 'view-public-profile',
+        builder: (context, state) {
+          final username = state.pathParameters['username'];
+          if (username == null) {
+            return const Scaffold(
+              body: Center(child: Text('Username required')),
+            );
+          }
+          return PublicProfileViewerScreen(username: username);
         },
       ),
     ],

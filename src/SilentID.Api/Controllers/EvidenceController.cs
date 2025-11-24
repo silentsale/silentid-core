@@ -14,12 +14,20 @@ namespace SilentID.Api.Controllers;
 public class EvidenceController : ControllerBase
 {
     private readonly IEvidenceService _evidenceService;
+    private readonly IBlobStorageService _blobStorageService;
+    private readonly IRiskEngineService _riskEngineService;
     private readonly ILogger<EvidenceController> _logger;
 
-    public EvidenceController(IEvidenceService evidenceService, ILogger<EvidenceController> logger)
+    public EvidenceController(
+        IEvidenceService evidenceService,
+        IBlobStorageService blobStorageService,
+        ILogger<EvidenceController> logger,
+        IRiskEngineService riskEngineService)
     {
         _evidenceService = evidenceService;
+        _blobStorageService = blobStorageService;
         _logger = logger;
+        _riskEngineService = riskEngineService;
     }
 
     private Guid GetUserId()
@@ -151,57 +159,60 @@ public class EvidenceController : ControllerBase
     }
 
     /// <summary>
-    /// POST /v1/evidence/screenshots/upload-url - Generate upload URL for screenshot
-    /// </summary>
-    [HttpPost("screenshots/upload-url")]
-    public IActionResult GetScreenshotUploadUrl()
-    {
-        try
-        {
-            var userId = GetUserId();
-
-            // For MVP, return a mock upload URL
-            // In production, this would generate an Azure Blob Storage SAS token
-            var uploadId = Guid.NewGuid();
-            var mockUploadUrl = $"https://silentid-storage.blob.core.windows.net/evidence/{userId}/{uploadId}?sas-token=mock";
-
-            _logger.LogInformation("Screenshot upload URL generated for user {UserId}: {UploadId}", userId, uploadId);
-
-            return Ok(new
-            {
-                uploadUrl = mockUploadUrl,
-                uploadId = uploadId,
-                expiresAt = DateTime.UtcNow.AddHours(1),
-                message = "Upload your screenshot to this URL. URL expires in 1 hour."
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating upload URL");
-            return StatusCode(500, new { error = "internal_error", message = "Failed to generate upload URL." });
-        }
-    }
-
-    /// <summary>
-    /// POST /v1/evidence/screenshots - Add screenshot evidence
+    /// POST /v1/evidence/screenshots - Upload and add screenshot evidence
     /// </summary>
     [HttpPost("screenshots")]
-    public async Task<IActionResult> AddScreenshot([FromBody] AddScreenshotRequest request)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadScreenshot([FromForm] IFormFile file, [FromForm] Platform platform, [FromForm] string? ocrText)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
 
+        // Validate file
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { error = "invalid_file", message = "Please provide a valid file." });
+        }
+
+        // Validate file type (images only)
+        var allowedContentTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/webp" };
+        if (!allowedContentTypes.Contains(file.ContentType.ToLowerInvariant()))
+        {
+            return BadRequest(new { error = "invalid_file_type", message = "Only image files (JPEG, PNG, WebP) are allowed." });
+        }
+
+        // Validate file size (max 10MB)
+        const int maxFileSizeBytes = 10 * 1024 * 1024; // 10MB
+        if (file.Length > maxFileSizeBytes)
+        {
+            return BadRequest(new { error = "file_too_large", message = "File size must not exceed 10MB." });
+        }
+
         try
         {
             var userId = GetUserId();
 
+            // Upload file to blob storage
+            string fileUrl;
+            using (var fileStream = file.OpenReadStream())
+            {
+                fileUrl = await _blobStorageService.UploadFileAsync(
+                    fileStream,
+                    file.FileName,
+                    file.ContentType
+                );
+            }
+
+            _logger.LogInformation("Screenshot uploaded for user {UserId}: {FileUrl}", userId, fileUrl);
+
+            // Create screenshot evidence record
             var screenshot = new ScreenshotEvidence
             {
-                FileUrl = request.FileUrl,
-                Platform = request.Platform,
-                OCRText = request.OcrText,
+                FileUrl = fileUrl,
+                Platform = platform,
+                OCRText = ocrText,
                 IntegrityScore = 85, // Placeholder - real OCR/EXIF validation would adjust this
                 FraudFlag = false,
                 EvidenceState = EvidenceState.Valid
@@ -209,7 +220,7 @@ public class EvidenceController : ControllerBase
 
             var savedScreenshot = await _evidenceService.AddScreenshotEvidenceAsync(userId, screenshot);
 
-            _logger.LogInformation("Screenshot added: {ScreenshotId} for user {UserId}", savedScreenshot.Id, userId);
+            _logger.LogInformation("Screenshot evidence added: {ScreenshotId} for user {UserId}", savedScreenshot.Id, userId);
 
             return CreatedAtAction(
                 nameof(GetScreenshot),
@@ -226,8 +237,8 @@ public class EvidenceController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error adding screenshot");
-            return StatusCode(500, new { error = "internal_error", message = "Failed to add screenshot." });
+            _logger.LogError(ex, "Error uploading screenshot");
+            return StatusCode(500, new { error = "internal_error", message = "Failed to upload screenshot." });
         }
     }
 
@@ -378,13 +389,6 @@ public class AddReceiptRequest
     public string? Currency { get; set; }
     public TransactionRole Role { get; set; }
     public DateTime Date { get; set; }
-}
-
-public class AddScreenshotRequest
-{
-    public string FileUrl { get; set; } = string.Empty;
-    public Platform Platform { get; set; }
-    public string? OcrText { get; set; }
 }
 
 public class AddProfileLinkRequest

@@ -174,7 +174,7 @@ class _TrustScoreOverviewScreenState extends State<TrustScoreOverviewScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha: 0.2),
             blurRadius: 20,
             spreadRadius: 5,
           ),
@@ -223,7 +223,7 @@ class _TrustScoreOverviewScreenState extends State<TrustScoreOverviewScreen> {
         border: Border.all(color: AppTheme.neutralGray300),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

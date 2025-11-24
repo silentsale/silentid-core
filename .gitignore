@@ -55,6 +55,9 @@ tmp/
 temp/
 *.tmp
 
+# Local file storage (development)
+LocalStorage/
+
 # Node modules (if any)
 node_modules/
 

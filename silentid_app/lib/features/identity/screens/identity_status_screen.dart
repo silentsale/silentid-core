@@ -100,7 +100,7 @@ class _IdentityStatusScreenState extends State<IdentityStatusScreen> {
                         height: 120,
                         width: 120,
                         decoration: BoxDecoration(
-                          color: _getStatusColor().withOpacity(0.1),
+                          color: _getStatusColor().withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(

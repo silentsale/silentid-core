@@ -1,7 +1,7 @@
 # SILENTID - MASTER SPECIFICATION DOCUMENT
 
-**Version:** 1.3.0
-**Last Updated:** 2025-11-21
+**Version:** 1.7.0
+**Last Updated:** 2025-11-23
 **Status:** Pre-Development - Complete Specification
 
 ---
@@ -4679,6 +4679,4976 @@ npm run export  # Static export for Azure Static Web Apps
 
 ---
 
+
+---
+
+## SECTION 22: PARTNER TRUSTSIGNAL API (EXTERNAL INTEGRATION)
+
+### 22.1 Purpose
+
+The Partner TrustSignal API enables external platforms to query high-level trust and risk summaries for SilentID users through a secure, server-to-server interface.
+
+**Post-MVP / Phase 2+:** Not required for initial MVP delivery.
+
+### 22.2 Access Model
+
+**Authentication:**
+- OAuth2 Client Credentials flow
+- Or signed server-to-server API keys
+- Partners receive unique credentials with defined scopes
+- Configurable rate limits per partner
+- No browser or client-side access permitted
+
+**Partner Onboarding:**
+- Manual approval process
+- Signed data processing agreement
+- API credentials issued
+- Rate limits configured
+- Access logs monitored
+
+### 22.3 User Identifiers
+
+**Partner queries MUST reference users by:**
+- Public username (e.g., `@alice123`)
+- Or public profile URL (`https://silentid.co.uk/u/alice123`)
+
+**Internal user IDs must NEVER be exposed to partners.**
+
+### 22.4 Conceptual API Endpoints
+
+**1. GET /api/partner/v1/trust-summary**
+
+Request:
+```json
+{
+  "username": "@alice123"
+}
+```
+
+Response:
+```json
+{
+  "username": "@alice123",
+  "trust_level": "high",
+  "trust_score_band": "801-900",
+  "identity_verified": true,
+  "account_age_days": 180,
+  "last_activity_days": 2
+}
+```
+
+**2. GET /api/partner/v1/risk-summary**
+
+Request:
+```json
+{
+  "username": "@alice123"
+}
+```
+
+Response:
+```json
+{
+  "username": "@alice123",
+  "risk_level": "low",
+  "safety_reports_count": 0,
+  "risk_signals_active": false,
+  "recommendation": "proceed_normal"
+}
+```
+
+**3. GET /api/partner/v1/public-profile**
+
+Request:
+```json
+{
+  "username": "@alice123"
+}
+```
+
+Response:
+```json
+{
+  "username": "@alice123",
+  "display_name": "Alice M.",
+  "trust_score": 847,
+  "identity_verified": true,
+  "verified_platforms_count": 3,
+  "account_created": "2025-05-15"
+}
+```
+
+**Response Fields Must:**
+- Be high-level aggregates only
+- Avoid exposing personal data
+- Avoid revealing algorithmic details
+- Use defamation-safe language
+- Never include reporter information
+
+### 22.5 Privacy & Data Protection Rules
+
+**NEVER return:**
+- Raw screenshots, receipts, or uploaded evidence
+- Public profile URLs that were scraped
+- IP addresses, device fingerprints, or location data
+- Names or details of users who filed reports
+- Exact TrustScore calculation formulas
+- Internal risk signal weights or thresholds
+
+**Only return:**
+- Aggregated trust/risk bands
+- Public profile information already visible on silentid.co.uk
+- Account age and verification status
+- High-level safety signal counts (not details)
+
+### 22.6 Abuse Prevention
+
+**Rate Limiting:**
+- Per-partner limits (e.g., 100 requests/minute)
+- Burst limits to prevent scraping
+- Dynamic throttling on suspicious patterns
+
+**Security Monitoring:**
+- Log all API requests with timestamps
+- Detect anomalous query patterns
+- Alert on excessive failed requests
+- Automatic key suspension on abuse detection
+
+**Key Management:**
+- Partners can rotate keys via admin portal
+- SilentID can revoke keys immediately if abuse detected
+- All key operations logged in AdminAuditLogs
+
+### 22.7 Use Cases
+
+**Primary Use Cases:**
+- **Marketplaces:** SilentSale, rental platforms validating user trust before allowing transactions
+- **Dating Apps:** Optional trust badge integration
+- **Community Platforms:** Moderators checking new member trust levels
+- **Service Providers:** Tradesperson platforms verifying service provider reliability
+
+**NOT for:**
+- Mass profiling or surveillance
+- Credit decisions
+- Employment screening (unless explicitly permitted)
+- Law enforcement (must use legal channels)
+
+### 22.8 Legal & Compliance
+
+**Data Processing Agreement Required:**
+- Partner must sign DPA covering:
+  - Lawful basis for processing
+  - User consent requirements
+  - Data retention limits
+  - Security measures
+  - Incident response obligations
+
+**GDPR Compliance:**
+- Partners must respect user rights (access, deletion, etc.)
+- Partners must display privacy notices to users
+- Partners must NOT combine SilentID data with sensitive categories
+
+**Liability:**
+- SilentID provides signals, NOT guarantees
+- Partners responsible for their own decision-making
+- API terms must include liability limitations
+
+---
+
+## SECTION 23: QR TRUST PASSPORT SYSTEM
+
+### 23.1 Purpose
+
+Enable SilentID users to share their trust profile in-person via QR codes for local trades, meetups, rental viewings, and community events.
+
+**Post-MVP / Phase 2+:** Static QR generation may be included in MVP; dynamic time-bound QR is future-only.
+
+### 23.2 QR Code Types
+
+**1. Static QR Code**
+- Encodes the user's public profile URL
+- Format: `https://silentid.co.uk/u/username`
+- Never expires
+- No tracking or analytics
+- Can be generated client-side
+
+**2. Dynamic QR Code (Future)**
+- Generates a time-bound signed token
+- Token includes:
+  - User ID (encrypted)
+  - Expiry timestamp
+  - Optional context metadata (e.g., "viewing at 3pm")
+- Scanner redirects to public profile after validation
+- Token expires after configurable duration (e.g., 15 minutes)
+- Enables analytics (how many times scanned, when, where)
+
+### 23.3 Security & Privacy
+
+**Static QR:**
+- Contains NO personal data beyond public username
+- User can disable public profile to invalidate QR
+- No tracking possible
+
+**Dynamic QR (Future):**
+- Signed with server-side secret key
+- Token cannot be forged or reused after expiry
+- User can revoke all issued tokens in Settings
+- Scanner sees only public profile, never raw token data
+
+**User Controls:**
+- Settings toggle: "Allow QR code sharing"
+- Option to hide public profile (disables QR)
+- View QR scan history (for dynamic QR only)
+
+### 23.4 User Experience
+
+**Share Profile Screen (Mobile App):**
+- "Share Your SilentID" button
+- Options:
+  - Copy Link
+  - Show QR Code
+  - Share via messaging app
+
+**QR Display Screen:**
+- Full-screen QR code
+- Username displayed below
+- TrustScore badge shown
+- "Scan this code to view my SilentID profile"
+- Dynamic QR shows expiry timer (future)
+
+**QR Scanning:**
+- Any standard QR scanner app works
+- Redirects to public profile in browser
+- Mobile deep link to SilentID app (if installed)
+
+### 23.5 Use Cases
+
+**Local Meetups:**
+- Marketplace buyers/sellers meeting in person
+- Roommate viewings
+- Community group introductions
+- Parent groups verifying other parents
+
+**Events:**
+- Networking events with trust verification
+- Trade shows (for professional profiles, future)
+
+**Emergency Verification:**
+- Quick trust check before accepting a ride/delivery
+- Verifying service provider identity
+
+---
+
+## SECTION 24: TRUSTSCORE APPEAL & REVIEW SYSTEM
+
+### 24.1 Purpose
+
+Provide users with a formal, transparent pathway to challenge evidence, flags, reports, or TrustScore outcomes they believe are incorrect or unfair.
+
+**Post-MVP / Phase 2+:** Not required in initial MVP.
+
+### 24.2 What Can Be Appealed
+
+**Eligible for Appeal:**
+1. **Specific Evidence Items:**
+   - Receipt marked as suspicious/invalid
+   - Screenshot flagged as tampered
+   - Public profile link rejected
+
+2. **Safety Reports:**
+   - Report filed against user
+   - Public safety warning on profile
+
+3. **TrustScore Components:**
+   - Identity score (if verification failed incorrectly)
+   - Evidence score (if evidence wrongly excluded)
+   - Behaviour score (if pattern detection error)
+   - Peer verification score (if mutual verification disputed)
+
+4. **Account Actions:**
+   - Temporary suspension
+   - Feature restrictions
+   - Public profile visibility
+
+**NOT Eligible for Appeal:**
+- Overall TrustScore number (derived from components)
+- Other users' profiles or scores
+- Marketplace/platform decisions (outside SilentID)
+
+### 24.3 User Appeal Flow
+
+**Step 1: Initiate Appeal**
+- User navigates to Settings > Appeals & Reviews
+- Selects appeal target (evidence, report, score component)
+- Views current status and reason
+
+**Step 2: Submit Explanation**
+- Text field: "Explain why you believe this is incorrect"
+- Character limit: 500 words
+- Optional: Upload supporting evidence (e.g., proof of correction)
+- Acknowledge: "Appeals are reviewed by SilentID staff within 5 business days"
+
+**Step 3: Appeal Submitted**
+- Appeal created with status: Pending
+- User receives email confirmation
+- Appeal tracked in Settings > My Appeals
+
+**Step 4: Track Progress**
+- Appeal status: Pending / Under Review / Resolved
+- User can view admin notes (sanitised)
+- User cannot submit duplicate appeals for same item
+
+### 24.4 Admin Review Flow
+
+**Step 1: Admin Reviews Appeal**
+- Admin accesses Appeals Queue in admin dashboard
+- Filters: Pending / Priority / Oldest first
+- Views:
+  - User's explanation
+  - Original evidence/report/score component
+  - System logs and integrity checks
+  - Risk signals and fraud indicators
+  - User's appeal history
+
+**Step 2: Admin Decision**
+
+**Decision Options:**
+1. **Uphold Original Decision**
+   - Reason: Evidence supports original assessment
+   - Action: No changes made
+   - User notified with neutral explanation
+
+2. **Adjust or Correct**
+   - Reason: Error identified or new evidence provided
+   - Action: Evidence re-scored, report removed, TrustScore recalculated
+   - User notified: "Your appeal has been upheld"
+
+3. **Partially Uphold**
+   - Reason: Some aspects correct, others not
+   - Action: Partial adjustment
+   - User notified with detailed breakdown
+
+4. **Escalate to Senior Review**
+   - Reason: Complex case requiring additional expertise
+   - Action: Routed to senior admin or legal review
+   - User notified: "Your appeal is under extended review"
+
+**Step 3: Communication**
+- Admin writes response (max 200 words)
+- Response must use:
+  - Neutral, factual language
+  - Evidence-based reasoning
+  - Defamation-safe wording
+  - Clear next steps (if any)
+
+**Step 4: Closure**
+- Appeal status set to: Resolved
+- User and admin notified
+- All actions logged in AdminAuditLogs
+
+### 24.5 Language Requirements
+
+**MUST use:**
+- "Based on the evidence provided..."
+- "Our review identified..."
+- "The original assessment stands because..."
+- "We have adjusted..."
+
+**MUST NOT use:**
+- "You are wrong"
+- "This is fraudulent"
+- "You are lying"
+- "This is obviously fake"
+
+**Tone:** Professional, neutral, evidence-based, respectful.
+
+### 24.6 Appeal Limits
+
+**To prevent abuse:**
+- Maximum 3 appeals per 30 days per user
+- Cannot appeal same item twice
+- Frivolous appeals may result in temporary appeal suspension
+- Users with RiskScore > 80 have appeals manually reviewed for patterns
+
+### 24.7 Database Schema
+
+```sql
+CREATE TABLE Appeals (
+  Id UUID PRIMARY KEY,
+  UserId UUID REFERENCES Users(Id),
+  TargetType VARCHAR(50), -- Evidence, Report, ScoreComponent, AccountAction
+  TargetId UUID, -- Reference to specific item
+  Reason TEXT, -- User's explanation
+  Status VARCHAR(50), -- Pending, UnderReview, Resolved, Escalated
+  AdminUserId UUID NULL REFERENCES Users(Id),
+  AdminDecision VARCHAR(50) NULL, -- Upheld, Adjusted, PartiallyUpheld, Escalated
+  AdminNotes TEXT NULL,
+  CreatedAt TIMESTAMP,
+  ReviewedAt TIMESTAMP NULL,
+  ResolvedAt TIMESTAMP NULL
+);
+```
+
+---
+
+## SECTION 25: RISK & ANOMALY SIGNALS (DETAILED SPECIFICATION)
+
+### 25.1 Purpose
+
+Define all risk signals used by the Risk Engine to calculate RiskScore (0-100) and inform admin decisions.
+
+**Post-MVP:** Full catalogue is future work; basic subset may appear in MVP.
+
+### 25.2 Signal Categories
+
+**1. Identity & Device Signals**
+- Multiple accounts from same device
+- VPN/Tor usage patterns
+- Device fingerprint mismatch
+- Rapid IP geo-location changes
+- Suspicious user-agent patterns
+- Known fraud device database matches
+
+**2. Behaviour & Transaction Signals**
+- Account created but never used (7+ days inactive)
+- Rapid sequential actions (< 1 second between requests)
+- Evidence upload patterns (e.g., 50 receipts uploaded in 1 minute)
+- Mutual verification circular patterns
+- Multiple failed login attempts
+- Unusual time-of-day activity (e.g., 3am bulk uploads)
+
+**3. Evidence Integrity Signals**
+- Screenshot tampering detected
+- Receipt DKIM/SPF validation failed
+- Duplicate evidence across multiple users
+- Evidence timestamp inconsistencies
+- Public profile URL mismatch with username
+- Evidence quality score below threshold
+
+**4. Network & Location Signals**
+- IP address on known fraud list
+- Country mismatch with claimed location
+- High-risk ASN (data center, hosting provider)
+- Shared IP with other flagged accounts
+- Location impossible travel (e.g., UK → Australia in 2 hours)
+
+**5. Reporting & Safety Signals**
+- User has 1+ verified reports against them
+- User has 3+ unverified reports (pending review)
+- User filed 5+ reports that were dismissed (possible false reporting)
+- User reported by high-trust users
+
+### 25.3 RiskScore Calculation
+
+**RiskScore Range:** 0-100 (higher = more risky)
+
+**Weight Examples:**
+- Fake evidence detected: +30
+- Identity verification mismatch: +20
+- Device fingerprint inconsistency: +10
+- VPN usage (non-malicious): +5
+- 1 verified report: +10
+- 3+ verified reports: +30
+- Collusion pattern detected: +20
+
+**RiskScore Bands:**
+
+| Score | Level | Internal Action |
+|-------|-------|-----------------|
+| 0-20 | Low | No action |
+| 21-40 | Mild | Monitoring only |
+| 41-60 | Elevated | Warning banner on profile, encourage ID verification |
+| 61-80 | High | Mandatory identity re-check, evidence uploads disabled |
+| 81-100 | Critical | Account frozen, admin notified immediately |
+
+**External API Simplified Bands:**
+- 0-40: "OK"
+- 41-70: "CAUTION"
+- 71-100: "REVIEW"
+
+### 25.4 Signal Tuning & Configuration
+
+**Risk signal weights stored in database configuration table:**
+```sql
+CREATE TABLE RiskSignalWeights (
+  Id UUID PRIMARY KEY,
+  SignalType VARCHAR(100),
+  Weight INT, -- Points added to RiskScore
+  IsActive BOOLEAN,
+  UpdatedAt TIMESTAMP,
+  UpdatedBy UUID REFERENCES Users(Id)
+);
+```
+
+**All weight changes:**
+- Must be logged in AdminAuditLogs
+- Require admin justification
+- Automatically recalculate affected user RiskScores
+
+### 25.5 Signal Display Rules
+
+**Internal Admin View:**
+- Full list of active signals
+- Signal severity (low/medium/high)
+- Timestamp of detection
+- Linked evidence or events
+
+**User View (Settings > Risk Status):**
+- Sanitised, high-level summary
+- Example: "Device inconsistency detected"
+- Clear actions to resolve (e.g., "Verify your identity")
+- NO exposure of internal detection logic
+
+**External API:**
+- Only return aggregated risk level ("low", "medium", "high")
+- Never return specific signals or weights
+
+---
+
+## SECTION 26: EVIDENCE INTEGRITY ENGINE
+
+### 26.1 Purpose
+
+Ensure all uploaded evidence is authentic, consistent, and not duplicated fraudulently across the platform.
+
+**Post-MVP:** Basic checks in MVP; full engine in Phase 2+.
+
+### 26.2 Evidence Types Covered
+
+1. **Screenshots** (marketplace reviews, profile stats, messages)
+2. **Email Receipts** (order confirmations, shipping notifications)
+3. **Public Profile URLs** (Vinted, eBay, Depop, etc.)
+
+### 26.3 Screenshot Integrity Checks
+
+**Level 1: Metadata Validation**
+- EXIF data extraction
+- Image resolution and format checks
+- Timestamp plausibility (not future-dated)
+- File size consistency with resolution
+
+**Level 2: Visual Consistency**
+- OCR text extraction and layout analysis
+- Known UI pattern matching (e.g., Vinted app screenshots)
+- Color palette consistency with platform branding
+- Font rendering consistency
+
+**Level 3: Tampering Detection**
+- Pixel-level manipulation analysis (e.g., clone stamping)
+- Edge inconsistency detection (copy-paste artifacts)
+- Noise pattern analysis
+- Compression artifact detection
+
+**Level 4: Content Validation**
+- Username consistency across screenshots
+- Rating/review count plausibility
+- Date consistency with other evidence
+
+**Integrity Score:** 0-100 (higher = more trustworthy)
+
+| Score | Classification | Action |
+|-------|---------------|---------|
+| 90-100 | High Quality | Full weight in TrustScore |
+| 70-89 | Acceptable | Partial weight |
+| 50-69 | Questionable | Flagged for review, reduced weight |
+| 0-49 | Suspicious | Rejected, creates RiskSignal |
+
+### 26.4 Email Receipt Integrity Checks
+
+**DKIM/SPF Validation:**
+- Verify sender domain authenticity
+- Check DKIM signature (if available)
+- Validate SPF records
+
+**Content Validation:**
+- Sender domain matches known marketplaces (vinted.com, ebay.com, etc.)
+- Email structure matches known templates
+- Order ID format validation
+- Amount/date/item plausibility
+
+**Duplicate Detection:**
+- Hash email content
+- Check if same receipt uploaded by multiple users
+- Check if same receipt uploaded multiple times by same user
+
+**Integrity Score:** 0-100
+
+### 26.5 Public Profile URL Integrity
+
+**Validation Checks:**
+- URL format matches platform (e.g., https://vinted.com/member/123456)
+- Profile is publicly accessible (not 404/private)
+- Username on profile matches SilentID username (fuzzy matching)
+- Profile metrics consistent with other evidence
+
+**Scraping Verification:**
+- Playwright headless browser scrape
+- Extract: username, reviews, rating, join date, listings count
+- Compare with user-provided data
+- Detect discrepancies
+
+**Duplicate Detection:**
+- Check if same URL claimed by multiple SilentID users (fraud flag)
+- Check if URL changes after initial verification (suspicious)
+
+### 26.6 Cross-Evidence Consistency
+
+**Consistency Checks:**
+- Do screenshots match public profile data?
+- Do receipt dates align with account age?
+- Do transaction counts across evidence types match?
+- Do usernames across all evidence types match?
+
+**Inconsistency Examples:**
+- User claims 500 transactions in receipts but public profile shows 50
+- Screenshots show username "alice123" but profile URL is "bob456"
+- Receipt dates are all from 2020 but account created in 2025
+
+**Action on Inconsistency:**
+- Create RiskSignal
+- Flag evidence for admin review
+- Reduce TrustScore until resolved
+
+### 26.7 Deduplication System
+
+**Hash-Based Deduplication:**
+```sql
+CREATE TABLE EvidenceHashes (
+  Id UUID PRIMARY KEY,
+  EvidenceId UUID REFERENCES Evidence(Id),
+  HashType VARCHAR(50), -- MD5, SHA256, PerceptualHash
+  HashValue VARCHAR(255),
+  CreatedAt TIMESTAMP,
+  INDEX(HashValue)
+);
+```
+
+**Deduplication Rules:**
+- Same evidence within same user:
+  - First instance: Full weight
+  - Duplicates: Zero weight, warning shown
+- Same evidence across different users:
+  - Both users flagged
+  - Evidence invalidated
+  - RiskSignal created
+  - Admin review triggered
+
+### 26.8 Impact on TrustScore
+
+**High-Quality Evidence:**
+- IntegrityScore 90-100
+- Full weight applied to Evidence component (up to 300 points)
+
+**Questionable Evidence:**
+- IntegrityScore 50-69
+- 50% weight applied
+- User encouraged to upload better quality evidence
+
+**Rejected Evidence:**
+- IntegrityScore < 50
+- Zero weight
+- RiskSignal created
+- User notified: "This evidence could not be verified"
+
+---
+
+## SECTION 27: EVIDENCE DELETION & EVIDENCE LIFECYCLE
+
+### 27.1 Purpose
+
+Define how evidence is retained, deleted, and expired to ensure GDPR compliance and system integrity.
+
+**Post-MVP:** Basic delete only; full lifecycle management in Phase 2+.
+
+### 27.2 User-Initiated Evidence Deletion
+
+**Flow:**
+1. User navigates to Evidence Vault
+2. Selects evidence item (receipt, screenshot, profile link)
+3. Taps "Delete Evidence"
+4. Confirmation prompt: "This evidence will be removed from your TrustScore calculation"
+5. User confirms
+
+**System Actions:**
+- Soft delete evidence record (DeletedAt timestamp set)
+- Remove file from Azure Blob Storage (schedule for batch deletion)
+- Recalculate TrustScore immediately
+- Log deletion in user audit trail
+
+**Impact:**
+- TrustScore updated within seconds
+- Deleted evidence NOT shown in public profile
+- Deleted evidence NOT returned in API responses
+- Deleted evidence retained in logs for fraud investigation (anonymised after 30 days)
+
+### 27.3 Automatic Evidence Expiry (Future)
+
+**Expiry Rules (Configurable):**
+- Receipts: No expiry (permanent unless user deletes)
+- Screenshots: Expire after 2 years (configurable)
+- Public profile links: Re-verified every 6 months
+
+**Expiry Actions:**
+- Evidence marked as Expired
+- User notified: "Your screenshot evidence has expired. Upload a new one to maintain your TrustScore."
+- TrustScore recalculated with expired evidence excluded
+- Expired evidence soft-deleted after 30 days
+
+### 27.4 Account Deletion Cascade
+
+**When user deletes account (Section 20.2):**
+
+**Immediate Actions:**
+1. User profile anonymised
+2. All evidence soft-deleted
+3. TrustScore snapshots retained (anonymised)
+4. Public profile removed
+
+**30-Day Grace Period:**
+- User can cancel deletion
+- Evidence NOT permanently deleted yet
+- Public profile remains inaccessible
+
+**After 30 Days (Irreversible):**
+1. Permanently delete:
+   - All evidence files from Azure Blob
+   - User personal data (email, username, etc.)
+   - Sessions and auth devices
+2. Retain (anonymised):
+   - RiskSignals (UserId replaced with `[DELETED_USER]`)
+   - AdminAuditLogs (for legal compliance)
+   - Anonymised TrustScore snapshots (for fraud research)
+3. Retention period: 7 years (UK legal requirement)
+
+### 27.5 Admin-Initiated Evidence Removal
+
+**Reason: Fraudulent or Harmful Evidence**
+
+**Admin Actions:**
+1. Admin reviews evidence
+2. Decision: Remove Evidence
+3. Justification required (text field)
+4. Evidence status set to: AdminRemoved
+5. User notified: "One of your evidence items has been removed following review"
+
+**System Actions:**
+- Evidence excluded from TrustScore
+- RiskSignal created (type: FraudulentEvidence)
+- File retained for investigation (not deleted)
+- User cannot re-upload same evidence (hash-blocked)
+
+**All admin removals logged in AdminAuditLogs.**
+
+### 27.6 Evidence Lifecycle States
+
+**Lifecycle State Machine:**
+
+```
+Uploaded → Pending Review → Verified → Active
+                           ↓
+                      Flagged → Under Review → AdminRemoved
+                                              ↓
+                                         Deleted (Soft)
+                                              ↓
+                                  Permanently Deleted (30 days)
+```
+
+**State Definitions:**
+- **Uploaded:** Evidence just uploaded, awaiting integrity checks
+- **Pending Review:** Integrity checks running
+- **Verified:** Passed integrity checks, contributes to TrustScore
+- **Flagged:** Integrity concerns detected, awaiting admin review
+- **Under Review:** Admin currently reviewing
+- **AdminRemoved:** Admin determined evidence is fraudulent/invalid
+- **Deleted (Soft):** User or system soft-deleted, file scheduled for removal
+- **Permanently Deleted:** File removed from storage, record anonymised
+
+### 27.7 Retention Policy Summary
+
+| Evidence Type | Retention While Active | Post-Deletion Retention |
+|---------------|------------------------|-------------------------|
+| Screenshots | Until deleted or expired | 30 days soft-delete, then permanent |
+| Receipts | Until deleted | 30 days soft-delete, then permanent |
+| Public Profile Links | Until deleted or re-verification fails | 30 days soft-delete, then permanent |
+| Fraud-Flagged Evidence | Indefinite (investigation) | 7 years (anonymised) |
+
+---
+
+## SECTION 28: ADMIN ROLES, PERMISSIONS & AUDIT LOGGING
+
+### 28.1 Purpose
+
+Define a secure, role-based admin hierarchy with comprehensive audit logging for all administrative actions.
+
+**Post-MVP:** Basic admin panel only; full RBAC in Phase 2+.
+
+### 28.2 Admin Role Definitions
+
+**1. Support Agent (Tier 1)**
+- **Can:**
+  - View user profiles (limited)
+  - View evidence (read-only)
+  - View reports (read-only)
+  - Respond to support tickets
+  - Create support notes
+- **Cannot:**
+  - Modify TrustScore
+  - Delete evidence
+  - Ban users
+  - Access RiskScore details
+
+**2. Risk/Trust Analyst (Tier 2)**
+- **Can (all of Tier 1 +):**
+  - View full user profiles
+  - View RiskScore and RiskSignals
+  - Review flagged evidence
+  - Approve/reject evidence
+  - Escalate reports
+  - Request identity re-verification
+- **Cannot:**
+  - Ban users permanently
+  - Delete accounts
+  - Modify audit logs
+  - Change admin permissions
+
+**3. Senior Moderator (Tier 3)**
+- **Can (all of Tier 2 +):**
+  - Freeze/unfreeze accounts
+  - Remove evidence
+  - Resolve safety reports
+  - Issue temporary bans (up to 30 days)
+  - Override RiskScore thresholds (with justification)
+- **Cannot:**
+  - Delete accounts permanently
+  - Modify admin permissions
+  - Access system configuration
+
+**4. Super Admin (Tier 4)**
+- **Can (all of Tier 3 +):**
+  - Permanently delete accounts
+  - Add/remove admin users
+  - Modify admin permissions
+  - Access system configuration
+  - Override all safety checks (with mandatory justification)
+  - View all audit logs
+
+**Assigned only to:** CTO, designated senior staff.
+
+### 28.3 Permission Matrix
+
+| Action | Support | Analyst | Senior Mod | Super Admin |
+|--------|---------|---------|------------|-------------|
+| View user profile | ✅ Limited | ✅ Full | ✅ Full | ✅ Full |
+| View evidence | ✅ Read | ✅ Read | ✅ Read | ✅ Full |
+| Approve/reject evidence | ❌ | ✅ | ✅ | ✅ |
+| Delete evidence | ❌ | ❌ | ✅ | ✅ |
+| View RiskScore | ❌ | ✅ | ✅ | ✅ |
+| Freeze account | ❌ | ❌ | ✅ | ✅ |
+| Ban user (temp) | ❌ | ❌ | ✅ | ✅ |
+| Delete account | ❌ | ❌ | ❌ | ✅ |
+| Manage admins | ❌ | ❌ | ❌ | ✅ |
+| View audit logs | ❌ | ✅ Limited | ✅ Full | ✅ Full |
+| Modify system config | ❌ | ❌ | ❌ | ✅ |
+
+### 28.4 Audit Logging Requirements
+
+**Every admin action MUST create an audit log entry:**
+
+**Database Schema:**
+```sql
+CREATE TABLE AdminAuditLogs (
+  Id UUID PRIMARY KEY,
+  AdminUserId UUID REFERENCES Users(Id), -- Admin who performed action
+  AdminRole VARCHAR(50), -- Support, Analyst, SeniorMod, SuperAdmin
+  Action VARCHAR(100), -- FreezeAccount, DeleteEvidence, BanUser, etc.
+  TargetType VARCHAR(50), -- User, Evidence, Report, etc.
+  TargetId UUID, -- ID of affected entity
+  Justification TEXT, -- Admin's reason (mandatory for critical actions)
+  Metadata JSONB, -- Additional context (old/new values, etc.)
+  IPAddress VARCHAR(50),
+  CreatedAt TIMESTAMP NOT NULL,
+  INDEX(AdminUserId, CreatedAt),
+  INDEX(TargetId, TargetType)
+);
+```
+
+**Audit Log Content:**
+- **Who:** Admin user ID and role
+- **What:** Action performed
+- **When:** Timestamp (UTC)
+- **Where:** IP address
+- **Why:** Justification (mandatory for high-risk actions)
+- **Target:** Affected user/evidence/report
+- **Metadata:** Old/new values, additional context
+
+**Mandatory Justification for:**
+- Freezing accounts
+- Banning users
+- Deleting evidence
+- Overriding RiskScore
+- Deleting accounts
+- Modifying admin permissions
+
+**Justification Field:**
+- Minimum 20 characters
+- Must be professional and factual
+- Examples:
+  - "User submitted 10 fake screenshots detected by integrity engine"
+  - "User requested account deletion via support ticket #1234"
+  - "Safety report verified with supporting evidence from 3 users"
+
+### 28.5 Audit Log Retention
+
+**Retention Period:** 7 years (UK legal compliance)
+
+**Immutability:**
+- Audit logs are **append-only**
+- No UPDATE or DELETE operations allowed
+- Database triggers prevent modification
+- Only Super Admins can view raw audit logs
+- Other admins see sanitised versions
+
+**Access Control:**
+- Support Agents: No access
+- Analysts: Limited (own actions + related cases)
+- Senior Moderators: Full access to action logs
+- Super Admins: Full access to all logs
+
+### 28.6 Admin Onboarding & Offboarding
+
+**Onboarding:**
+1. Background check completed
+2. Signed confidentiality agreement
+3. Super Admin creates admin account
+4. Assign role (Support/Analyst/SeniorMod)
+5. Issue credentials (email + passkey)
+6. Log creation in AdminAuditLogs
+
+**Offboarding:**
+1. Super Admin disables account
+2. Revoke all sessions
+3. Remove from admin role
+4. Retain audit logs (anonymise admin ID after 1 year if departed)
+5. Log deactivation in AdminAuditLogs
+
+### 28.7 Admin Session Security
+
+**Authentication:**
+- Email + passkey (mandatory)
+- No password-based admin logins
+
+**Session Management:**
+- 2-hour session timeout
+- Re-authentication required for critical actions
+- IP-based session binding
+- Anomaly detection (e.g., login from new country)
+
+**Critical Action Re-Authentication:**
+- Freeze/ban user
+- Delete evidence
+- Delete account
+- Modify admin permissions
+
+**Prompt:** "Please confirm your identity to continue" → Passkey/OTP challenge
+
+---
+
+## SECTION 29: SECURITY ALERTS & NOTIFICATIONS
+
+### 29.1 Purpose
+
+Notify users of critical account security events to enable rapid response and maintain trust.
+
+**Post-MVP:** Limited alerts in MVP (new device, suspicious login); full system in Phase 2+.
+
+### 29.2 Alert Types
+
+**1. New Device Login**
+- Trigger: User logs in from unrecognised device
+- Notification: "New device detected: [Device Name] in [Location]"
+- Action: "Was this you? If not, secure your account immediately."
+
+**2. New Location Login**
+- Trigger: Login from significantly different location (e.g., UK → US)
+- Notification: "Login detected from [City, Country]"
+- Action: "Review recent activity"
+
+**3. Evidence Flagged**
+- Trigger: Uploaded evidence fails integrity checks
+- Notification: "One of your evidence items could not be verified"
+- Action: "Review and re-upload if needed"
+
+**4. Multiple Failed Login Attempts**
+- Trigger: 5+ failed OTP/passkey attempts in 10 minutes
+- Notification: "Multiple failed login attempts detected"
+- Action: "Change your email password and review account security"
+
+**5. Account Frozen**
+- Trigger: Admin freezes account due to risk signals
+- Notification: "Your account has been temporarily restricted"
+- Action: "Contact support for more information"
+
+**6. Safety Report Filed**
+- Trigger: Another user files report against this user
+- Notification: "A safety report has been filed regarding your account"
+- Action: "You can respond via Settings > My Reports"
+
+**7. TrustScore Significant Change**
+- Trigger: TrustScore drops by 100+ points
+- Notification: "Your TrustScore has decreased"
+- Action: "Review your Evidence Vault and Risk Status"
+
+**8. Identity Verification Expiry (Future)**
+- Trigger: Identity verification approaching expiry (e.g., 30 days before)
+- Notification: "Your identity verification expires soon"
+- Action: "Re-verify to maintain your TrustScore"
+
+### 29.3 Notification Channels
+
+**In-App Notifications:**
+- Bell icon badge with unread count
+- Notifications list in Settings > Notifications
+- Tap notification → navigate to relevant screen
+
+**Email Notifications:**
+- Critical alerts only (new device, account frozen, failed logins)
+- HTML formatted with clear subject lines
+- Unsubscribe NOT allowed for security alerts
+
+**Push Notifications (Future):**
+- iOS/Android push for real-time critical alerts
+- User can disable non-critical push notifications
+
+### 29.4 User Controls
+
+**Settings > Notifications:**
+- Toggle: "New device alerts" (default: ON, cannot disable)
+- Toggle: "TrustScore change alerts" (default: ON, can disable)
+- Toggle: "Evidence status updates" (default: ON, can disable)
+- Toggle: "Safety report notifications" (default: ON, cannot disable)
+
+**Cannot Disable:**
+- New device logins
+- Multiple failed login attempts
+- Account frozen
+- Safety reports
+
+### 29.5 Alert Delivery Timing
+
+**Immediate (Real-Time):**
+- New device login
+- Multiple failed logins
+- Account frozen
+
+**Batched (Daily Summary):**
+- TrustScore changes
+- Evidence status updates (unless critical)
+
+**Scheduled (Weekly):**
+- Account activity summary (optional)
+
+### 29.6 Database Schema
+
+```sql
+CREATE TABLE SecurityAlerts (
+  Id UUID PRIMARY KEY,
+  UserId UUID REFERENCES Users(Id),
+  AlertType VARCHAR(100), -- NewDevice, SuspiciousLogin, EvidenceFlagged, etc.
+  Severity VARCHAR(50), -- Low, Medium, High, Critical
+  Title VARCHAR(200),
+  Message TEXT,
+  ActionUrl VARCHAR(500) NULL, -- Deep link to relevant screen
+  IsRead BOOLEAN DEFAULT FALSE,
+  SentViaEmail BOOLEAN DEFAULT FALSE,
+  SentViaPush BOOLEAN DEFAULT FALSE,
+  CreatedAt TIMESTAMP,
+  ReadAt TIMESTAMP NULL,
+  INDEX(UserId, IsRead),
+  INDEX(CreatedAt)
+);
+```
+
+### 29.7 Alert Display (Mobile App)
+
+**Notifications Screen:**
+- Group by date (Today, Yesterday, This Week, Older)
+- Unread alerts highlighted
+- Tap alert → mark as read, navigate to action screen
+- Swipe to dismiss (for non-critical alerts)
+
+**Alert Card:**
+```
+[Icon] New Device Detected
+iPhone 14 Pro in London, UK
+2 hours ago
+
+Was this you? [Review] [Dismiss]
+```
+
+---
+
+## SECTION 30: WEB & DESKTOP ACCESS RULES
+
+### 30.1 Purpose
+
+Define where and how SilentID can be accessed across platforms.
+
+### 30.2 Mobile Apps (Primary Platform)
+
+**iOS + Android:**
+- Full functionality
+- 100% passwordless authentication
+- Biometric login (Face ID, Touch ID, fingerprint)
+- Push notifications
+- Camera for evidence uploads
+- QR code scanning and generation
+
+**Priority:** Mobile-first design and development.
+
+### 30.3 Public Web Profiles
+
+**URL:** `https://silentid.co.uk/u/username`
+
+**Access:**
+- No login required
+- Publicly accessible
+- Privacy-compliant display (display name only, no full name)
+- SEO optimised
+- Social media preview (Open Graph, Twitter Card)
+
+**Features:**
+- View TrustScore
+- View verification badges
+- View public metrics (transaction count, platforms, account age)
+- QR code display
+- Share button
+
+**NOT accessible on web:**
+- Evidence uploads
+- Settings
+- Admin dashboard (separate admin.silentid.co.uk)
+
+### 30.4 Future Web App (Phase 2+)
+
+**URL:** `https://app.silentid.co.uk`
+
+**Purpose:**
+- Read-only access to SilentID profile
+- View TrustScore breakdown
+- View evidence (limited)
+- Manage basic settings
+
+**Authentication:**
+- Same passwordless model (email OTP, passkeys)
+- WebAuthn for passkey support in browser
+
+**Limitations:**
+- Cannot upload evidence (mobile only)
+- Cannot use camera features (mobile only)
+- No push notifications (email fallback)
+
+**Technology:**
+- Next.js or React SPA
+- Same ASP.NET Core API backend
+- Responsive design
+
+### 30.5 Admin Dashboard (Web Only)
+
+**URL:** `https://admin.silentid.co.uk`
+
+**Access:**
+- Admin users only
+- Passwordless authentication (email OTP + passkey)
+- IP allowlisting (optional)
+
+**Platform:**
+- Web only (no mobile admin app in MVP)
+
+### 30.6 Platform Decision Summary
+
+| Feature | iOS App | Android App | Web (Public Profile) | Web App (Future) | Admin (Web) |
+|---------|---------|-------------|----------------------|------------------|-------------|
+| View TrustScore | ✅ Full | ✅ Full | ✅ Public | ✅ Full | ✅ Full |
+| Upload Evidence | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Identity Verification | ✅ | ✅ | ❌ | ✅ | ❌ |
+| Mutual Verification | ✅ | ✅ | ❌ | ✅ | ❌ |
+| Settings | ✅ | ✅ | ❌ | ✅ Limited | ❌ |
+| Admin Tools | ❌ | ❌ | ❌ | ❌ | ✅ |
+
+---
+
+## SECTION 31: INTERNATIONALISATION (i18n) PLAN
+
+### 31.1 Purpose
+
+Prepare SilentID for international expansion and multi-language support.
+
+**Post-MVP:** English (UK) only for MVP; other languages in Phase 2+.
+
+### 31.2 Source Language
+
+**Canonical Language:** English (UK)
+
+**Rationale:**
+- SILENTSALE LTD registered in UK
+- Primary market is UK initially
+- Legal documents in English (UK)
+
+**Spelling & Grammar:**
+- Use British English conventions (e.g., "colour" not "color")
+- Currency: GBP (£)
+- Date format: DD/MM/YYYY
+
+### 31.3 Future Languages (Priority Order)
+
+**Phase 2:**
+1. **Albanian** - Core market expansion
+2. **French** - EU market
+3. **German** - EU market
+
+**Phase 3:**
+4. Spanish
+5. Italian
+6. Polish
+7. Romanian
+
+**Rationale:** Target countries with active marketplace usage (Vinted, eBay, etc.).
+
+### 31.4 Technical Implementation
+
+**Frontend (Flutter):**
+- Use `flutter_localizations` package
+- All strings extracted to `.arb` files (Application Resource Bundle)
+- No hard-coded strings in UI components
+
+**Backend (ASP.NET Core):**
+- Use `IStringLocalizer<T>` for API error messages
+- Store UI strings in resource files (`.resx`)
+- Accept `Accept-Language` header from client
+
+**Database:**
+- Store user's preferred language in `Users` table
+- Legal docs and help center content in multiple languages (future)
+
+### 31.5 What Needs Translation
+
+**Must Translate:**
+- All UI strings (buttons, labels, headings)
+- Error messages
+- Push notifications
+- Email templates
+- Help center articles
+
+**Do NOT Translate:**
+- Usernames
+- Display names
+- Evidence content
+- Admin notes
+
+**Special Cases:**
+- Legal documents: Must be translated AND reviewed by local legal counsel
+- TrustScore labels: Standardised translations (e.g., "High Trust" → "Haute Confiance")
+
+### 31.6 Legal & Compliance
+
+**GDPR in Non-English Markets:**
+- Privacy Policy must be available in local language
+- Terms & Conditions must be available in local language
+- Consent prompts must be in user's language
+
+**Localised Support:**
+- Email support in local language (Phase 2+)
+- Help center articles translated
+
+---
+
+## SECTION 32: DATA RETENTION & PRIVACY DURATIONS
+
+### 32.1 Purpose
+
+Define how long SilentID stores different categories of data to ensure GDPR compliance and legal obligations.
+
+### 32.2 Data Retention by Category
+
+**1. User Account Data**
+- **What:** Email, username, display name, phone
+- **Retention:** Until account deletion requested
+- **Post-Deletion:** Anonymised within 30 days
+
+**2. Evidence (Screenshots, Receipts, Profile Links)**
+- **What:** Uploaded evidence files and metadata
+- **Retention:** Until user deletes OR account deleted
+- **Post-Deletion:** Files removed within 30 days, metadata anonymised
+
+**3. TrustScore Snapshots**
+- **What:** Weekly TrustScore calculations
+- **Retention:** Until account deletion
+- **Post-Deletion:** Anonymised for fraud research (7 years max)
+
+**4. RiskSignals**
+- **What:** Fraud detection signals and risk events
+- **Retention:** Until account deletion
+- **Post-Deletion:** Anonymised for fraud prevention (7 years)
+
+**5. Safety Reports**
+- **What:** User-submitted reports and evidence
+- **Retention:** 7 years (legal requirement for fraud investigations)
+- **Post-Deletion:** Retained even if reporter/reported user deletes account (anonymised)
+
+**6. Admin Audit Logs**
+- **What:** All admin actions
+- **Retention:** 7 years (UK compliance requirement)
+- **Post-Deletion:** Never deleted (anonymised admin/user IDs after 1 year)
+
+**7. Authentication Logs (Sessions, Devices)**
+- **What:** Login history, device info, IP addresses
+- **Retention:** 90 days (active logs), 2 years (archived)
+- **Post-Deletion:** Deleted after retention period
+
+**8. Billing/Subscription Records**
+- **What:** Stripe payment records, invoices
+- **Retention:** 7 years (UK tax law requirement)
+- **Post-Deletion:** Retained for legal compliance (anonymised user IDs)
+
+**9. Support Tickets**
+- **What:** User correspondence with support
+- **Retention:** 3 years
+- **Post-Deletion:** Anonymised after retention period
+
+**10. Analytics & Aggregated Data**
+- **What:** Platform usage metrics (non-personal)
+- **Retention:** Indefinite (anonymised)
+- **Post-Deletion:** Not affected (no PII)
+
+### 32.3 Retention Principles
+
+**Data Minimisation:**
+- Only store what's necessary for service delivery
+- Delete unnecessary metadata after processing
+
+**Purpose Limitation:**
+- Data retained only for original purpose
+- Cannot be repurposed without consent
+
+**Lawful Retention:**
+- Legal obligations override user deletion requests (e.g., fraud logs, billing records)
+- Lawful basis documented for each retention category
+
+### 32.4 Automated Deletion Jobs
+
+**Daily Jobs:**
+- Delete soft-deleted evidence files > 30 days old
+- Delete expired sessions
+- Delete temporary OTP tokens
+
+**Weekly Jobs:**
+- Delete archived authentication logs > 2 years old
+- Anonymise deleted user records > 30 days old
+
+**Monthly Jobs:**
+- Anonymise admin audit logs for departed staff > 1 year
+- Anonymise support tickets > 3 years old
+
+**Annual Jobs:**
+- Review retention policies for compliance
+- Update legal retention periods if regulations change
+
+---
+
+## SECTION 33: LEGAL DOCUMENTS PLAN (T&Cs, PRIVACY, COOKIES)
+
+### 33.1 Purpose
+
+Define structure and requirements for all legal documents required by SilentID.
+
+**Post-MVP:** Basic legal docs for MVP; comprehensive updates in Phase 2.
+
+### 33.2 Required Legal Documents
+
+**1. Terms & Conditions**
+**2. Privacy Policy**
+**3. Cookie Policy** (if cookies used)
+**4. Acceptable Use Policy** (future)
+**5. Data Processing Agreement** (for Partner API, future)
+
+### 33.3 Terms & Conditions Content
+
+**Must Include:**
+- What SilentID is (and is NOT)
+- User eligibility (18+ only)
+- Prohibited activities (fraud, impersonation, etc.)
+- Account termination conditions
+- Limitation of liability
+- Dispute resolution (UK jurisdiction)
+- Subscription terms (Free, Premium, Pro)
+- Refund policy
+- Changes to terms
+- Contact information
+
+**Critical Clauses:**
+- "SilentID provides trust signals, NOT guarantees"
+- "SilentID is not responsible for third-party decisions based on trust data"
+- "Users are responsible for accuracy of uploaded evidence"
+
+### 33.4 Privacy Policy Content
+
+**Must Include:**
+- What data we collect (Section 20.11)
+- Lawful basis for processing (GDPR Article 6)
+- How we use data
+- Who we share data with (Stripe, Azure, email providers)
+- Data retention periods (Section 32)
+- User rights (access, rectification, erasure, portability, objection)
+- How to exercise rights (privacy@silentid.co.uk)
+- Cookie usage (if applicable)
+- International transfers (if applicable)
+- DPO contact details
+- ICO registration number
+- Complaints process
+
+**Privacy Policy Sections:**
+1. Introduction
+2. Data Controller Details (SILENTSALE LTD)
+3. What Data We Collect
+4. How We Use Your Data
+5. Legal Basis for Processing
+6. Third-Party Processors
+7. Data Retention
+8. Your Rights
+9. Security Measures
+10. Changes to Policy
+11. Contact Us
+
+### 33.5 Cookie Policy Content
+
+**If Cookies Used:**
+- What cookies are used (session, analytics, etc.)
+- Purpose of each cookie
+- How to disable cookies
+- Impact of disabling cookies
+
+**SilentID Cookie Strategy:**
+- Minimal cookie usage (session only if needed)
+- No tracking cookies
+- No advertising cookies
+
+### 33.6 Alignment with CLAUDE.md
+
+**Critical Rule:**
+Legal documents MUST reflect actual system behaviour as defined in `CLAUDE.md`.
+
+**Examples:**
+- If Section 4 says "SilentID stores only verification status", Privacy Policy must match
+- If Section 5 says "100% passwordless", Terms must prohibit password creation
+- If Section 12 says "£4.99/month Premium", Terms must reflect exact pricing
+
+**Conflict Resolution:**
+- If legal text conflicts with `CLAUDE.md`, update legal text to match
+- If legal requirement conflicts with `CLAUDE.md`, update `CLAUDE.md` first, then legal docs
+
+### 33.7 Review & Update Process
+
+**Initial Creation:**
+- Legal counsel reviews `CLAUDE.md`
+- Drafts legal documents aligned with spec
+- Internal review by CTO + CEO
+- Final approval by legal counsel
+
+**Updates:**
+- When `CLAUDE.md` changes materially, legal docs updated
+- Users notified of changes via email
+- Continued use = acceptance of new terms
+- Version history maintained
+
+**Version Control:**
+- Legal docs versioned (e.g., v1.0, v1.1)
+- Previous versions archived
+- Change log published
+
+---
+
+## SECTION 34: PERFORMANCE, RATE LIMITING & SCALABILITY REQUIREMENTS
+
+### 34.1 Purpose
+
+Ensure SilentID performs reliably and scales gracefully as user base grows.
+
+### 34.2 Performance Targets (P95 Latency)
+
+**Authentication Endpoints:**
+- POST /v1/auth/request-otp: < 500ms
+- POST /v1/auth/verify-otp: < 800ms
+- POST /v1/auth/passkey/login: < 600ms
+
+**Read Operations:**
+- GET /v1/trustscore/me: < 300ms
+- GET /v1/users/me: < 200ms
+- GET /v1/public/profile/{username}: < 500ms
+
+**Write Operations:**
+- POST /v1/evidence/screenshots: < 2000ms (includes upload)
+- POST /v1/evidence/receipts: < 1000ms
+- POST /v1/mutual-verifications: < 800ms
+
+**Heavy Operations:**
+- TrustScore recalculation: < 5000ms (background job acceptable)
+- Evidence integrity check: < 10000ms (background job)
+
+### 34.3 Rate Limiting Strategy
+
+**Per-User Limits:**
+- OTP requests: 3 per 5 minutes
+- Evidence uploads: 20 per hour
+- Mutual verification requests: 10 per hour
+- Profile views: 100 per hour
+- API calls (general): 60 per minute
+
+**Per-IP Limits:**
+- Public profile views: 100 per minute
+- OTP requests: 10 per 5 minutes
+- Failed login attempts: 5 per 10 minutes
+
+**Partner API Limits:**
+- Configurable per partner (e.g., 100 requests/minute)
+- Burst allowance: 150 requests/minute for 10 seconds
+- Daily cap: 100,000 requests/day
+
+**Rate Limit Response:**
+```json
+HTTP 429 Too Many Requests
+{
+  "error": "rate_limit_exceeded",
+  "message": "Too many requests. Please try again in 60 seconds.",
+  "retry_after": 60
+}
+```
+
+### 34.4 Scalability Requirements
+
+**Horizontal Scaling:**
+- Backend API: Stateless, can scale to N instances
+- Database: Managed PostgreSQL with read replicas
+- File storage: Azure Blob (auto-scaling)
+
+**Caching Strategy:**
+- TrustScore: Cache for 1 hour (invalidate on evidence change)
+- Public profiles: Cache for 15 minutes
+- Static assets: CDN caching (logo, favicon, etc.)
+
+**Database Optimisation:**
+- Indexes on frequently queried fields (UserId, Email, Username)
+- Partitioning for large tables (Evidence, TrustScoreSnapshots)
+- Read replicas for analytics and reporting
+
+**Background Jobs:**
+- TrustScore recalculation: Queue-based (Azure Service Bus or equivalent)
+- Evidence integrity checks: Queue-based
+- Email sending: Queue-based
+
+**Load Testing Targets:**
+- 1000 concurrent users
+- 10,000 requests per minute
+- < 1% error rate
+- < 3% request timeout rate
+
+---
+
+## SECTION 35: BACKUP, RESILIENCE & DISASTER RECOVERY
+
+### 35.1 Purpose
+
+Protect SilentID data against hardware failures, human error, and catastrophic events.
+
+### 35.2 Backup Strategy
+
+**Database Backups:**
+- **Frequency:** Automated daily backups (3am UTC)
+- **Retention:** 30 days rolling
+- **Type:** Full database snapshots
+- **Storage:** Azure Backup (geo-redundant)
+- **Encryption:** Encrypted at rest and in transit
+
+**Evidence File Backups:**
+- **Frequency:** Continuous replication (Azure Blob geo-redundant storage)
+- **Retention:** Until file deleted + 30 days
+- **Regions:** Primary (UK South), Secondary (UK West)
+
+**Configuration Backups:**
+- **Frequency:** On every change
+- **Storage:** Git repository + Azure Key Vault
+- **Retention:** Indefinite
+
+**Audit Log Backups:**
+- **Frequency:** Daily
+- **Retention:** 7 years (immutable)
+- **Storage:** Azure Archive Storage
+
+### 35.3 Backup Testing
+
+**Monthly Tests:**
+- Restore database backup to staging environment
+- Verify data integrity and completeness
+- Test application functionality on restored database
+
+**Quarterly Tests:**
+- Full disaster recovery drill
+- Restore from backup to new environment
+- Measure RTO and RPO
+
+**Test Documentation:**
+- Document restore process step-by-step
+- Maintain runbook for disaster recovery
+- Update based on test findings
+
+### 35.4 Resilience
+
+**Database:**
+- Managed PostgreSQL (Azure Database for PostgreSQL)
+- Automatic failover to standby replica
+- Multi-zone deployment (future)
+
+**Backend API:**
+- Multiple instances behind load balancer
+- Auto-scaling based on CPU/memory
+- Health checks and automatic restart
+
+**File Storage:**
+- Azure Blob Storage (geo-redundant by default)
+- Automatic replication across regions
+
+**Monitoring:**
+- Azure Monitor for infrastructure
+- Application Insights for app-level monitoring
+- Alerts on high error rates, latency spikes, downtime
+
+### 35.5 Disaster Recovery
+
+**Recovery Time Objective (RTO):** 4 hours
+**Recovery Point Objective (RPO):** 24 hours (daily backups)
+
+**Disaster Scenarios:**
+
+**1. Database Corruption**
+- **Response:** Restore from most recent clean backup
+- **Steps:**
+  1. Identify corruption scope
+  2. Take offline (maintenance mode)
+  3. Restore from backup
+  4. Verify integrity
+  5. Bring back online
+- **RTO:** 2 hours
+
+**2. Azure Region Failure**
+- **Response:** Failover to secondary region (if configured)
+- **Steps:**
+  1. DNS failover to secondary region
+  2. Restore database from geo-redundant backup
+  3. Verify application functionality
+  4. Communicate with users
+- **RTO:** 4 hours
+
+**3. Data Breach / Ransomware**
+- **Response:** Isolate, restore, investigate
+- **Steps:**
+  1. Isolate affected systems
+  2. Restore from clean backup
+  3. Forensic investigation
+  4. Notify ICO and users (within 72 hours if required)
+  5. Implement additional security measures
+- **RTO:** 8 hours (extended for investigation)
+
+**4. Human Error (Accidental Deletion)**
+- **Response:** Restore specific data from backup
+- **Steps:**
+  1. Identify scope of deletion
+  2. Restore from most recent backup before deletion
+  3. Verify restored data
+  4. Document incident
+- **RTO:** 1 hour
+
+### 35.6 Business Continuity
+
+**Communication Plan:**
+- Status page: status.silentid.co.uk
+- Email notifications to all users
+- Social media updates (Twitter, LinkedIn)
+
+**Incident Response Team:**
+- Incident Commander: CTO
+- Technical Lead: Senior Backend Engineer
+- Communications: CEO
+- Legal: Company Solicitor
+
+**Escalation Process:**
+- Severity 1 (Critical): Immediate escalation to CTO
+- Severity 2 (High): Escalate within 1 hour
+- Severity 3 (Medium): Escalate within 4 hours
+- Severity 4 (Low): Handle in normal workflow
+
+---
+
+## SECTION 36: SECURITY INCIDENT & BREACH RESPONSE
+
+### 36.1 Purpose
+
+Define how SilentID detects, responds to, and recovers from security incidents and data breaches.
+
+**Post-MVP:** Basic incident response in MVP; full playbook in Phase 2.
+
+### 36.2 Incident Types
+
+**1. Infrastructure Compromise**
+- Server breach
+- Database access by unauthorised party
+- Admin account takeover
+
+**2. Data Breach**
+- Unauthorised access to user data
+- Data exfiltration
+- Accidental data exposure
+
+**3. Credential Leakage**
+- API keys exposed
+- Stripe keys leaked
+- Database credentials compromised
+
+**4. Abusive Admin Behaviour**
+- Admin misusing access
+- Unauthorised data access
+- Malicious admin actions
+
+**5. Application Vulnerability**
+- SQL injection
+- XSS attack
+- Authentication bypass
+
+### 36.3 Incident Response Process
+
+**Phase 1: Detection**
+- **Automated Monitoring:**
+  - Azure Monitor alerts
+  - Unusual API traffic patterns
+  - Multiple failed admin login attempts
+  - Database query anomalies
+- **Manual Reporting:**
+  - User reports suspicious activity
+  - Internal staff notices irregularity
+- **External Notification:**
+  - Security researcher reports vulnerability
+
+**Phase 2: Containment**
+- **Immediate Actions:**
+  - Isolate affected systems
+  - Revoke compromised credentials
+  - Block malicious IP addresses
+  - Disable affected user accounts (if needed)
+  - Take affected services offline if necessary
+
+**Phase 3: Investigation**
+- **Evidence Collection:**
+  - Review audit logs
+  - Analyse network traffic
+  - Examine database query logs
+  - Interview involved staff
+- **Scope Determination:**
+  - What data was accessed?
+  - How many users affected?
+  - When did breach occur?
+  - How was breach executed?
+
+**Phase 4: Notification**
+- **Internal Notification:**
+  - Incident Commander (CTO)
+  - CEO
+  - Legal counsel
+  - Affected staff
+
+- **External Notification:**
+  - **ICO (UK GDPR):**
+    - Within 72 hours if personal data breach
+    - Required info: nature of breach, categories of data, approximate number affected, contact details
+  - **Affected Users:**
+    - Within 7 days if high risk to rights/freedoms
+    - Email notification with: what happened, what data affected, what we're doing, what they should do
+  - **Partner API Users:**
+    - If partner data affected
+  - **Public Statement:**
+    - If breach is public/media coverage
+
+**Phase 5: Remediation**
+- **Fix Vulnerability:**
+  - Patch software
+  - Update configurations
+  - Strengthen authentication
+  - Review access controls
+- **Restore Services:**
+  - Bring systems back online
+  - Verify functionality
+  - Monitor for repeat incidents
+
+**Phase 6: Post-Incident Review**
+- **Post-Mortem Document:**
+  - Timeline of events
+  - Root cause analysis
+  - Impact assessment
+  - Response effectiveness
+  - Lessons learned
+  - Action items
+- **Update Procedures:**
+  - Improve detection mechanisms
+  - Update incident response plan
+  - Train staff on new procedures
+
+### 36.4 Notification Templates
+
+**Email to Affected Users:**
+```
+Subject: Important Security Notice - SilentID Account
+
+Dear [User],
+
+We are writing to inform you of a security incident affecting your SilentID account.
+
+What Happened:
+[Brief description of incident]
+
+What Data Was Affected:
+[List of data types: email, TrustScore, evidence, etc.]
+
+What We're Doing:
+- [Action 1]
+- [Action 2]
+
+What You Should Do:
+- [User action 1]
+- [User action 2]
+
+We sincerely apologise for this incident and are committed to preventing future occurrences.
+
+For more information: support@silentid.co.uk
+
+SILENTSALE LTD
+```
+
+**ICO Notification Template:**
+- Nature of breach
+- Categories and approximate number of data subjects
+- Categories and approximate number of records
+- Contact point for more information
+- Likely consequences of breach
+- Measures taken or proposed
+
+### 36.5 Security Incident Severity Levels
+
+**Severity 1: Critical**
+- Database compromised
+- Mass data exfiltration
+- Authentication bypass affecting all users
+- **Response Time:** Immediate (< 15 minutes)
+
+**Severity 2: High**
+- Individual user account compromised
+- Admin account takeover
+- API key leaked
+- **Response Time:** < 1 hour
+
+**Severity 3: Medium**
+- Attempted breach (unsuccessful)
+- Suspicious activity detected
+- Minor vulnerability discovered
+- **Response Time:** < 4 hours
+
+**Severity 4: Low**
+- Security best practice deviation
+- Minor configuration issue
+- **Response Time:** < 24 hours
+
+### 36.6 Logging & Evidence Preservation
+
+**All incidents MUST:**
+- Be logged in `SecurityIncidents` table
+- Preserve all evidence (logs, screenshots, communications)
+- Document timeline of events
+- Document all actions taken
+- Retain for 7 years (legal requirement)
+
+**Database Schema:**
+```sql
+CREATE TABLE SecurityIncidents (
+  Id UUID PRIMARY KEY,
+  IncidentType VARCHAR(100),
+  Severity VARCHAR(50),
+  Description TEXT,
+  AffectedUsers INT,
+  AffectedData TEXT,
+  DetectedAt TIMESTAMP,
+  ContainedAt TIMESTAMP NULL,
+  ResolvedAt TIMESTAMP NULL,
+  ICONotified BOOLEAN DEFAULT FALSE,
+  UsersNotified BOOLEAN DEFAULT FALSE,
+  PostMortemUrl VARCHAR(500),
+  CreatedAt TIMESTAMP
+);
+```
+
+---
+
+## SECTION 37: FRAUD CASE BUNDLING & CROSS-PLATFORM PATTERN DETECTION
+
+### 37.1 Purpose
+
+Detect organised fraud rings and repeated bad actors by correlating signals across devices, evidence, and platforms.
+
+**Post-MVP / Phase 2+:** Advanced fraud detection.
+
+### 37.2 Case Bundling Concept
+
+**Definition:** Grouping multiple users/accounts that exhibit correlated fraud signals.
+
+**Bundling Criteria:**
+- Shared device fingerprints
+- Shared IP addresses (excluding common IPs like public WiFi)
+- Shared evidence files (identical hashes)
+- Circular mutual verification patterns
+- Similar behavioural patterns (e.g., all accounts created same day, all upload evidence at exact same times)
+
+**Example Case:**
+- User A, User B, User C share device fingerprint
+- All three verify each other mutually
+- All three submit same screenshot (different filenames, identical hash)
+- **Conclusion:** Likely fraud ring → bundle into Case #123 for investigation
+
+### 37.3 Detection Signals for Bundling
+
+**Device-Based Signals:**
+- Device fingerprint reuse (same browser/OS/resolution across accounts)
+- IP address clustering (accounts frequently log in from same IPs)
+- Geolocation consistency (accounts always from same city)
+
+**Evidence-Based Signals:**
+- Identical evidence hashes across accounts
+- Evidence files uploaded within minutes of each other
+- Evidence metadata patterns (e.g., same camera model EXIF)
+
+**Behaviour-Based Signals:**
+- Account creation timestamps within hours
+- Mutual verification chains (A verifies B, B verifies C, C verifies A)
+- Similar TrustScore trajectories
+- Identical platform profiles linked (same Vinted/eBay accounts across multiple SilentID users)
+
+**Transaction-Based Signals:**
+- Same transaction verified by multiple SilentID accounts
+- Receipt evidence for same order ID from different users
+
+### 37.4 Cross-Platform Pattern Detection
+
+**Purpose:** Detect users with repeated fraud/dispute history across multiple marketplaces.
+
+**Data Sources:**
+- Public profile URLs (Vinted, eBay, Depop, etc.)
+- User-reported platform usernames
+- Scraped marketplace data (if available)
+
+**Patterns to Detect:**
+1. **Serial Disputer:**
+   - Multiple disputes on Vinted
+   - Multiple disputes on eBay
+   - Multiple disputes on Depop
+   - **Action:** Flag as high-risk, reduce TrustScore
+
+2. **Account Hopping:**
+   - User has 5+ different marketplace accounts
+   - All created within 2 years
+   - Possible indicator of being banned/warned
+   - **Action:** Request explanation, manual review
+
+3. **Rating Manipulation:**
+   - User's SilentID profile shows high transactions
+   - Marketplace profiles show low/negative ratings
+   - Inconsistency suggests fake evidence
+   - **Action:** Flag evidence, manual review
+
+4. **Geo-Inconsistency:**
+   - SilentID location: UK
+   - All marketplace profiles: Poland
+   - Possible account sharing/selling
+   - **Action:** Request identity re-verification
+
+### 37.5 Case Investigation Flow
+
+**Step 1: Automated Detection**
+- System runs fraud detection jobs daily
+- Identifies potential fraud cases based on signals
+- Creates `FraudCase` record with status: Detected
+
+**Step 2: Admin Review**
+- Admin assigned to case
+- Reviews:
+  - All accounts in bundle
+  - Shared signals
+  - Evidence integrity
+  - TrustScore patterns
+  - Risk history
+
+**Step 3: Decision**
+- **False Positive:** Close case, no action
+- **Suspicious:** Flag accounts, increase monitoring
+- **Confirmed Fraud:** Freeze all accounts, notify users, permanently ban
+
+**Step 4: Action**
+- Freeze all accounts in bundle
+- Invalidate all evidence from bundled accounts
+- Remove mutual verifications between bundled accounts
+- Create RiskSignals for all affected users
+- Log in AdminAuditLogs
+
+**Step 5: Communication**
+- Notify affected users: "Your account has been restricted due to suspicious activity"
+- Provide appeal pathway (Section 24)
+
+### 37.6 Database Schema
+
+```sql
+CREATE TABLE FraudCases (
+  Id UUID PRIMARY KEY,
+  CaseType VARCHAR(100), -- DeviceCluster, EvidenceReuse, MutualVerificationRing, etc.
+  Status VARCHAR(50), -- Detected, UnderReview, Confirmed, FalsePositive, Closed
+  UserIds JSONB, -- Array of affected user IDs
+  DetectionSignals JSONB, -- Array of signals that triggered detection
+  AssignedAdminId UUID NULL REFERENCES Users(Id),
+  Decision VARCHAR(100) NULL,
+  Notes TEXT,
+  CreatedAt TIMESTAMP,
+  ReviewedAt TIMESTAMP NULL,
+  ResolvedAt TIMESTAMP NULL
+);
+```
+
+### 37.7 Impact on TrustScore
+
+**Users in Confirmed Fraud Cases:**
+- TrustScore set to 0
+- All evidence invalidated
+- Public profile shows: "This account has been restricted"
+- Cannot create new evidence
+- Cannot create mutual verifications
+
+**Users in Suspicious Cases:**
+- RiskScore increased by 40
+- Evidence weight reduced by 50%
+- Public profile shows: "Safety concern flagged"
+- Manual admin review required for any new evidence
+
+---
+
+## SECTION 38: BUSINESS / PROFESSIONAL PROFILES (FUTURE EXTENSION)
+
+### 38.1 Purpose
+
+Enable SilentID to support professional sellers, registered businesses, and organisations while maintaining the individual trust identity model.
+
+**Post-MVP / Phase 3+:** Not required for MVP or Phase 2.
+
+### 38.2 Business Account Type
+
+**Definition:** A SilentID account type for registered businesses, sole traders, or professional sellers.
+
+**Differences from Individual Accounts:**
+- Display company/business name
+- Show business registration number (optional)
+- Link to individual staff profiles (e.g., owner, employees)
+- Higher transaction volume expectations
+- Different trust signals (business-specific)
+
+**Eligibility:**
+- Must provide business registration number
+- Must verify business entity (e.g., Companies House lookup for UK)
+- Must link to at least one verified individual profile (owner/director)
+
+### 38.3 Business Profile Display
+
+**Public Profile:**
+- Business Name (e.g., "Smith's Vintage Shop")
+- Business TrustScore (0-1000, separate calculation)
+- Business Verified Badge
+- Registration Number (optional visibility toggle)
+- Linked Individual Profiles (owner, staff)
+- Business Evidence Vault (invoices, shipping records, etc.)
+
+**Example:**
+```
+Smith's Vintage Shop
+Business TrustScore: 892 (Very High)
+✅ Business Verified (Companies House)
+Registered in England & Wales - Company No. 12345678
+
+Owner: John Smith (@johnsmith) - TrustScore 847
+Staff: Sarah M. (@sarahtrusted) - TrustScore 754
+
+500+ verified transactions
+Active since 2024
+```
+
+### 38.4 Business TrustScore Calculation
+
+**Components:**
+1. **Business Identity (200 pts):**
+   - Companies House verification
+   - VAT number verification
+   - Business address verification
+2. **Business Evidence (300 pts):**
+   - Invoices
+   - Shipping records
+   - Customer reviews (external)
+   - Business profile links (eBay store, Etsy shop, etc.)
+3. **Business Behaviour (300 pts):**
+   - No consumer complaints
+   - Consistent shipping/delivery
+   - Low return/refund rates
+4. **Staff Trust (200 pts):**
+   - Average TrustScore of linked individual profiles
+   - Staff background checks (optional)
+
+### 38.5 Link to Individual Profiles
+
+**Linking Model:**
+- Business account can link to multiple individual profiles
+- Each individual must consent to link
+- Individual TrustScore remains separate
+- Business TrustScore influenced by staff TrustScores
+
+**Use Case:**
+- Buyer sees: "This item is sold by Smith's Vintage Shop (TrustScore 892). The seller is Sarah M. (TrustScore 754)."
+- Transparency: Both business and individual trust visible
+
+### 38.6 Legal & Compliance Differences
+
+**Business-Specific Legal Requirements:**
+- Terms & Conditions must include business-specific clauses
+- VAT compliance (if applicable)
+- Consumer Rights Act 2015 compliance (UK)
+- Business GDPR obligations (data controller vs processor)
+
+**Business Privacy:**
+- Business registration details are public (less privacy protection)
+- Individual staff profiles maintain full privacy protections
+
+### 38.7 Subscriptions for Businesses
+
+**Business Tier (Future):**
+- £49.99/month
+- Features:
+  - Unlimited business evidence
+  - Multiple staff profiles linked
+  - Bulk transaction verification
+  - Business analytics dashboard
+  - Export financial reports
+  - White-label trust badge
+  - API access (limited)
+
+### 38.8 Use Cases
+
+**1. Professional Sellers:**
+- High-volume eBay/Vinted sellers
+- Vintage shop owners
+- Resellers and traders
+
+**2. Service Providers:**
+- Cleaners, tutors, tradespeople
+- Freelancers
+- Gig workers
+
+**3. Community Organisations:**
+- Parent groups
+- Local buy/sell/trade groups
+- Neighbourhood associations
+
+**4. Future Expansion:**
+- Rental agencies
+- Estate agents
+- Recruitment firms
+
+---
+
+
+---
+
+## SECTION 39: SILENTID APP UI — PROFILE, SETTINGS & NAVIGATION RULES
+
+### 39.1 Purpose
+
+Define canonical UI design rules for SilentID's Profile, Settings, and Navigation systems to ensure consistency across all development phases and agents.
+
+**Scope:** Flutter mobile app (iOS + Android)
+**Applies to:** MVP and all future phases
+
+### 39.2 Role of Profile / Settings Area
+
+**Definition:**
+The Profile/Settings area is the **control centre** for a user's identity, trust, security, and account management.
+
+**Core Responsibilities:**
+- Identity & verification status (Stripe Identity)
+- TrustScore and breakdown
+- Risk & Security Center access
+- Evidence Vault management
+- Devices & login methods (passkeys, Apple/Google, email OTP)
+- Subscriptions (Free / Premium / Pro)
+- Privacy, data export, account deletion
+- Help, support, and safety reporting
+
+**Design Philosophy:**
+This area must feel like a **bank account dashboard**:
+- Serious, calm, professional
+- High-trust, evidence-driven
+- Premium, minimal, precise
+- Never juvenile, playful, or social-media style
+
+### 39.3 Navigation Placement
+
+**Canonical Pattern (MANDATORY):**
+
+**Bottom Navigation Bar (4 tabs):**
+1. **Home** - TrustScore overview, quick actions, recent activity
+2. **Evidence** - Receipts, screenshots, profile links
+3. **Verify** - Mutual verifications, scan profiles, QR codes
+4. **Profile** - Settings, account, security, help
+
+**Profile Tab Entry:**
+- Icon: User avatar or profile icon
+- Label: "Profile" or "Account"
+- Badge: Shows unread notifications count (if any)
+
+**Alternative Access (Secondary):**
+- From Home screen: Avatar icon (top-right) → Profile/Settings
+- From any screen: Menu → Profile/Settings
+
+**Rule:** All UI agents must implement the **bottom navigation pattern** as primary access. Alternative access is optional enhancement.
+
+### 39.4 Grouping Rules
+
+**Mandatory Section Structure:**
+
+All Profile/Settings items must be grouped into these **7 sections** in this **exact order**:
+
+#### **1. Account & Identity**
+- Profile header (avatar, display name, username)
+- Identity verification status (Stripe Identity)
+  - Status: Verified / Pending / Failed / Not Started
+  - CTA: "Verify your identity" (if not verified)
+- Public profile settings
+  - Toggle: "Public profile visible"
+  - Link: "View my public profile"
+- Edit profile (display name, avatar)
+
+#### **2. Trust & Evidence**
+- TrustScore overview
+  - Score display (0-1000)
+  - Score label (Very High / High / Moderate / Low / High Risk)
+  - CTA: "View breakdown"
+- Evidence Vault
+  - Email receipts count
+  - Screenshots count
+  - Profile links count
+  - CTA: "Add evidence"
+- Mutual verification
+  - Verified transactions count
+  - CTA: "Request verification"
+
+#### **3. Security & Risk**
+- Security Center (Section 15)
+  - Risk status indicator
+  - Active alerts count
+  - CTA: "Open Security Center"
+- Devices & sessions
+  - Trusted devices count
+  - CTA: "Manage devices"
+- Login methods
+  - Passkey status (enabled/disabled)
+  - Connected accounts (Apple, Google)
+  - Email OTP status
+  - CTA: "Manage login methods"
+
+#### **4. Subscriptions & Billing**
+- Current plan
+  - Free / Premium / Pro badge
+  - Benefits summary
+- Subscription management
+  - CTA: "Upgrade to Premium" (if Free)
+  - CTA: "Upgrade to Pro" (if Premium)
+  - CTA: "Manage subscription" (if Premium/Pro)
+- Billing history (Premium/Pro only)
+
+#### **5. Privacy & Data**
+- Connected services
+  - Email connection status
+  - Permissions granted
+  - CTA: "Manage permissions"
+- Data export
+  - CTA: "Download my data" (GDPR SAR)
+- Privacy preferences
+  - Toggle: "Allow profile indexing"
+  - Toggle: "Show verification badges publicly"
+- Delete account
+  - CTA: "Delete my account" (red/danger color)
+
+#### **6. Help & Legal**
+- Help Center
+  - CTA: "Browse help articles"
+- Contact support
+  - CTA: "Get help"
+- Report a safety concern
+  - CTA: "Report user"
+- My reports
+  - Filed reports count
+  - CTA: "View my reports"
+
+#### **7. About & Legal**
+- Terms & Conditions
+- Privacy Policy
+- Cookie Policy (future)
+- Licenses & credits
+- App version
+- SilentID specification version (displays current CLAUDE.md version)
+
+**Grouping Rules:**
+- ✅ Related items must appear in the same section
+- ✅ Sections must appear in the order above
+- ❌ Do NOT mix financial, safety, and cosmetic settings in a single random list
+- ❌ Do NOT create custom groupings that conflict with this structure
+- ❌ Do NOT split sections into multiple screens unless complexity requires it
+
+### 39.5 Header & Primary CTAs
+
+**Profile Screen Header (Top Section):**
+
+```
+┌─────────────────────────────────────────────┐
+│  [Avatar]  Sarah M.                         │
+│            @sarahtrusted                    │
+│            ✅ Identity Verified             │
+│            🎯 TrustScore: 847 (High)        │
+│            💎 Premium Member                │
+├─────────────────────────────────────────────┤
+│  [Primary CTA: Improve TrustScore]          │
+│  [Secondary CTA: Open Security Center]      │
+└─────────────────────────────────────────────┘
+```
+
+**Header Components:**
+1. **Avatar** (64×64 or 80×80, circular)
+2. **Display Name** (Inter Semibold, 20-24pt)
+3. **Username** (Inter Regular, 14-16pt, muted gray)
+4. **Trust Badges** (1-3 badges max):
+   - Identity Verified ✅
+   - TrustScore level 🎯
+   - Subscription tier 💎 (if Premium/Pro)
+5. **Primary CTA Button** (full-width or 90% width):
+   - Text: Dynamic based on user state
+   - Examples:
+     - "Verify your identity" (if not verified)
+     - "Improve your TrustScore" (if verified but score < 800)
+     - "Open Security Center" (if risk alerts active)
+     - "Upgrade to Premium" (if Free tier)
+6. **Secondary CTA Button** (optional, text button style):
+   - Examples:
+     - "View public profile"
+     - "Manage subscription"
+
+**CTA Selection Logic:**
+- Show the **most actionable** CTA based on user state
+- Priority order:
+  1. Critical actions (verify identity, resolve security alerts)
+  2. Growth actions (improve TrustScore, add evidence)
+  3. Monetization (upgrade subscription)
+  4. Information (view profile, help)
+
+**Visual Rules:**
+- Primary CTA: Royal purple `#5A3EB8` background, white text
+- Secondary CTA: Transparent background, purple text, purple border
+- Spacing: 16px between header content and CTAs, 12px between CTAs
+
+### 39.6 Icons & Visual Consistency
+
+**Icon System Requirements:**
+
+**Mandatory Rules:**
+1. **Single Icon Family:**
+   - Use ONE icon set only (e.g., Lucide Icons, Feather Icons, Material Icons)
+   - DO NOT mix multiple icon families on the same screen
+   - Recommended: Lucide Icons (MIT license, clean, modern)
+
+2. **Icon Size:**
+   - Standard size: **24×24 dp** (or 24sp in Flutter)
+   - Small size: **16×16 dp** (for inline badges)
+   - Large size: **32×32 dp** (for header/feature icons)
+
+3. **Icon Style:**
+   - Stroke weight: 1.5-2px (consistent across all icons)
+   - Fill: Outline only (no filled icons unless specifically for active states)
+   - Corner radius: Matches brand (rounded, not sharp)
+   - Color: Neutral gray `#4C4C4C` (default), royal purple `#5A3EB8` (active/selected)
+
+4. **Icon-Text Alignment:**
+   - Icons always **left-aligned** with text
+   - Vertical center alignment
+   - Gap between icon and text: **12px**
+
+**Required Icons by Section:**
+
+| Section | Item | Icon | Color |
+|---------|------|------|-------|
+| **Account & Identity** | Identity verification | shield-check | purple (verified) / gray (not verified) |
+| | Public profile | user-check | gray |
+| | Edit profile | edit | gray |
+| **Trust & Evidence** | TrustScore | award | purple |
+| | Evidence Vault | folder | gray |
+| | Mutual verification | check-circle-2 | gray |
+| **Security & Risk** | Security Center | shield | purple (alerts) / gray (safe) |
+| | Devices | smartphone | gray |
+| | Login methods | key | gray |
+| **Subscriptions** | Current plan | credit-card | purple (Premium/Pro) / gray (Free) |
+| | Upgrade | arrow-up-circle | purple |
+| **Privacy & Data** | Connected services | link | gray |
+| | Data export | download | gray |
+| | Delete account | trash-2 | red `#D04C4C` |
+| **Help & Legal** | Help Center | help-circle | gray |
+| | Contact support | message-circle | gray |
+| | Report | flag | red (if active reports) / gray |
+| **About** | Terms | file-text | gray |
+| | Privacy | lock | gray |
+| | App version | info | gray |
+
+**Accessibility:**
+- All icons must have semantic labels for screen readers
+- Icon + text together = minimum tap target of 44×44 dp
+
+### 39.7 Spacing & Layout Rules
+
+**Design Token System (Flutter):**
+
+Based on a **4-point grid**:
+
+```dart
+class AppSpacing {
+  static const double xxs = 4.0;   // Tiny gaps
+  static const double xs = 8.0;    // Small gaps within items
+  static const double sm = 12.0;   // Medium gaps within items
+  static const double md = 16.0;   // Standard gaps between items
+  static const double lg = 24.0;   // Gaps between item groups
+  static const double xl = 32.0;   // Gaps between major sections
+  static const double xxl = 48.0;  // Extra large gaps (rare)
+}
+```
+
+**Spacing Rules:**
+
+1. **Horizontal Padding (Screen Edges):**
+   - Standard: **16px** (AppSpacing.md)
+   - Content must NOT touch screen edges
+
+2. **Vertical Spacing:**
+   - Between major section groups: **24-32px** (AppSpacing.lg or .xl)
+   - Between items within a group: **8-12px** (AppSpacing.xs or .sm)
+   - Between header and first section: **24px** (AppSpacing.lg)
+   - Between last section and bottom: **32px** (AppSpacing.xl)
+
+3. **Item Internal Spacing:**
+   - Icon to text: **12px** (AppSpacing.sm)
+   - Text to chevron/badge: **8px** (AppSpacing.xs)
+   - Padding inside item rows: **16px vertical**, **16px horizontal**
+
+4. **CTA Button Spacing:**
+   - Height: **52-56px**
+   - Horizontal padding: **24px**
+   - Between buttons (stacked): **12px**
+
+**Layout Grid:**
+
+```
+┌─────────────────────────────────────────────┐
+│ [16px padding]                  [16px]      │
+│                                              │
+│  HEADER (avatar, name, badges, CTAs)        │
+│                                              │
+├─────────────────────────────────────────────┤
+│ [24px gap]                                   │
+│                                              │
+│  SECTION 1: Account & Identity              │
+│  ┌────────────────────────────────────────┐ │
+│  │ [icon 24×24] [12px] Item text [8px] ›  │ │ (16px padding)
+│  ├────────────────────────────────────────┤ │
+│  │ [icon] [12px] Item text [8px] ›        │ │
+│  └────────────────────────────────────────┘ │
+│                                              │
+├─────────────────────────────────────────────┤
+│ [24px gap]                                   │
+│                                              │
+│  SECTION 2: Trust & Evidence                │
+│  ┌────────────────────────────────────────┐ │
+│  │ [icon] [12px] Item text [8px] ›        │ │
+│  └────────────────────────────────────────┘ │
+│                                              │
+└─────────────────────────────────────────────┘
+```
+
+**Minimum Tap Targets:**
+- All interactive items: **44×44 dp minimum** (iOS/Android accessibility)
+- Buttons: **52-56px height**
+- Icons alone (if tappable): **40×40 dp** with padding
+
+### 39.8 Tone & Brand Enforcement
+
+**Profile/Settings UI Must:**
+
+1. **Feel Like a Bank Account:**
+   - Clean white backgrounds
+   - Royal purple `#5A3EB8` accents only (no other colors except red for danger)
+   - Inter font throughout
+   - Generous white space
+   - Professional, calm animations (subtle, smooth)
+
+2. **Avoid:**
+   - ❌ Playful language or emojis (except info point icons: ⓘ)
+   - ❌ Social media style (likes, hearts, streaks, gamification)
+   - ❌ Cartoonish icons or illustrations
+   - ❌ Loud colors or gradients
+   - ❌ Excessive animations or transitions
+
+3. **Language Rules:**
+   - Use **defamation-safe wording** from Section 4
+   - Examples:
+     - ✅ "Safety concern flagged"
+     - ❌ "This user is a scammer"
+   - Use **GDPR-compliant privacy language** from Section 20
+   - Use **subscription wording** from Section 12/16
+
+4. **Trust Signals:**
+   - Display verification badges prominently
+   - Show TrustScore clearly
+   - Use subtle colors for risk indicators (amber/red only when necessary)
+
+### 39.9 Responsive Design Rules
+
+**Screen Size Considerations:**
+
+**Small Screens (<375px width):**
+- Reduce horizontal padding to **12px**
+- Stack CTAs vertically
+- Reduce avatar size to **56×56**
+- Use smaller font sizes (scale down by 10%)
+
+**Large Screens (>600px width, tablets):**
+- Increase horizontal padding to **24px**
+- Use 2-column layout for Settings sections (optional)
+- Increase avatar size to **96×96**
+- Use larger font sizes (scale up by 10%)
+
+**Portrait vs Landscape:**
+- Profile header remains top-fixed (not side-fixed)
+- Bottom navigation remains visible (except during scrolling, optional hide)
+
+### 39.10 Accessibility Requirements
+
+**Mandatory Accessibility Features:**
+
+1. **Screen Reader Support:**
+   - All icons have semantic labels
+   - All interactive elements have clear labels
+   - Section headers announced correctly
+   - Navigation hints provided ("Tap to manage devices")
+
+2. **Dynamic Text Sizing:**
+   - Support iOS Dynamic Type
+   - Support Android font scaling
+   - Test with 200% text size
+
+3. **Color Contrast:**
+   - All text meets WCAG AA standards (4.5:1 for normal text)
+   - Icons meet 3:1 contrast ratio
+   - Interactive elements have clear focus states
+
+4. **Touch Targets:**
+   - Minimum 44×44 dp for all interactive elements
+   - Clear spacing between tappable items (minimum 8px)
+
+5. **Focus Indicators:**
+   - Clear visual focus states for keyboard navigation (future web app)
+   - Highlighted state for selected items
+
+### 39.11 Interaction Patterns
+
+**Standard Interactions:**
+
+1. **Tapping a Settings Row:**
+   - Visual feedback: Brief background color change (light purple tint)
+   - Navigation: Push to detail screen (right-to-left animation)
+   - Loading: Show spinner only if >500ms delay
+
+2. **Toggles:**
+   - Standard Material/Cupertino toggle switches
+   - Immediate feedback (no confirmation unless destructive)
+   - Toast message for confirmation ("Public profile hidden")
+
+3. **Danger Actions (Delete Account, Remove Evidence):**
+   - Show confirmation dialog
+   - Clear warning text
+   - Require explicit confirmation ("Type DELETE to confirm")
+   - Red/danger button color
+
+4. **CTAs:**
+   - Tap feedback: Scale down slightly (95%) with subtle bounce
+   - Disabled state: 40% opacity, no interaction
+   - Loading state: Show spinner inside button, disable interaction
+
+### 39.12 Error & Empty States
+
+**Error States:**
+- Identity verification failed: Show retry CTA, link to Help Center
+- Evidence upload failed: Clear error message, suggest troubleshooting
+- Network error: "Unable to load. Pull to refresh."
+
+**Empty States:**
+- No evidence uploaded: "Add your first evidence to build your TrustScore"
+- No devices: "Your current device is your only trusted device"
+- No mutual verifications: "Request verification from someone you've traded with"
+
+**Consistency Rule:**
+- All error/empty states must follow the same visual pattern
+- Include icon, title, description, CTA (optional)
+
+### 39.13 Migration & Implementation Rules
+
+**For All UI Agents (Flutter, Future Web):**
+
+1. **Before implementing Profile/Settings:**
+   - Read this section (39) completely
+   - Read Section 2 (Branding)
+   - Read Section 10 (Frontend Architecture)
+   - Understand which features already exist in the backend
+
+2. **During implementation:**
+   - Follow the exact section order and grouping
+   - Use the specified icon system
+   - Apply spacing tokens correctly
+   - Test with accessibility features enabled
+
+3. **After implementation:**
+   - Verify against brand checklist (Section 2)
+   - Test all interaction patterns
+   - Validate against GDPR/privacy rules (Section 4, 20)
+
+---
+
+## SECTION 40: UI INFO POINTS & IN-APP EDUCATION SYSTEM
+
+### 40.1 Purpose
+
+Define a canonical **UI Info Point System** to provide short, contextual explanations for complex SilentID concepts directly within the app UI.
+
+**Goals:**
+- Reduce user confusion
+- Improve trust transparency
+- Educate users about security, privacy, and trust mechanisms
+- Reduce support tickets
+- Complement Help Center (Section 19) with in-app education
+
+### 40.2 Visual & Interaction Design
+
+**Info Point Icon:**
+- Symbol: **ⓘ** (circled lowercase "i")
+- Size: **20×20 dp** (slightly smaller than navigation icons)
+- Color:
+  - Default: Neutral gray `#4C4C4C`
+  - Hover/Tap: Royal purple `#5A3EB8`
+- Style: Outline (not filled), consistent with icon system (Section 39.6)
+
+**Placement Rules:**
+- Always appear **immediately after** or **to the right of** the term being explained
+- Gap between term and info icon: **4-6px**
+- Vertically centered with text baseline
+
+**Examples:**
+```
+TrustScore ⓘ
+Risk Status ⓘ
+Identity Verified ⓘ
+Evidence Vault ⓘ
+```
+
+**Interaction:**
+- **Tap:** Opens info modal/bottom sheet
+- **Long press:** (optional) Shows tooltip preview
+- **Keyboard focus:** (future web) Tab-accessible, Enter to open
+
+### 40.3 Info Modal Design
+
+**Modal Structure:**
+
+```
+┌─────────────────────────────────────────────┐
+│  ✕ (close button, top-right)                │
+│                                              │
+│  [Icon] Modal Title                         │
+│                                              │
+│  Explanatory text (2-4 lines)               │
+│  Clear, simple language                     │
+│  No jargon without translation              │
+│                                              │
+│  [Optional: Learn More Link]                │
+│                                              │
+│  [Primary Action Button (optional)]         │
+└─────────────────────────────────────────────┘
+```
+
+**Modal Properties:**
+- **Type:** Bottom sheet (mobile), centered modal (web/tablet)
+- **Background:** White with subtle shadow/blur backdrop
+- **Max width:** 90% screen width or 400px (whichever is smaller)
+- **Padding:** 24px all sides
+- **Animation:** Slide up from bottom (300ms ease-out)
+
+**Components:**
+1. **Close Button** (top-right, 24×24, gray X icon)
+2. **Icon** (optional, 32×32, matches the concept - e.g., shield for Identity)
+3. **Title** (Inter Semibold, 18-20pt, black)
+4. **Body Text** (Inter Regular, 14-16pt, dark gray, line height 1.5)
+5. **Learn More Link** (optional, Inter Medium, 14pt, purple, underlined)
+   - Opens relevant Help Center article
+6. **Action Button** (optional, e.g., "Verify Now", "Add Evidence")
+
+**Interaction:**
+- **Tap outside modal:** Closes modal
+- **Swipe down (mobile):** Closes modal
+- **Tap close button:** Closes modal
+- **Tap Learn More:** Opens Help Center in new screen (or in-app browser)
+- **Tap Action Button:** Navigates to relevant screen, closes modal
+
+### 40.4 Required Info Point Locations
+
+**Mandatory Info Points (Must Exist):**
+
+#### **1. TrustScore UI**
+
+**Overall TrustScore:**
+- **Location:** Next to "TrustScore" label on Home screen and Profile screen
+- **Title:** "What is TrustScore?"
+- **Body:**
+  ```
+  Your TrustScore (0-1000) shows how trustworthy you are to deal with online.
+
+  It's calculated from:
+  • Identity verification
+  • Evidence you upload
+  • Your behaviour
+  • Peer confirmations
+
+  Higher score = more trust = better reputation.
+  ```
+- **Link:** "Learn More" → Help Center: "Understanding Your TrustScore"
+
+**Identity Component:**
+- **Title:** "Identity Component"
+- **Body:**
+  ```
+  Worth up to 200 points.
+
+  Earned by verifying your identity with Stripe and confirming your email/phone.
+  ```
+- **Link:** "Learn More" → Help Center: "How Identity Verification Works"
+
+**Evidence Component:**
+- **Title:** "Evidence Component"
+- **Body:**
+  ```
+  Worth up to 300 points.
+
+  Earned by uploading receipts, screenshots, and linking your marketplace profiles.
+  ```
+- **Link:** "Learn More" → Help Center: "Adding Evidence to Your Profile"
+
+**Behaviour Component:**
+- **Title:** "Behaviour Component"
+- **Body:**
+  ```
+  Worth up to 300 points.
+
+  Based on having no safety reports, consistent activity, and account longevity.
+  ```
+
+**Peer Verification Component:**
+- **Title:** "Peer Verification Component"
+- **Body:**
+  ```
+  Worth up to 200 points.
+
+  Earned by getting mutual confirmations from people you've traded with.
+  ```
+- **Link:** "Learn More" → Help Center: "Mutual Transaction Verification"
+
+#### **2. RiskScore & Security Center**
+
+**RiskScore:**
+- **Title:** "What is RiskScore?"
+- **Body:**
+  ```
+  RiskScore (0-100) measures potential fraud signals. Higher = more risk.
+
+  It's based on device patterns, evidence integrity checks, and user reports.
+
+  High RiskScore may restrict account features until resolved.
+  ```
+- **Link:** "Learn More" → Help Center: "Understanding Risk Signals"
+- **Action:** "Open Security Center"
+
+**Risk Signals:**
+- **Title:** "Risk Signals"
+- **Body:**
+  ```
+  Risk signals are automated fraud detection alerts.
+
+  Examples: suspicious evidence, device inconsistency, or reports from other users.
+
+  You can review and resolve these in Security Center.
+  ```
+- **Link:** "Learn More" → Help Center: "What Are Risk Signals?"
+
+**Device Fingerprinting:**
+- **Title:** "Device Security"
+- **Body:**
+  ```
+  SilentID monitors your devices for security.
+
+  If you log in from a new device, we'll alert you to prevent account takeover.
+  ```
+- **Link:** "Learn More" → Help Center: "Device & Session Security"
+
+**Account Restrictions:**
+- **Title:** "Why is my account restricted?"
+- **Body:**
+  ```
+  Accounts may be temporarily restricted if:
+  • High RiskScore detected
+  • Multiple safety reports filed
+  • Evidence integrity concerns
+
+  Contact support to resolve.
+  ```
+- **Action:** "Contact Support"
+
+#### **3. Identity Verification (Stripe)**
+
+**Stripe Identity:**
+- **Title:** "Identity Verification with Stripe"
+- **Body:**
+  ```
+  SilentID uses Stripe to verify your identity.
+
+  Your ID documents and selfie are stored by Stripe (not SilentID). We only receive confirmation that you're verified.
+
+  This prevents fake accounts and boosts your TrustScore.
+  ```
+- **Link:** "Learn More" → Help Center: "How Identity Verification Works"
+- **Action:** "Verify Now" (if not verified)
+
+**Verification Retry:**
+- **Title:** "Verification Failed"
+- **Body:**
+  ```
+  Your identity verification was unsuccessful.
+
+  Reasons: blurry photo, document mismatch, or expired ID.
+
+  You can retry up to 3 times per 24 hours.
+  ```
+- **Link:** "Learn More" → Help Center: "Troubleshooting Identity Verification"
+- **Action:** "Try Again"
+
+#### **4. Evidence Vault**
+
+**Evidence Vault:**
+- **Title:** "What is Evidence Vault?"
+- **Body:**
+  ```
+  Your Evidence Vault stores proof of your trustworthy behaviour:
+
+  • Email receipts from marketplaces
+  • Screenshots of reviews/ratings
+  • Links to public seller profiles
+
+  All evidence is integrity-checked and contributes to your TrustScore.
+  ```
+- **Link:** "Learn More" → Help Center: "Adding Evidence to Your Profile"
+
+**Email Receipt Scanning:**
+- **Title:** "How Email Scanning Works"
+- **Body:**
+  ```
+  We scan your inbox for order confirmations from marketplaces like Vinted, eBay, and Depop.
+
+  We only read receipts—not personal emails.
+
+  You can disconnect anytime.
+  ```
+- **Link:** "Learn More" → Help Center: "Email Receipt Scanning"
+
+**Screenshot Integrity:**
+- **Title:** "Screenshot Verification"
+- **Body:**
+  ```
+  All screenshots are checked for tampering using image analysis.
+
+  Suspicious or edited screenshots may be rejected.
+
+  Upload clear, unedited screenshots for best results.
+  ```
+
+**Evidence Storage:**
+- **Title:** "What SilentID Stores"
+- **Body:**
+  ```
+  We store:
+  ✅ Summary of transactions (date, amount, platform)
+  ✅ Screenshot images
+  ✅ Public profile data
+
+  We do NOT store:
+  ❌ Full email content
+  ❌ ID documents (handled by Stripe)
+  ❌ Your passwords (we don't use passwords!)
+  ```
+- **Link:** "Learn More" → Help Center: "Privacy & Data Storage"
+
+#### **5. Passwordless Authentication**
+
+**Why No Passwords:**
+- **Title:** "Why Doesn't SilentID Use Passwords?"
+- **Body:**
+  ```
+  Passwords are the #1 cause of account hacks.
+
+  SilentID is 100% passwordless. You log in with:
+  • Apple Sign-In
+  • Google Sign-In
+  • Passkeys (Face ID / Touch ID)
+  • Email OTP (6-digit code)
+
+  Your account is more secure this way.
+  ```
+- **Link:** "Learn More" → Help Center: "Passwordless Authentication"
+
+**Email OTP:**
+- **Title:** "How Email OTP Works"
+- **Body:**
+  ```
+  We send a 6-digit code to your email.
+
+  Enter it within 5 minutes to log in.
+
+  You can request up to 3 codes per 5 minutes.
+  ```
+
+**Passkeys:**
+- **Title:** "What are Passkeys?"
+- **Body:**
+  ```
+  Passkeys use Face ID, Touch ID, or fingerprint to log in.
+
+  They're device-bound and extremely secure.
+
+  You can enable passkeys in Settings → Security.
+  ```
+- **Link:** "Learn More" → Help Center: "Setting Up Passkeys"
+- **Action:** "Enable Passkey"
+
+**Account Recovery:**
+- **Title:** "What if I lose my device?"
+- **Body:**
+  ```
+  If you lose access, you can recover your account by:
+
+  1. Entering your email
+  2. Verifying your identity via Stripe again
+
+  Your TrustScore and evidence will be restored.
+  ```
+- **Link:** "Learn More" → Help Center: "Account Recovery"
+
+#### **6. Public Profile**
+
+**Public Profile Visibility:**
+- **Title:** "What's Public?"
+- **Body:**
+  ```
+  Your public profile shows:
+  ✅ Display name (e.g., "Sarah M.")
+  ✅ Username (@sarahtrusted)
+  ✅ TrustScore
+  ✅ Verification badges
+  ✅ General activity metrics
+
+  Your public profile does NOT show:
+  ❌ Full legal name
+  ❌ Email or phone
+  ❌ Address or location
+  ❌ ID documents
+  ```
+- **Link:** "Learn More" → Help Center: "Public Profile Privacy"
+
+**Safety Labels:**
+- **Title:** "Safety Warnings"
+- **Body:**
+  ```
+  If multiple users report a profile, we may display:
+
+  ⚠️ "Safety concern flagged"
+
+  This means other users have submitted verified evidence about this person.
+
+  We recommend extra caution.
+  ```
+- **Link:** "Learn More" → Help Center: "Safety Reports & Warnings"
+
+#### **7. Subscriptions (Free / Premium / Pro)**
+
+**Subscription Tiers:**
+- **Title:** "What's the difference?"
+- **Body:**
+  ```
+  Free: Basic TrustScore, limited evidence (10 receipts, 5 screenshots)
+
+  Premium (£4.99/mo): Unlimited evidence, advanced analytics, 100GB vault
+
+  Pro (£14.99/mo): Everything in Premium + bulk checks, dispute tools, 500GB vault
+  ```
+- **Link:** "Learn More" → Help Center: "Subscription Plans"
+- **Action:** "Upgrade Now"
+
+**Subscription & Safety:**
+- **Title:** "Does paying increase my TrustScore?"
+- **Body:**
+  ```
+  NO.
+
+  Paying for Premium or Pro does NOT directly increase your TrustScore or override safety systems.
+
+  Subscriptions only unlock features like larger Evidence Vault and analytics.
+  ```
+- **Link:** "Learn More" → Help Center: "How Subscriptions Work"
+
+**Refund Policy:**
+- **Title:** "Refund Policy"
+- **Body:**
+  ```
+  We do not offer refunds for partial months.
+
+  You can cancel anytime. Your plan remains active until the end of your billing period.
+  ```
+- **Link:** "Learn More" → Help Center: "Cancellation & Refunds"
+
+### 40.5 Copy Source & Constraints
+
+**Mandatory Rules:**
+
+1. **All info point text MUST:**
+   - Be derived from existing content in CLAUDE.md (Sections 3, 5, 6, 11, 15, 16, 19, 20)
+   - Never define new product behaviour not specified in CLAUDE.md
+   - Respect all legal, privacy, and defamation constraints from Section 4
+
+2. **Language Requirements:**
+   - Use **defamation-safe wording** (Section 4)
+     - ✅ "Safety concern flagged"
+     - ❌ "This user is a scammer"
+   - Use **GDPR-compliant language** (Section 20)
+     - ✅ "We store transaction summaries"
+     - ❌ "We read all your emails"
+   - Use **subscription wording from Section 12/16**
+     - ✅ "Paid subscription does NOT override risk systems"
+
+3. **Copy Length Limits:**
+   - Title: Maximum 6 words
+   - Body: Maximum 100 words (4-5 sentences)
+   - Bullet points: Maximum 5 items
+   - Learn More link text: Maximum 6 words
+
+4. **Tone:**
+   - Professional, calm, educational
+   - Bank-grade seriousness (not playful)
+   - Simple language (avoid jargon)
+   - Empowering (not condescending)
+
+### 40.6 Integration with Help Center (Section 19)
+
+**Link Behavior:**
+
+1. **"Learn More" Links:**
+   - Must point to specific Help Center article (Section 19)
+   - Opens in:
+     - **Mobile:** In-app web view (preferred) or native browser
+     - **Web:** New tab
+   - Back button returns to info modal (mobile)
+
+2. **Help Center Article Mapping:**
+
+| Info Point Topic | Help Center Article |
+|------------------|---------------------|
+| TrustScore | "Understanding Your TrustScore" |
+| Identity Verification | "How Identity Verification Works" |
+| Evidence Vault | "Adding Evidence to Your Profile" |
+| Passwordless Auth | "Passwordless Authentication" |
+| RiskScore | "Understanding Risk Signals" |
+| Public Profile | "Public Profile Privacy" |
+| Subscriptions | "Subscription Plans" |
+| Safety Reports | "Safety Reports & Warnings" |
+
+3. **Help Center Content Sync:**
+   - When Help Center articles are updated (Section 19), info point text should be reviewed for consistency
+   - Info points provide **short summaries**, Help Center provides **full details**
+
+### 40.7 Testing & Validation
+
+**Before Shipping Info Points:**
+
+1. **Content Validation:**
+   - ✅ All text derived from CLAUDE.md
+   - ✅ No new product behaviour invented
+   - ✅ Defamation-safe language used
+   - ✅ GDPR-compliant wording
+   - ✅ All "Learn More" links point to correct Help Center articles
+
+2. **UI Validation:**
+   - ✅ Info icons use correct size/color/style
+   - ✅ Modals render correctly on all screen sizes
+   - ✅ Tap targets meet 44×44 dp minimum
+   - ✅ Modal close interaction works (tap outside, swipe down)
+   - ✅ Animations smooth (300ms or less)
+
+3. **Accessibility Validation:**
+   - ✅ Screen readers announce info point purpose
+   - ✅ Modal content readable by screen readers
+   - ✅ Keyboard navigation works (future web)
+
+### 40.8 Implementation Checklist for UI Agents
+
+**Before Implementing Info Points:**
+
+1. Read Section 40 completely
+2. Read all referenced sections (3, 5, 6, 11, 15, 16, 19, 20)
+3. Verify Help Center articles exist (Section 19)
+4. Confirm all info point locations from Section 40.4
+
+**During Implementation:**
+
+1. Create reusable InfoPoint component/widget
+2. Create reusable InfoModal component/widget
+3. Add info points to all required locations
+4. Link to Help Center articles correctly
+5. Test modal behavior on all screen sizes
+
+**After Implementation:**
+
+1. Validate all copy against CLAUDE.md
+2. Test all info point interactions
+3. Verify Help Center links work
+4. Test with screen readers enabled
+5. Get legal review for any new copy (if needed)
+
+### 40.9 Future Extensions
+
+**Post-MVP Enhancements:**
+
+1. **Interactive Tutorials:**
+   - First-time user onboarding with info point highlights
+   - "Tap here to learn about TrustScore" tooltips
+
+2. **Contextual Info Points:**
+   - Show different info based on user state
+   - Example: "Your TrustScore is low" → Info point explains how to improve
+
+3. **Info Point Analytics:**
+   - Track which info points users tap most
+   - Use data to improve Help Center content
+
+4. **Video Info Points:**
+   - Short 15-30 second explainer videos
+   - Embedded in info modals (future)
+
+5. **Personalised Info:**
+   - Info point text adapts based on user's subscription tier
+   - Example: Free users see "Upgrade to unlock" in Evidence Vault info
+
+---
+
+## SECTION 41: AI ARCHITECTURE & MODEL USAGE (AZURE-HOSTED)
+
+### 41.1 Purpose
+
+Define SilentID's AI architecture, model usage strategy, data handling rules, and integration points across the platform to ensure:
+- Privacy-compliant AI assistance for trust analysis, risk detection, and user support
+- Clear boundaries between AI-assisted operations and deterministic business logic
+- Secure Azure-hosted infrastructure with appropriate model selection per use case
+- Compliance with all legal, privacy, and defamation constraints defined throughout this specification
+
+**Critical Principle:** AI models **assist** but never override hard safety rules, legal constraints, or admin review processes defined in other sections of CLAUDE.md.
+
+### 41.2 Hosting & Infrastructure
+
+**Primary AI Infrastructure:**
+- **Platform:** Microsoft Azure (same tenant as SilentID backend/database)
+- **Primary Region:** UK South or West Europe (GDPR compliance)
+- **Failover Region:** Secondary EU region (disaster recovery)
+- **Network:** Private endpoints, no public internet exposure for AI processing
+- **Data Residency:** All AI processing must occur within EU/UK Azure regions
+
+**Azure Services Used:**
+- Azure OpenAI Service (primary reasoning engine)
+- Azure Cognitive Services (OCR, image verification)
+- Azure Kubernetes Service (AKS) - for optional self-hosted models
+- Azure AI Studio - for model deployment, monitoring, version control
+
+### 41.3 Layered AI Model Strategy
+
+SilentID uses a **4-layer AI architecture**, each with specific responsibilities, data access permissions, and privacy constraints:
+
+---
+
+#### **Layer A: Primary Reasoning Engine (Azure OpenAI)**
+
+**Models:**
+- GPT-4 Turbo (gpt-4-0125-preview or later)
+- GPT-4o (multimodal capabilities for future use)
+- Future: GPT-5.x as available in Azure OpenAI
+
+**Use Cases:**
+1. **TrustScore Reasoning & Explanation**
+   - Analyze aggregated evidence signals (not raw data) to generate human-readable explanations
+   - Example: "Your TrustScore increased by 40 points because you added 5 verified receipts from Vinted"
+   - Input: Anonymized transaction summaries, evidence counts, platform names
+   - Output: Plain-language explanations for Info Point modals, Help Center articles
+
+2. **Risk Pattern Interpretation**
+   - Assist RiskEngine (Section 25) by interpreting complex fraud patterns
+   - Example: Detect circular mutual verification rings, collusion signals
+   - Input: Anonymized device fingerprints, IP patterns, transaction graphs
+   - Output: Risk signal descriptions, suggested admin review priorities
+
+3. **Scam Detection & Evidence Analysis**
+   - Analyze text from screenshots (OCR output) for scam indicators
+   - Example: Detect fake tracking numbers, inconsistent dates, fraudulent language patterns
+   - Input: OCR text from screenshots (never ID documents), public profile scraped data
+   - Output: Integrity score contributions, fraud flags for admin review
+
+4. **Help Center Content Generation**
+   - Generate draft help articles based on CLAUDE.md specifications (Section 19)
+   - Input: CLAUDE.md sections, user question templates
+   - Output: Draft help articles (must be reviewed before publishing)
+
+5. **Admin Support Tooling**
+   - Summarize complex user disputes for admin review
+   - Suggest resolution pathways based on evidence patterns
+   - Input: Anonymized report details, evidence summaries
+   - Output: Admin dashboard insights, suggested actions (final decision always human)
+
+**Data Access Permissions:**
+✅ **CAN access:**
+- Aggregated TrustScore component values (numbers only, no raw evidence)
+- OCR text from marketplace screenshots (no ID documents)
+- Anonymized risk signals (device fingerprint patterns, IP clusters)
+- Public profile scraped data (marketplace usernames, ratings, review counts)
+- Summarized transaction metadata (date, amount, platform - no full receipts)
+
+❌ **CANNOT access:**
+- Raw ID documents or Stripe Identity verification images
+- Full email content (only extracted summaries: date, amount, platform)
+- User's full legal name, address, date of birth, phone number
+- Raw session logs, authentication tokens, device IDs
+- Individual user queries without anonymization
+
+**Privacy & Security Rules:**
+- All requests to Azure OpenAI must include `user_id` hash (not actual user ID) for abuse monitoring
+- No model training on SilentID user data (Azure OpenAI enterprise agreement)
+- All prompts logged for compliance audits (stored separately, 90-day retention)
+- Rate limiting: 100 requests/minute per endpoint, 10,000/day per user context
+- Prompt injection detection: Filter user-provided text before sending to model
+- Response validation: Check for PII leakage, defamation-unsafe language before displaying
+
+**API Integration Pattern:**
+```csharp
+// Example: TrustScore explanation generation
+var prompt = $@"
+Context: User's TrustScore increased from {oldScore} to {newScore}.
+Changes: Added {receiptCount} receipts, {screenshotCount} screenshots.
+Platforms: {string.Join(", ", platforms)}.
+
+Generate a concise (2-3 sentence) explanation for why the score changed.
+Use defamation-safe language (Section 4 rules). No marketing fluff.
+";
+
+var response = await azureOpenAIClient.GetCompletionAsync(
+    deploymentName: "gpt-4-turbo",
+    prompt: prompt,
+    maxTokens: 150,
+    temperature: 0.3, // Low temperature for consistency
+    user: HashUserId(userId) // Anonymized tracking
+);
+```
+
+---
+
+#### **Layer B: Internal Risk Engine (Optional Self-Hosted Llama)**
+
+**Models:**
+- Llama 3.1 70B (or smaller variants for cost optimization)
+- Hosted on Azure Kubernetes Service (AKS) within SilentID's private network
+- Never exposed to public internet or external APIs
+
+**Use Cases:**
+1. **Anomaly Detection**
+   - Detect unusual device fingerprint patterns (Section 7, 25)
+   - Identify IP geo-location anomalies (impossible travel detection)
+   - Flag suspicious timing patterns (bulk evidence uploads at 3am)
+
+2. **Collusion Detection**
+   - Analyze mutual verification graphs for circular patterns (Section 7)
+   - Detect fake account clusters (same device, same IP, same evidence hashes)
+   - Identify reputation boosting rings
+
+3. **Behavior Pattern Clustering**
+   - Group similar fraud patterns for improved detection
+   - Learn from admin-confirmed fraud cases (supervised learning on flagged accounts)
+   - Predict high-risk account creation attempts
+
+**Data Access Permissions:**
+✅ **CAN access:**
+- Device fingerprints (hashed)
+- IP addresses and ASN patterns
+- Transaction timing patterns
+- Evidence upload patterns (file sizes, timestamps, metadata - not content)
+- Account creation patterns (signup IP, device, timing)
+
+❌ **CANNOT access:**
+- User personal data (names, emails, addresses)
+- Evidence content (screenshots, receipt images, OCR text)
+- TrustScore or RiskScore final values (only input signals)
+- Stripe Identity verification results
+
+**Privacy & Security Rules:**
+- Model trained ONLY on anonymized, aggregated patterns
+- No individual user data used for training (only pattern clusters)
+- All data processed in-memory (no disk writes except encrypted model weights)
+- Model outputs are internal signals only (never shown directly to users or partners)
+- Human admin review required before acting on high-severity risk signals
+
+**Output Format:**
+- Risk signals sent to RiskSignals table (Section 25)
+- Each signal includes: type, severity (1-10), confidence score, evidence pointers
+- Admin dashboard shows signals with explainability: "Flagged due to device cluster pattern X"
+
+---
+
+#### **Layer C: Vision & OCR (Azure Cognitive + Optional External Models)**
+
+**Models:**
+- **Primary:** Azure Computer Vision (OCR, image integrity checks)
+- **Secondary (Optional):** Google Gemini Vision 1.5 Pro (for complex marketplace screenshots)
+
+**Use Cases:**
+1. **Screenshot OCR & Text Extraction**
+   - Extract text from marketplace screenshots (reviews, ratings, transaction history)
+   - Detect tampering indicators (pixel-level manipulation, edge inconsistencies)
+   - Validate screenshot authenticity (metadata checks, device consistency)
+
+2. **Receipt Image Processing**
+   - Extract transaction details from email receipt images (date, amount, platform)
+   - Verify receipt format matches known marketplace templates
+   - Detect duplicate receipts (perceptual hashing)
+
+3. **Image Integrity Verification**
+   - Detect Photoshop artifacts, clone stamping, copy-paste manipulation
+   - Analyze color palette consistency with known platform branding
+   - Validate screenshot resolution matches claimed device
+
+**Data Access Permissions:**
+✅ **CAN access:**
+- Marketplace screenshot images (Vinted, eBay, Depop profiles)
+- Email receipt images (order confirmations, shipping labels)
+- Public profile screenshots (reviews, ratings, join dates)
+
+❌ **CANNOT access:**
+- ID documents (passport, driver's license, national ID)
+- Selfies or biometric images (Stripe Identity handles these, SilentID never sees them)
+- Screenshots containing full personal addresses or phone numbers (must be redacted first)
+- Private messages or DMs (only transaction-related content allowed)
+
+**Privacy-Filtered Input Process:**
+1. **Pre-Processing (Before AI):**
+   - User uploads screenshot → SilentID frontend redacts sensitive fields (address, phone)
+   - Backend validates file type, size, metadata
+   - Check if image contains ID document indicators (flag and reject if detected)
+
+2. **AI Processing:**
+   - Send privacy-filtered image to Azure Computer Vision for OCR
+   - If Azure OCR fails or confidence < 80%, optionally send to Gemini Vision
+   - Extract: marketplace name, username, rating, review count, join date, transaction details
+
+3. **Post-Processing:**
+   - Store only extracted metadata (text summary, integrity score)
+   - Delete original image after 30 days (or immediately if user deletes evidence)
+   - Never send extracted data to external models for training
+
+**Azure Computer Vision API Pattern:**
+```csharp
+var ocrResult = await computerVisionClient.ReadInStreamAsync(imageStream);
+var text = string.Join(" ", ocrResult.AnalyzeResult.ReadResults.SelectMany(r => r.Lines.Select(l => l.Text)));
+
+// Integrity check
+var integrityScore = CalculateImageIntegrity(imageMetadata, ocrResult);
+
+// Store summary only
+var screenshotEvidence = new ScreenshotEvidence {
+    OCRText = text,
+    IntegrityScore = integrityScore,
+    Platform = DetectPlatform(text),
+    FileUrl = azureBlobUrl, // Will be deleted after 30 days
+    EvidenceState = integrityScore > 70 ? "Valid" : "Suspicious"
+};
+```
+
+**External Model Usage (Gemini Vision) - Optional:**
+- Only used when Azure OCR confidence < 80% or complex layout detected
+- Google Gemini API called via Azure API Management (rate limiting, logging)
+- Same privacy filtering rules apply
+- User data NOT used for Gemini model training (Google Vertex AI enterprise agreement)
+
+---
+
+#### **Layer D: Safe Text & User-Facing Explanations (Azure OpenAI + Optional Claude)**
+
+**Models:**
+- **Primary:** Azure OpenAI GPT-4 Turbo (same as Layer A)
+- **Secondary (Optional):** Anthropic Claude 3.5 Sonnet (via Azure Bedrock or API)
+
+**Use Cases:**
+1. **Info Point Modal Content (Section 40)**
+   - Generate short explanations for info point (ⓘ) modals
+   - Example: "What is TrustScore?" → 2-3 sentence explanation
+   - Input: Section references from CLAUDE.md, user's current context (e.g., score = 450)
+   - Output: Plain-language text (max 100 words, defamation-safe)
+
+2. **Help Center Article Drafting (Section 19)**
+   - Auto-generate help articles from CLAUDE.md sections
+   - Example: "How to add email receipts" → Step-by-step guide
+   - Input: CLAUDE.md Section 5, 6 (feature descriptions)
+   - Output: Structured help article (requires human review before publishing)
+
+3. **TrustScore Improvement Suggestions**
+   - Personalized suggestions based on user's current evidence
+   - Example: "Add 5 more receipts to reach High Trust (600+ score)"
+   - Input: User's current TrustScore breakdown (anonymized)
+   - Output: Actionable suggestions list
+
+4. **Defamation-Safe Report Wording**
+   - Assist admins in writing neutral, evidence-based report summaries
+   - Input: Admin-selected evidence, report category
+   - Output: Suggested wording following Section 4 guidelines
+
+**Data Access Permissions:**
+✅ **CAN access:**
+- CLAUDE.md specification text (for Help Center generation)
+- User's TrustScore component breakdown (numbers only)
+- Evidence counts (number of receipts, screenshots - not content)
+- Public profile metrics (platforms verified, account age)
+
+❌ **CANNOT access:**
+- User's full name, email, phone, address
+- Raw evidence content (screenshot images, receipt details)
+- Other users' data (except for comparative examples like "Users with similar scores have...")
+
+**Legal & Safety Constraints:**
+- All generated text MUST follow defamation-safe language rules (Section 4)
+- Never use: "scammer", "fraudster", "untrustworthy", "criminal", "dangerous"
+- Always use: "safety concern flagged", "risk signals detected", "multiple reports received"
+- Generated content reviewed by automated safety filter before display
+- Admin review required for: public-facing help articles, legal disclaimers, safety warnings
+
+**Claude Usage (Optional):**
+- If Azure OpenAI produces marketing-style or overly promotional text, use Claude 3.5 Sonnet
+- Claude API called via Azure API Management or direct Anthropic API
+- Same data access restrictions apply
+- Use temperature=0.2 for consistency, strict prompt for defamation-safe language
+
+---
+
+### 41.4 Data Handling Rules (Comprehensive)
+
+**Anonymization Requirements:**
+
+| Data Type | AI Layer Access | Anonymization Required | Example |
+|-----------|-----------------|------------------------|---------|
+| User ID | All layers | ✅ Hash to UUID | `user_12345` → `hash(user_12345)` |
+| Email | None | ✅ Never sent to AI | `user@example.com` → (not provided) |
+| Full Name | None | ✅ Never sent to AI | `John Smith` → (not provided) |
+| Display Name | Layer A, D | ⚠️ Partial (first name + initial only) | `Sarah M.` (OK), `Sarah Mitchell` (not OK) |
+| Device Fingerprint | Layer B | ✅ Hash to UUID | `device_abc123` → `hash(device_abc123)` |
+| IP Address | Layer B | ✅ Anonymize to /24 subnet | `192.168.1.50` → `192.168.1.0/24` |
+| OCR Text | Layer A, C | ✅ Redact PII first | Remove phone, address before AI |
+| Screenshot Image | Layer C only | ✅ Privacy-filter first | Blur sensitive fields before AI |
+| Receipt Details | Layer A | ✅ Summary only | "Transaction: £45.99, Vinted, 2025-01-15" |
+| TrustScore | Layer A, D | ⚠️ Numbers only | "TrustScore: 754" (OK), with user name (not OK) |
+
+**Model Training Restrictions:**
+- ✅ Azure OpenAI: Enterprise agreement, no training on customer data
+- ✅ Azure Cognitive Services: No training on customer data
+- ✅ Self-hosted Llama: Trained only on anonymized pattern clusters, never raw user data
+- ❌ External APIs (Gemini, Claude): Data must NOT be used for training (verify in service agreements)
+
+**Logging & Audit:**
+- All AI requests logged to separate audit database (90-day retention)
+- Log format: `{ timestamp, model, user_hash, prompt_hash, response_hash, latency, cost }`
+- Never log full prompts or responses containing PII
+- Admin access to logs requires SuperAdmin role + justification
+- Logs used for: abuse detection, cost monitoring, performance optimization
+
+---
+
+### 41.5 Responsibilities & Decision Authority
+
+**What AI Models DO:**
+- ✅ Assist in TrustScore explanation generation (plain-language summaries)
+- ✅ Detect fraud patterns and generate risk signals for admin review
+- ✅ Extract text from screenshots (OCR) and verify image integrity
+- ✅ Suggest admin actions (freeze account, request more evidence)
+- ✅ Draft Help Center articles and Info Point content
+- ✅ Provide comparative insights ("Users with similar TrustScores have...")
+
+**What AI Models DO NOT DO:**
+- ❌ Make final TrustScore calculations (deterministic formula in TrustScoreService)
+- ❌ Make final RiskScore decisions (deterministic rules in RiskEngine)
+- ❌ Automatically freeze/ban accounts (admin approval required)
+- ❌ Override legal constraints or defamation-safe language rules
+- ❌ Bypass Stripe Identity verification (ID checks always via Stripe)
+- ❌ Approve/reject evidence without admin review (for high-risk cases)
+
+**Decision Authority Hierarchy:**
+1. **Hard Business Rules** (Code) - Highest authority
+   - TrustScore formula (Section 5)
+   - RiskScore thresholds (Section 25)
+   - Account suspension triggers (Section 28)
+
+2. **Admin Review** (Human)
+   - Safety report verification (Section 8, 24)
+   - Evidence rejection appeals (Section 24)
+   - Account freeze/ban decisions (Section 28)
+
+3. **AI Assistance** (Advisory Only)
+   - Risk signal suggestions
+   - Fraud pattern detection
+   - Admin workflow optimization
+
+**Example Decision Flow:**
+```
+1. AI (Layer B) detects collusion pattern → Creates RiskSignal (severity=8)
+2. RiskEngine (Code) evaluates RiskSignal → Increases RiskScore to 75
+3. RiskScore > 70 threshold → Triggers account freeze (automatic, per Section 25)
+4. Admin receives notification → Reviews evidence, AI explanation, user history
+5. Admin makes final decision:
+   - Confirm freeze (permanent ban if fraud confirmed)
+   - Unfreeze (false positive, adjust detection rules)
+   - Request more evidence (user must re-verify identity)
+```
+
+---
+
+### 41.6 Integration Points with Existing Sections
+
+**Section 5 (Core Features):**
+- AI assists with TrustScore explanations but does NOT calculate TrustScore
+- TrustScore formula remains deterministic: Identity (200) + Evidence (300) + Behaviour (300) + Peer (200)
+
+**Section 7 (Anti-Fraud Engine):**
+- Layer B (Llama) feeds signals into existing 9-layer fraud detection system
+- AI-detected patterns create RiskSignals in database (same table as rule-based signals)
+- Final RiskScore calculation combines AI signals + deterministic rules
+
+**Section 19 (Help Center):**
+- Layer D generates draft help articles from CLAUDE.md
+- All articles reviewed by admin before publishing
+- Article generation follows Section 19 format requirements
+
+**Section 24 (Appeals & Review):**
+- AI provides admin with suggested resolution pathways
+- Final appeal decisions made by human admin
+- AI explanation included in admin notes for transparency
+
+**Section 25 (Risk & Anomaly Signals):**
+- Layer B generates new signal types: `AIAnomalyDetected`, `AICollisionPattern`, `AIDeviceCluster`
+- Signals include confidence score (0.0-1.0) and explainability text
+- Low confidence signals (< 0.7) flagged for admin review before action
+
+**Section 28 (Admin Roles & Permissions):**
+- AI-suggested actions require admin approval
+- SuperAdmin can override AI risk signals (with justification)
+- All AI-triggered actions logged in AdminAuditLogs
+
+**Section 40 (Info Points):**
+- Layer D generates dynamic info point content
+- Content filtered through defamation-safe language checker
+- Cached for 24 hours (regenerated if underlying data changes)
+
+**Partner API (Section 22):**
+- AI explanations NOT exposed to partners (only aggregated trust/risk levels)
+- Partners receive static risk bands: "Low", "Medium", "High"
+- No AI-generated text in partner-facing API responses
+
+---
+
+### 41.7 Performance & Cost Management
+
+**Model Selection Strategy:**
+
+| Use Case | Model | Reasoning |
+|----------|-------|-----------|
+| Simple explanations (< 50 words) | GPT-4o-mini | Fast, low-cost, sufficient quality |
+| Complex fraud analysis | GPT-4 Turbo | High reasoning capability needed |
+| Bulk pattern detection | Self-hosted Llama | Cost-effective for high-volume internal processing |
+| Image OCR (simple) | Azure Computer Vision | Optimized for text extraction |
+| Image OCR (complex layouts) | Gemini Vision 1.5 Pro | Better multi-modal understanding |
+
+**Cost Optimization:**
+- Caching: Store AI-generated Help Center articles for 30 days
+- Batch processing: Group similar risk analysis requests (process 100 accounts together)
+- Rate limiting: 10 AI requests per user per hour (prevents abuse)
+- Smart routing: Use GPT-4o-mini for 80% of requests, GPT-4 Turbo only when needed
+- Self-hosting: Llama for internal risk processing (avoids per-token costs)
+
+**Performance Targets:**
+- Info Point explanations: < 500ms response time (cached)
+- Risk signal generation: < 5s for batch of 100 accounts
+- Screenshot OCR: < 3s per image
+- Help Center article generation: < 10s (async, background job)
+
+**Monitoring:**
+- Track token usage per endpoint (alert if usage spikes)
+- Monitor AI response latency (P95 < 2s for user-facing requests)
+- Log model version for each request (enables A/B testing)
+- Cost dashboard: $ spent per AI layer per day
+
+---
+
+### 41.8 Security & Compliance
+
+**Prompt Injection Defense:**
+- All user-provided text sanitized before including in prompts
+- Blacklist: `ignore previous instructions`, `system:`, `<|endoftext|>`, etc.
+- Whitelist approach for structured inputs (e.g., platform names must match enum)
+- Output validation: Reject responses containing PII patterns
+
+**PII Leakage Prevention:**
+- Automated PII detector runs on all AI responses before display
+- Regex patterns for: email, phone, full address, credit card, passport numbers
+- If PII detected: Block response, log incident, alert admin
+- User never sees raw AI output (always filtered through safety layer)
+
+**GDPR Compliance:**
+- AI processing covered under "Legitimate Interest" lawful basis (fraud prevention, service improvement)
+- Users informed via Privacy Policy (Section 33) that AI assists with trust analysis
+- Right to object: Users can opt out of AI-assisted explanations (fallback to static text)
+- Data retention: AI request logs deleted after 90 days (anonymized summaries retained)
+
+**Audit Trail:**
+- Every AI decision logged: what data was sent, what model was used, what output was generated
+- Admin can trace: "Why was this user flagged?" → View AI risk signal + prompt/response summary
+- Compliance team can audit: AI usage patterns, data access, model versions
+
+---
+
+### 41.9 Future Extensions (Phase 2+)
+
+**Conversational Trust Assistant (Not MVP):**
+- User asks: "How can I improve my TrustScore?"
+- AI (Layer D) provides personalized, actionable suggestions
+- Requires: Conversation history storage, user consent for chat analysis
+
+**Predictive Risk Scoring (Not MVP):**
+- Layer B predicts likelihood of future fraud based on early signals
+- Example: "New account with high-risk device pattern → 80% chance of fraud attempt"
+- Requires: Historical fraud case dataset, supervised learning pipeline
+
+**Automated Evidence Categorization (Not MVP):**
+- Layer C automatically tags screenshots: "Vinted review screenshot", "eBay sales history"
+- Reduces manual user input during evidence upload
+- Requires: Fine-tuned vision model on marketplace screenshot dataset
+
+**Multi-Language Support (Not MVP):**
+- AI translates Help Center articles, Info Points into user's language
+- Maintains defamation-safe language rules across translations
+- Requires: Translation memory, legal review per language
+
+---
+
+### 41.10 Implementation Checklist
+
+**Before ANY agent implements AI features:**
+
+✅ **Phase 0: Azure Infrastructure Setup**
+- [ ] Provision Azure OpenAI Service in UK South/West Europe region
+- [ ] Create Azure Computer Vision resource
+- [ ] Set up private endpoints (no public internet access)
+- [ ] Configure Azure Key Vault for API keys
+- [ ] Enable logging to Azure Monitor + Application Insights
+
+✅ **Phase 1: Layer A (Primary Reasoning)**
+- [ ] Implement AzureOpenAIService wrapper class
+- [ ] Add PII filtering middleware
+- [ ] Create prompt templates for TrustScore explanations
+- [ ] Build defamation-safe language validator
+- [ ] Test with sample data (no real user data yet)
+
+✅ **Phase 2: Layer C (Vision/OCR)**
+- [ ] Integrate Azure Computer Vision API
+- [ ] Build screenshot privacy filter (redact sensitive fields)
+- [ ] Implement image integrity checker
+- [ ] Optional: Add Gemini Vision fallback
+- [ ] Test with marketplace screenshot samples
+
+✅ **Phase 3: Layer B (Risk Engine - Optional)**
+- [ ] Deploy Llama 3.1 to AKS cluster
+- [ ] Build anonymization pipeline for training data
+- [ ] Train model on fraud pattern clusters
+- [ ] Create RiskSignal generation API
+- [ ] Integrate with existing RiskEngine (Section 25)
+
+✅ **Phase 4: Layer D (User-Facing Text)**
+- [ ] Generate Help Center articles from CLAUDE.md
+- [ ] Implement Info Point content API
+- [ ] Add human review workflow for generated content
+- [ ] Cache generated text (Redis/Azure Cache)
+
+✅ **Validation & Testing:**
+- [ ] Security audit: Verify no PII leakage, prompt injection protection
+- [ ] Legal review: Ensure defamation-safe language in all outputs
+- [ ] Performance testing: Measure latency, cost per request
+- [ ] GDPR compliance check: Data retention, user rights (access, deletion)
+
+---
+
+### 41.11 Non-Implementation Constraints
+
+**This section is a SPECIFICATION ONLY.**
+
+Future implementation agents must:
+- ✅ Follow this AI architecture exactly (no deviation without updating CLAUDE.md first)
+- ✅ Respect all data access permissions defined in Section 41.4
+- ✅ Use Azure-hosted models as primary option (external models only as fallback)
+- ✅ Never bypass legal/privacy constraints defined in Section 4, 20, 32, 33
+- ✅ Implement AI features in phases (do NOT build all layers at once)
+
+Implementation agents must NOT:
+- ❌ Add new AI use cases not listed in this section (update spec first)
+- ❌ Change model selection strategy without cost/performance justification
+- ❌ Send user data to external AI services without privacy filtering
+- ❌ Use AI outputs to make irreversible decisions without admin review
+
+---
+
+## END OF SECTION 41
+
+**Related Sections:**
+- Section 4: Legal & Compliance (defamation-safe language rules)
+- Section 5: Core Features (TrustScore, Evidence Vault)
+- Section 7: Anti-Fraud Engine (fraud detection, RiskScore)
+- Section 19: Help Center System (AI-generated content)
+- Section 20: Critical System Requirements (privacy, GDPR)
+- Section 24: TrustScore Appeal & Review (AI-assisted admin decisions)
+- Section 25: Risk & Anomaly Signals (AI-generated risk signals)
+- Section 28: Admin Roles & Permissions (AI action approval workflow)
+- Section 32: Data Retention & Privacy (AI request logs, 90-day retention)
+- Section 33: Legal Documents (Privacy Policy must mention AI usage)
+- Section 40: UI Info Points (AI-generated explanatory content)
+
+**Implementation Phase:** Phase 2+ (Not required for MVP)
+
+**Next Steps for Implementation Agents:**
+1. Review this section completely before implementing ANY AI feature
+2. Start with Phase 0 (Azure infrastructure) - do NOT build AI features without proper hosting
+3. Implement layers sequentially: A → C → D → B (not all at once)
+4. Test with sample data first, never use real user data in development
+5. Security audit and legal review required before production deployment
+
+---
+
+## SECTION 42: SILENTID LEGAL & COMPLIANCE OVERVIEW (CONSUMER)
+
+### Purpose
+
+This section provides a comprehensive legal framework for SilentID's consumer-facing trust identity service, ensuring compliance with UK and EU data protection law while protecting both users and SILENTSALE LTD.
+
+### Legal Entity & Jurisdiction
+
+**Service Provider:**
+- **Company Name:** SILENTSALE LTD
+- **Company Number:** 16457502
+- **Registered in:** England & Wales
+- **Registered Office:** [Insert registered address]
+- **Trading as:** SilentID
+- **Website:** www.silentid.co.uk
+- **Contact Email:** legal@silentid.co.uk
+
+**Governing Law:**
+All legal relationships between SilentID and users are governed exclusively by the laws of England and Wales. Users agree to the exclusive jurisdiction of the courts of England and Wales for any disputes.
+
+### What SilentID Is
+
+SilentID is a **passwordless digital trust identity platform** that enables users to:
+- Verify their identity once (via Stripe Identity)
+- Build a portable reputation profile (TrustScore 0-1000)
+- Share their trust profile across marketplaces, dating apps, rental platforms, and community groups
+- Store evidence of trustworthy behaviour (receipts, screenshots, marketplace profiles)
+
+### What SilentID Is NOT
+
+**Critical Legal Position:**
+
+SilentID is **NOT**:
+- ❌ A credit reference agency
+- ❌ A criminal records provider
+- ❌ An insurance provider or guarantee service
+- ❌ A background check or clearance service
+- ❌ A financial institution or bank
+- ❌ A marketplace or transaction platform
+- ❌ A law enforcement agency
+- ❌ A password manager
+
+SilentID provides **evidence-based trust signals and tools** to help users make safer decisions. **SilentID does not guarantee outcomes, verify accuracy of third-party information, or provide legal, financial, or insurance advice.**
+
+### Regulatory Compliance
+
+**UK GDPR (General Data Protection Regulation):**
+- SilentID complies with UK GDPR and the Data Protection Act 2018
+- ICO Registration Number: [To be inserted upon registration]
+- Data Protection Officer: dpo@silentid.co.uk
+
+**Payment Services:**
+- Payment processing handled exclusively by Stripe (regulated payment processor)
+- SILENTSALE LTD is NOT a payment service provider
+
+**Age Restriction:**
+- SilentID is available ONLY to users aged 18 and over
+- Users under 18 are prohibited from creating accounts
+
+### Consumer Rights
+
+**UK Consumer Law:**
+Users are protected by:
+- Consumer Rights Act 2015
+- Consumer Contracts (Information, Cancellation and Additional Charges) Regulations 2013
+- Electronic Commerce (EC Directive) Regulations 2002
+
+**Right to Cancel:**
+Users may cancel Premium or Pro subscriptions at any time. Subscription access continues until the end of the current billing period. No refunds for partial months.
+
+**Right to Complain:**
+Users may complain to:
+1. SilentID Support: support@silentid.co.uk
+2. If unresolved, the Information Commissioner's Office (ICO): ico.org.uk
+
+### Limitation of Liability
+
+**To the maximum extent permitted by UK law:**
+
+1. **No Guarantee of Outcomes:**
+   SilentID provides trust signals based on evidence and algorithms but does NOT guarantee the accuracy, reliability, or trustworthiness of any user.
+
+2. **Third-Party Reliance:**
+   SilentID is NOT responsible for decisions made by third parties (marketplaces, landlords, employers, etc.) based on TrustScores or profiles.
+
+3. **Excluded Losses:**
+   SilentID is not liable for:
+   - Indirect, consequential, or incidental losses
+   - Loss of profits, revenue, data, or business opportunities
+   - Losses caused by third-party fraud or misrepresentation
+
+4. **Maximum Liability:**
+   SILENTSALE LTD's total liability to any user is limited to the amount paid by that user in the 12 months preceding the claim (or £100, whichever is greater).
+
+**Exceptions:**
+Nothing in these terms excludes liability for:
+- Death or personal injury caused by negligence
+- Fraud or fraudulent misrepresentation
+- Any other liability that cannot be excluded by UK law
+
+### Data Protection & Privacy
+
+**GDPR Compliance:**
+- Privacy by Design: SilentID is built with data minimisation and privacy protection
+- User Rights: Access, Rectification, Erasure, Restriction, Portability, Objection
+- Data Retention: Minimum necessary retention periods (see Section 32)
+- Third-Party Processors: Stripe, Microsoft Azure, email providers
+
+**No ID Documents Stored:**
+SilentID uses Stripe Identity for identity verification. **ID documents and selfies are stored by Stripe, NOT by SilentID.** SilentID stores ONLY the verification result.
+
+**No Passwords Stored:**
+SilentID is 100% passwordless. **No passwords are ever stored.** Authentication uses Apple Sign-In, Google Sign-In, Passkeys, or Email OTP only.
+
+### Prohibited Activities
+
+Users must NOT:
+- Create multiple accounts (one person = one account)
+- Upload fake, tampered, or fraudulent evidence
+- Impersonate others or create fake profiles
+- Engage in collusion or reputation manipulation
+- Use SilentID for illegal activities
+- Harass, threaten, or abuse other users
+- Attempt to hack, reverse engineer, or compromise the platform
+
+**Consequences:**
+Violation may result in account suspension, permanent ban, and legal action.
+
+### Intellectual Property
+
+**SilentID Ownership:**
+All intellectual property in SilentID (software, logos, content, designs) belongs to SILENTSALE LTD. Users are granted a limited, non-exclusive, revocable licence to use the service.
+
+**User Content:**
+Users retain ownership of evidence they upload but grant SilentID a licence to process, store, and display it for service provision.
+
+### Changes to Terms & Service
+
+**Updates:**
+SILENTSALE LTD reserves the right to update terms, policies, or service features at any time. Material changes will be communicated via email or in-app notification.
+
+**Continued Use:**
+Continued use of SilentID after changes constitutes acceptance of new terms.
+
+---
+
+## SECTION 43: SILENTID CONSUMER TERMS OF USE
+
+**Last Updated:** [Insert date]
+**Effective Date:** [Insert date]
+**Version:** 1.0
+
+These Terms of Use ("**Terms**") govern your access to and use of SilentID, a digital trust identity service provided by **SILENTSALE LTD** (Company No. 16457502), a company registered in England and Wales.
+
+By creating a SilentID account or using our service, you agree to these Terms. If you do not agree, you must not use SilentID.
+
+---
+
+### 1. DEFINITIONS
+
+**1.1 Definitions:**
+
+- **"SilentID", "we", "us", "our"** means SILENTSALE LTD.
+- **"You", "your", "user"** means the person or entity using SilentID.
+- **"Service"** means the SilentID mobile application, website, and all related services.
+- **"Account"** means your registered SilentID user account.
+- **"TrustScore"** means the 0-1000 numerical trust rating calculated by SilentID.
+- **"Evidence"** means receipts, screenshots, and marketplace profiles you upload.
+- **"Public Profile"** means your publicly accessible SilentID profile at silentid.co.uk/u/[username].
+
+---
+
+### 2. ELIGIBILITY
+
+**2.1 Age Requirement:**
+You must be at least **18 years old** to use SilentID. By creating an account, you confirm you are 18 or older.
+
+**2.2 Capacity:**
+You confirm you have the legal capacity to enter into these Terms under the laws of England and Wales.
+
+**2.3 Geographic Availability:**
+SilentID is primarily intended for users in the United Kingdom. Use from other jurisdictions is at your own risk and subject to local laws.
+
+---
+
+### 3. ACCOUNT CREATION & SECURITY
+
+**3.1 Account Registration:**
+To use SilentID, you must create an account using one of these **passwordless** methods:
+- Apple Sign-In
+- Google Sign-In
+- Passkeys (Face ID, Touch ID, fingerprint)
+- Email OTP (one-time code)
+
+**SilentID does NOT use passwords.** Any attempt to create or use passwords is prohibited.
+
+**3.2 One Account Per Person:**
+Each person may have **only ONE SilentID account**. Creating multiple accounts is prohibited and may result in all accounts being suspended.
+
+**3.3 Account Security:**
+You are responsible for:
+- Keeping your email account secure
+- Protecting your devices (passkey-enabled devices must be secured)
+- Immediately reporting suspicious activity to support@silentid.co.uk
+
+**3.4 Account Sharing:**
+You must NOT share your account with others. Your account is personal and non-transferable.
+
+---
+
+### 4. IDENTITY VERIFICATION
+
+**4.1 Stripe Identity:**
+SilentID uses **Stripe Identity** (a third-party service) to verify your identity. When you choose to verify, you submit:
+- A photo of your government-issued ID (passport, driver's licence, national ID)
+- A selfie for liveness detection
+
+**4.2 What SilentID Stores:**
+SilentID stores ONLY:
+- Verification status (Verified, Pending, Failed)
+- Stripe verification reference ID
+- Timestamp of verification
+
+**SilentID does NOT store your ID documents or selfie photos.** These are stored by Stripe and governed by Stripe's privacy policy.
+
+**4.3 Verification Requirement:**
+Identity verification is **optional but strongly recommended**. Failure to verify will result in a lower TrustScore.
+
+---
+
+### 5. TRUSTSCORE SYSTEM
+
+**5.1 What is TrustScore:**
+TrustScore is a numerical score (0-1000) calculated based on:
+- **Identity (200 points):** Stripe verification, email/phone verification
+- **Evidence (300 points):** Receipts, screenshots, marketplace profiles
+- **Behaviour (300 points):** No safety reports, account longevity, consistent activity
+- **Peer Verification (200 points):** Mutual confirmations from trading partners
+
+**5.2 No Guarantee:**
+TrustScore is an **indicator only** and does NOT guarantee trustworthiness, reliability, or safety. Third parties (marketplaces, landlords, etc.) make their own decisions.
+
+**5.3 Score Changes:**
+Your TrustScore may increase or decrease based on:
+- Adding or removing evidence
+- Safety reports filed against you
+- Changes in verification status
+- Platform-detected fraud signals
+
+**5.4 Recalculation:**
+TrustScores are recalculated weekly. You can view your score breakdown in the app.
+
+---
+
+### 6. EVIDENCE VAULT
+
+**6.1 What You Can Upload:**
+You may upload:
+- **Email Receipts:** Order confirmations from marketplaces (Vinted, eBay, Depop, etc.)
+- **Screenshots:** Marketplace reviews, ratings, seller profiles
+- **Public Profile Links:** URLs to your public seller profiles
+
+**6.2 Evidence Integrity:**
+All evidence is subject to automated integrity checks. Tampered, fake, or fraudulent evidence will be rejected and may result in account suspension.
+
+**6.3 Storage Limits:**
+- **Free:** 250MB
+- **Premium (£4.99/month):** 100GB
+- **Pro (£14.99/month):** 500GB
+
+**6.4 What SilentID Stores:**
+- Summary of transactions (date, amount, platform, item)
+- Screenshot images (integrity-checked)
+- Public profile data (username, rating, review count, join date)
+
+**SilentID does NOT store:**
+- Full email content (only transaction summaries)
+- Private messages or DMs
+- Passwords or credentials
+
+**6.5 Email Scanning (Optional):**
+If you connect your email account, SilentID scans ONLY for:
+- Order confirmations
+- Shipping notifications
+- Transaction receipts
+
+**We do NOT read personal emails.** You can disconnect your email at any time.
+
+---
+
+### 7. PUBLIC PROFILE
+
+**7.1 What is Public:**
+Your Public Profile at `silentid.co.uk/u/[username]` shows:
+- Display name (e.g., "Sarah M.")
+- Username (e.g., @sarahtrusted)
+- TrustScore
+- Verification badges
+- Account age
+- Number of verified transactions (approximate)
+
+**7.2 What is NOT Public:**
+Your Public Profile does NOT show:
+- Full legal name
+- Email address or phone number
+- Home address or location
+- Date of birth
+- ID documents
+- Raw evidence content
+
+**7.3 Visibility Control:**
+You can hide your Public Profile in Settings. This will prevent others from viewing your profile via link or QR code.
+
+---
+
+### 8. SUBSCRIPTIONS & BILLING
+
+**8.1 Subscription Tiers:**
+- **Free:** Basic features, limited evidence storage (250MB)
+- **Premium (£4.99/month):** Unlimited evidence, advanced analytics, 100GB storage
+- **Pro (£14.99/month):** All Premium features + bulk checks, dispute tools, 500GB storage
+
+**8.2 Payment Processing:**
+All payments are processed by **Stripe**. SilentID does NOT store your credit card details.
+
+**8.3 Billing:**
+Subscriptions are billed monthly and auto-renew unless cancelled. You will be charged on the same day each month.
+
+**8.4 VAT:**
+Prices include UK VAT (20%). VAT invoices are provided by Stripe.
+
+**8.5 Cancellation:**
+You may cancel your subscription at any time via Settings > Subscription > Cancel. Your subscription remains active until the end of the current billing period.
+
+**8.6 No Refunds:**
+We do NOT provide refunds for partial months. If you cancel, you retain access until period end.
+
+**8.7 Payment Failures:**
+If payment fails, you have a 7-day grace period. After 7 days, you will be automatically downgraded to Free.
+
+**8.8 No Pay-to-Win:**
+**Paid subscriptions do NOT increase your TrustScore or override risk/safety systems.** Subscriptions only unlock features like advanced analytics and larger storage.
+
+---
+
+### 9. SAFETY REPORTS & RISK SIGNALS
+
+**9.1 Reporting:**
+You may report safety concerns about other users if you have evidence of:
+- Item not received
+- Fraudulent behaviour
+- Aggressive or threatening conduct
+- Payment issues
+
+**9.2 Evidence Required:**
+Reports must include evidence (screenshots, receipts, messages). SilentID reviews all reports before taking action.
+
+**9.3 False Reporting:**
+Filing false or malicious reports is prohibited and may result in account suspension.
+
+**9.4 Risk Signals:**
+SilentID's automated fraud detection system may flag suspicious activity. Risk signals may result in:
+- Account restrictions
+- Evidence upload disabled
+- Mandatory identity re-verification
+- Account freeze (temporary or permanent)
+
+**9.5 Appeals:**
+If you believe a risk signal or report is incorrect, you may appeal via Settings > Appeals.
+
+---
+
+### 10. PROHIBITED ACTIVITIES
+
+**10.1 You Must NOT:**
+- Create multiple accounts
+- Upload fake, tampered, or fraudulent evidence
+- Impersonate others or create fake profiles
+- Engage in collusion or reputation manipulation
+- Use SilentID for illegal activities (fraud, scams, money laundering)
+- Harass, threaten, defame, or abuse other users or staff
+- Attempt to hack, reverse engineer, or compromise the platform
+- Scrape, copy, or extract data from SilentID without permission
+- Use automated tools (bots, scripts) to access SilentID
+
+**10.2 Consequences:**
+Violation may result in:
+- Warning
+- Account suspension (temporary)
+- Permanent ban
+- Legal action
+- Reporting to law enforcement
+
+---
+
+### 11. INTELLECTUAL PROPERTY
+
+**11.1 SilentID Ownership:**
+All intellectual property in SilentID (software, logos, designs, content, algorithms) belongs to SILENTSALE LTD. You are granted a limited, non-exclusive, revocable licence to use the Service.
+
+**11.2 User Content:**
+You retain ownership of evidence you upload. By uploading, you grant SilentID a worldwide, non-exclusive, royalty-free licence to:
+- Process, store, and display your evidence
+- Use evidence to calculate TrustScore
+- Display evidence on your Public Profile (if applicable)
+
+This licence ends when you delete your account or remove the evidence.
+
+**11.3 Restrictions:**
+You must NOT:
+- Copy, modify, or distribute SilentID's software or content
+- Use SilentID's trademarks or logos without permission
+- Reverse engineer or decompile the app
+
+---
+
+### 12. DATA PROTECTION & PRIVACY
+
+**12.1 Privacy Policy:**
+Your use of SilentID is governed by our **Privacy Policy** (Section 44), which explains:
+- What data we collect
+- How we use it
+- Your rights under UK GDPR
+
+**12.2 Your Rights:**
+You have the right to:
+- **Access** your data (request a copy)
+- **Rectify** inaccurate data
+- **Erase** your data (delete your account)
+- **Restrict** processing
+- **Object** to processing
+- **Port** your data to another service
+
+To exercise your rights, contact privacy@silentid.co.uk.
+
+**12.3 Data Retention:**
+We retain your data for as long as your account is active. After deletion, most data is deleted within 30 days. Some data (anonymised fraud logs) is retained for up to 7 years for legal compliance.
+
+---
+
+### 13. DISCLAIMERS & LIMITATION OF LIABILITY
+
+**13.1 Service "As Is":**
+SilentID is provided **"as is" and "as available"** without warranties of any kind, express or implied, including but not limited to:
+- Merchantability
+- Fitness for a particular purpose
+- Non-infringement
+- Accuracy, reliability, or completeness of TrustScores or user data
+
+**13.2 No Guarantee:**
+SilentID does NOT guarantee:
+- The accuracy or reliability of any user's TrustScore or profile
+- That use of SilentID will prevent fraud or scams
+- Continuous, uninterrupted, or error-free operation
+- That defects will be corrected
+
+**13.3 Limitation of Liability:**
+**To the maximum extent permitted by UK law:**
+
+SILENTSALE LTD is NOT liable for:
+- Indirect, consequential, incidental, or punitive damages
+- Loss of profits, revenue, data, or business opportunities
+- Losses arising from third-party reliance on TrustScores
+- Losses caused by user error, fraud, or misrepresentation
+- Losses caused by internet outages, device failures, or third-party services
+
+**13.4 Maximum Liability:**
+SILENTSALE LTD's total liability to you is limited to the lesser of:
+- The amount you paid to SilentID in the 12 months before the claim; or
+- £100
+
+**13.5 Exceptions:**
+Nothing in these Terms excludes liability for:
+- Death or personal injury caused by negligence
+- Fraud or fraudulent misrepresentation
+- Any other liability that cannot be excluded under UK law
+
+---
+
+### 14. TERMINATION
+
+**14.1 Your Right to Terminate:**
+You may delete your account at any time via Settings > Account > Delete Account. You have a 30-day grace period to cancel deletion.
+
+**14.2 Our Right to Terminate:**
+We may suspend or terminate your account if:
+- You violate these Terms
+- We detect fraudulent or illegal activity
+- We receive a valid legal order
+- You pose a risk to other users or the platform
+
+**14.3 Effect of Termination:**
+Upon termination:
+- Your access to SilentID is immediately revoked
+- Your Public Profile is hidden
+- Your data is deleted within 30 days (except as required by law)
+- Paid subscriptions are non-refundable
+
+---
+
+### 15. DISPUTE RESOLUTION
+
+**15.1 Governing Law:**
+These Terms are governed by the laws of **England and Wales**.
+
+**15.2 Jurisdiction:**
+You agree to the **exclusive jurisdiction** of the courts of England and Wales for any disputes.
+
+**15.3 Informal Resolution:**
+Before filing a legal claim, you agree to attempt informal resolution by contacting legal@silentid.co.uk.
+
+**15.4 No Class Actions:**
+You agree to resolve disputes individually, not as part of a class action or representative proceeding.
+
+---
+
+### 16. CHANGES TO TERMS
+
+**16.1 Updates:**
+We may update these Terms at any time. Material changes will be communicated via:
+- Email notification
+- In-app notification
+- Website posting
+
+**16.2 Continued Use:**
+Continued use of SilentID after changes constitutes acceptance of the new Terms.
+
+**16.3 Disagreement:**
+If you do not agree to changes, you must stop using SilentID and delete your account.
+
+---
+
+### 17. GENERAL PROVISIONS
+
+**17.1 Entire Agreement:**
+These Terms, together with the Privacy Policy and Cookie Policy, constitute the entire agreement between you and SILENTSALE LTD.
+
+**17.2 Severability:**
+If any provision is found invalid, the remaining provisions remain in full effect.
+
+**17.3 No Waiver:**
+Failure to enforce any provision does not constitute a waiver of that provision.
+
+**17.4 Assignment:**
+You may NOT assign these Terms. We may assign them to a successor or affiliate.
+
+**17.5 Force Majeure:**
+We are not liable for delays or failures caused by events beyond our reasonable control (e.g., natural disasters, pandemics, government actions, internet outages).
+
+**17.6 Contact:**
+For questions about these Terms, contact:
+**SILENTSALE LTD**
+Email: legal@silentid.co.uk
+Website: www.silentid.co.uk
+
+---
+
+**END OF CONSUMER TERMS OF USE**
+
+---
+
+## SECTION 44: SILENTID PRIVACY POLICY (UK GDPR-ALIGNED)
+
+**Last Updated:** [Insert date]
+**Effective Date:** [Insert date]
+**Version:** 1.0
+
+This Privacy Policy explains how **SILENTSALE LTD** (Company No. 16457502) ("**SilentID**", "**we**", "**us**", "**our**") collects, uses, stores, and protects your personal data when you use the SilentID service.
+
+---
+
+### 1. INTRODUCTION
+
+**1.1 Our Commitment:**
+SilentID is committed to protecting your privacy and complying with the **UK General Data Protection Regulation (UK GDPR)** and the **Data Protection Act 2018**.
+
+**1.2 Data Controller:**
+SILENTSALE LTD is the data controller responsible for your personal data.
+
+**1.3 Contact:**
+For privacy questions, contact:
+**Data Protection Officer**
+Email: dpo@silentid.co.uk
+Website: www.silentid.co.uk
+
+**1.4 ICO Registration:**
+ICO Registration Number: [To be inserted upon registration]
+
+---
+
+### 2. WHAT DATA WE COLLECT
+
+**2.1 Account Information:**
+When you create an account, we collect:
+- **Email address** (required)
+- **Username** (chosen by you, publicly visible)
+- **Display name** (e.g., "Sarah M." - publicly visible)
+- **Phone number** (optional)
+- **Date of Birth** (from identity verification - NOT publicly visible)
+
+**2.2 Authentication Data:**
+Depending on your login method:
+- **Apple Sign-In:** Apple User ID
+- **Google Sign-In:** Google User ID
+- **Passkey:** Public key stored on our servers (private key stays on your device)
+- **Email OTP:** No additional data (one-time codes are not stored)
+
+**We do NOT store passwords. SilentID is 100% passwordless.**
+
+**2.3 Identity Verification Data (via Stripe):**
+When you verify your identity:
+- **Stripe Verification Reference ID** (we store ONLY the reference, NOT your ID documents)
+- **Verification Status** (Verified, Pending, Failed)
+- **Timestamp** of verification
+
+**ID documents and selfies are stored by Stripe, NOT by SilentID.** Stripe's handling of this data is governed by Stripe's privacy policy.
+
+**2.4 Evidence Data:**
+If you upload evidence:
+- **Email Receipts:** Date, amount, platform, item description, buyer/seller role (NOT full email content)
+- **Screenshots:** Image files, OCR-extracted text, integrity scores
+- **Public Profile URLs:** Marketplace username, ratings, reviews, join date (scraped from public pages)
+
+**2.5 Device & Usage Data:**
+- **Device Information:** Device model, operating system, browser type
+- **Device Fingerprint:** Hashed identifier for fraud prevention
+- **IP Address:** For security, fraud detection, and geo-location (not exact location)
+- **Login History:** Timestamps, device, location (city/country)
+- **App Usage:** Features used, screens viewed (anonymous analytics)
+
+**2.6 Payment Data:**
+- **Stripe Customer ID** (for subscription billing)
+- **Subscription Tier** (Free, Premium, Pro)
+- **Payment History** (stored by Stripe, not SilentID)
+
+**We do NOT store your credit card details.** Stripe handles all payment processing.
+
+**2.7 Risk & Safety Data:**
+- **RiskSignals:** Fraud detection signals (device patterns, evidence integrity flags)
+- **Safety Reports:** Reports you file or reports filed against you (including evidence)
+
+---
+
+### 3. LEGAL BASIS FOR PROCESSING
+
+Under UK GDPR, we must have a lawful basis for processing your personal data. We rely on:
+
+| Data Type | Lawful Basis | Purpose |
+|-----------|--------------|---------|
+| Account information (email, username) | **Contract** + **Legitimate Interest** | Provide SilentID service, prevent fraud |
+| Authentication data | **Contract** | Secure account access |
+| Identity verification (Stripe result) | **Legitimate Interest** | Prevent fake accounts, fraud |
+| Evidence (receipts, screenshots, profiles) | **Consent** + **Legitimate Interest** | Build TrustScore, fraud prevention |
+| Device & usage data | **Legitimate Interest** | Security, fraud detection, service improvement |
+| Payment data | **Contract** | Process subscriptions |
+| Risk & safety data | **Legitimate Interest** + **Legal Obligation** | Fraud prevention, safety, legal compliance |
+
+**Consent:**
+Where we rely on consent (e.g., email inbox scanning), you can withdraw consent at any time via Settings.
+
+---
+
+### 4. HOW WE USE YOUR DATA
+
+**4.1 Service Provision:**
+- Create and manage your account
+- Calculate your TrustScore
+- Display your Public Profile
+- Store and display your evidence
+- Process subscriptions
+
+**4.2 Security & Fraud Prevention:**
+- Detect fake accounts and fraudulent activity
+- Monitor for suspicious device patterns
+- Verify evidence integrity
+- Respond to safety reports
+
+**4.3 Communication:**
+- Send account notifications (login alerts, security warnings)
+- Send subscription emails (payment confirmations, renewal reminders)
+- Respond to support requests
+- Send service updates (important changes to Terms or Privacy Policy)
+
+**We do NOT send marketing emails without your explicit consent.**
+
+**4.4 Service Improvement:**
+- Analyse usage patterns (anonymous analytics)
+- Improve TrustScore algorithms
+- Test new features
+
+**4.5 Legal Compliance:**
+- Comply with legal obligations (e.g., responding to valid legal orders)
+- Enforce our Terms of Use
+- Protect our rights and interests
+
+---
+
+### 5. WHO WE SHARE DATA WITH
+
+**5.1 Third-Party Service Providers:**
+
+| Provider | Purpose | Data Shared | Location |
+|----------|---------|-------------|----------|
+| **Stripe** | Identity verification, payment processing | Email, name, DOB, ID documents (for verification only) | EU/UK |
+| **Microsoft Azure** | Database hosting, file storage | All user data (encrypted) | UK |
+| **Email Provider** (SendGrid or AWS SES) | Send OTP codes, notifications | Email address | EU |
+| **Azure Cognitive Services** | Screenshot OCR, image verification | Screenshot images (no ID documents) | UK/EU |
+
+**5.2 Legal Disclosures:**
+We may disclose your data if required by law or in response to:
+- Valid court orders or subpoenas
+- Law enforcement requests (with proper legal basis)
+- Protecting our rights, safety, or property
+
+**5.3 Business Transfers:**
+If SILENTSALE LTD is acquired or merged, your data may be transferred to the new owner (you will be notified).
+
+**5.4 We Do NOT:**
+- Sell your data to third parties
+- Share your data for advertising or marketing purposes
+- Provide your data to partner platforms (unless you explicitly request it)
+
+---
+
+### 6. DATA RETENTION
+
+**6.1 Active Accounts:**
+We retain your data for as long as your account is active.
+
+**6.2 After Account Deletion:**
+- **Most data:** Deleted within **30 days**
+- **Anonymised fraud logs:** Retained for **7 years** (UK legal requirement for fraud prevention)
+- **Financial records (Stripe):** Retained for **7 years** (UK tax law requirement)
+
+**6.3 Specific Retention Periods:**
+- **Authentication logs:** 90 days (active), 2 years (archived)
+- **Evidence files:** Deleted 30 days after removal
+- **Safety reports:** 7 years (legal compliance)
+- **Admin audit logs:** 7 years (immutable, anonymised after account deletion)
+
+---
+
+### 7. YOUR RIGHTS UNDER UK GDPR
+
+**7.1 Right of Access:**
+You can request a copy of all personal data we hold about you.
+
+**7.2 Right to Rectification:**
+You can correct inaccurate or incomplete data.
+
+**7.3 Right to Erasure ("Right to be Forgotten"):**
+You can request deletion of your data. We will delete it within 30 days, except where:
+- We have a legal obligation to retain it (e.g., fraud logs, financial records)
+- It's needed to defend legal claims
+
+**7.4 Right to Restrict Processing:**
+You can ask us to limit how we use your data (e.g., stop using it for certain purposes).
+
+**7.5 Right to Object:**
+You can object to processing based on legitimate interest (e.g., fraud detection). We will stop unless we have compelling reasons.
+
+**7.6 Right to Data Portability:**
+You can request your data in a machine-readable format (JSON) to transfer to another service.
+
+**7.7 Right to Withdraw Consent:**
+If processing is based on consent (e.g., email scanning), you can withdraw consent at any time.
+
+**7.8 How to Exercise Your Rights:**
+Email: **privacy@silentid.co.uk**
+In-app: **Settings > Privacy > Request My Data**
+
+We will respond within **30 days**.
+
+---
+
+### 8. DATA SECURITY
+
+**8.1 Security Measures:**
+We protect your data using:
+- **Encryption:** Data encrypted in transit (TLS) and at rest (AES-256)
+- **Access Controls:** Role-based access, admin authentication
+- **Device Fingerprinting:** Detect unauthorised access
+- **Automated Monitoring:** Suspicious activity alerts
+- **Regular Security Audits**
+
+**8.2 No Passwords:**
+SilentID never stores passwords. Passwordless authentication eliminates the #1 cause of data breaches.
+
+**8.3 Incident Response:**
+If a data breach occurs, we will:
+- Notify the ICO within **72 hours** (if required by law)
+- Notify affected users within **7 days** (if high risk)
+- Take immediate action to contain the breach
+
+---
+
+### 9. COOKIES & TRACKING
+
+**9.1 What Cookies We Use:**
+SilentID uses **minimal cookies**:
+- **Session Cookies:** Keep you logged in (essential, cannot be disabled)
+- **Analytics Cookies:** Anonymous usage statistics (optional, can be disabled)
+
+**9.2 No Advertising Cookies:**
+We do NOT use advertising or tracking cookies.
+
+**9.3 Managing Cookies:**
+You can disable non-essential cookies via Settings > Privacy > Cookie Preferences.
+
+**Full Cookie Policy:** See Section 45.
+
+---
+
+### 10. CHILDREN'S PRIVACY
+
+**10.1 Age Restriction:**
+SilentID is **NOT intended for users under 18**. We do not knowingly collect data from children.
+
+**10.2 Parental Discovery:**
+If we discover a user is under 18, we will immediately delete their account and data.
+
+---
+
+### 11. INTERNATIONAL TRANSFERS
+
+**11.1 Data Location:**
+Your data is stored in **UK and EU data centres** (Microsoft Azure - UK South region).
+
+**11.2 Transfers Outside UK/EU:**
+We do NOT routinely transfer data outside the UK/EU. If necessary (e.g., for support services), we ensure:
+- **Adequate protection** (UK GDPR-approved mechanisms)
+- **Standard Contractual Clauses** with third parties
+
+---
+
+### 12. AUTOMATED DECISION-MAKING
+
+**12.1 TrustScore Calculation:**
+Your TrustScore is calculated by **automated algorithms** based on:
+- Identity verification status
+- Evidence quality and quantity
+- Safety reports
+- Account behaviour
+
+**12.2 Right to Human Review:**
+If you believe your TrustScore is incorrect, you can:
+- Appeal via Settings > Appeals
+- Request human admin review
+
+**12.3 Risk Signals:**
+Automated fraud detection may flag suspicious activity. You can appeal via Settings > Risk Status.
+
+---
+
+### 13. CHANGES TO THIS PRIVACY POLICY
+
+**13.1 Updates:**
+We may update this Privacy Policy at any time. Material changes will be communicated via:
+- Email notification
+- In-app notification
+- Website posting
+
+**13.2 Continued Use:**
+Continued use of SilentID after changes constitutes acceptance.
+
+---
+
+### 14. COMPLAINTS
+
+**14.1 Contact Us First:**
+If you have concerns about how we handle your data, please contact:
+**dpo@silentid.co.uk**
+
+**14.2 ICO Complaint:**
+If unresolved, you may complain to the **Information Commissioner's Office (ICO)**:
+Website: ico.org.uk
+Phone: 0303 123 1113
+Address: Information Commissioner's Office, Wycliffe House, Water Lane, Wilmslow, Cheshire SK9 5AF
+
+---
+
+### 15. CONTACT
+
+**SILENTSALE LTD**
+**Data Protection Officer:** dpo@silentid.co.uk
+**Privacy Enquiries:** privacy@silentid.co.uk
+**Website:** www.silentid.co.uk
+
+---
+
+**END OF PRIVACY POLICY**
+
+---
+
+## SECTION 45: SILENTID COOKIE & TRACKING POLICY
+
+**Last Updated:** [Insert date]
+**Effective Date:** [Insert date]
+**Version:** 1.0
+
+This Cookie Policy explains how **SILENTSALE LTD** ("**SilentID**", "**we**", "**us**", "**our**") uses cookies and similar tracking technologies when you use the SilentID mobile app and website.
+
+---
+
+### 1. WHAT ARE COOKIES?
+
+**1.1 Definition:**
+Cookies are small text files stored on your device (phone, tablet, computer) when you visit a website or use an app. They help websites remember your preferences and improve your experience.
+
+**1.2 Similar Technologies:**
+We also use:
+- **Local Storage:** Data stored in your browser or app
+- **Session Tokens:** Temporary authentication tokens
+- **Device Fingerprints:** Unique device identifiers for security
+
+---
+
+### 2. COOKIES WE USE
+
+**2.1 Essential Cookies (Cannot be Disabled):**
+These cookies are necessary for SilentID to function.
+
+| Cookie Name | Purpose | Duration |
+|-------------|---------|----------|
+| `session_token` | Keep you logged in | 7 days |
+| `device_fingerprint` | Detect unauthorised access | Permanent |
+| `csrf_token` | Prevent cross-site request forgery attacks | Session |
+
+**2.2 Analytics Cookies (Optional):**
+These cookies help us understand how users use SilentID.
+
+| Cookie Name | Purpose | Duration |
+|-------------|---------|----------|
+| `analytics_id` | Anonymous usage statistics | 2 years |
+| `feature_usage` | Track which features are used | 1 year |
+
+**Analytics cookies are:**
+- **Anonymous** (not linked to your account)
+- **Optional** (can be disabled in Settings)
+
+**2.3 Cookies We Do NOT Use:**
+- ❌ Advertising cookies
+- ❌ Third-party tracking cookies
+- ❌ Social media cookies
+
+---
+
+### 3. HOW WE USE COOKIES
+
+**3.1 Security & Authentication:**
+- Keep you logged in securely
+- Detect suspicious login attempts
+- Prevent fraud and account takeover
+
+**3.2 Service Functionality:**
+- Remember your preferences (e.g., language, display settings)
+- Store temporary data during your session
+
+**3.3 Analytics & Improvement:**
+- Understand how users navigate the app
+- Identify features that need improvement
+- Measure performance
+
+---
+
+### 4. MANAGING COOKIES
+
+**4.1 Mobile App:**
+You can manage cookies via:
+**Settings > Privacy > Cookie Preferences**
+
+**4.2 Website:**
+You can manage cookies via your browser settings:
+- **Chrome:** Settings > Privacy and Security > Cookies
+- **Safari:** Preferences > Privacy > Manage Website Data
+- **Firefox:** Settings > Privacy & Security > Cookies
+
+**4.3 Disabling Cookies:**
+If you disable essential cookies, you will NOT be able to log in or use SilentID.
+
+If you disable analytics cookies, your experience will not be affected (we just won't collect anonymous usage data).
+
+---
+
+### 5. THIRD-PARTY COOKIES
+
+**5.1 Stripe:**
+When you make a payment, Stripe may set cookies for fraud prevention and payment processing. These are governed by Stripe's privacy policy.
+
+**5.2 Azure:**
+Our hosting provider (Microsoft Azure) may set cookies for performance monitoring. These are governed by Microsoft's privacy policy.
+
+**5.3 No Advertising Networks:**
+We do NOT use third-party advertising networks or tracking services.
+
+---
+
+### 6. DATA PROTECTION
+
+**6.1 Cookie Data:**
+Cookie data is subject to the same protections as other personal data (see Privacy Policy, Section 44).
+
+**6.2 Encryption:**
+Session tokens and authentication cookies are encrypted.
+
+**6.3 Retention:**
+Cookies are deleted when they expire or when you log out (for session cookies).
+
+---
+
+### 7. CHANGES TO THIS POLICY
+
+**7.1 Updates:**
+We may update this Cookie Policy at any time. Changes will be posted on this page.
+
+**7.2 Notification:**
+Material changes will be communicated via email or in-app notification.
+
+---
+
+### 8. CONTACT
+
+For questions about cookies, contact:
+**SILENTSALE LTD**
+Email: privacy@silentid.co.uk
+Website: www.silentid.co.uk
+
+---
+
+**END OF COOKIE POLICY**
+
+---
+
+## SECTION 46: ABOUT SILENTID – ABOUT US / LEGAL IMPRINT
+
+**Last Updated:** [Insert date]
+
+---
+
+### WHO WE ARE
+
+**SilentID** is a passwordless digital trust identity platform that helps people build portable, evidence-based reputations across marketplaces, dating apps, rental platforms, and community groups.
+
+We believe that **honest people should rise, and scammers should fail.**
+
+---
+
+### OUR MISSION
+
+**To create a safer internet** where trust is portable, verifiable, and transparent.
+
+SilentID empowers users to:
+- Verify their identity **once** (via Stripe Identity)
+- Build a **TrustScore (0-1000)** based on real evidence
+- Share their trust profile **everywhere** they trade or interact online
+
+---
+
+### WHAT MAKES US DIFFERENT
+
+**1. 100% Passwordless:**
+SilentID **never** uses passwords. We use Apple Sign-In, Google Sign-In, Passkeys, and Email OTP for maximum security.
+
+**2. Privacy-First:**
+We **do NOT store** your ID documents or passwords. Identity verification is handled by Stripe, and we store only the verification result.
+
+**3. Evidence-Based Trust:**
+TrustScores are built on **real evidence**:
+- Email receipts from marketplaces
+- Screenshots of reviews and ratings
+- Links to your public seller profiles
+
+**4. Bank-Grade Security:**
+SilentID is designed with the same security standards as financial institutions.
+
+---
+
+### OUR VALUES
+
+- **Trust:** We are transparent about how TrustScores are calculated.
+- **Safety:** We prioritise fraud prevention and user protection.
+- **Privacy:** We minimise data collection and protect what we do collect.
+- **Fairness:** No pay-to-win. Paid subscriptions do NOT increase TrustScores.
+
+---
+
+### COMPANY INFORMATION
+
+**Legal Name:** SILENTSALE LTD
+**Company Number:** 16457502
+**Registered in:** England & Wales
+**Registered Office:** [Insert registered address]
+**Trading As:** SilentID
+**VAT Number:** [To be inserted if VAT-registered]
+
+**Contact:**
+Website: www.silentid.co.uk
+Email: hello@silentid.co.uk
+Support: support@silentid.co.uk
+Legal: legal@silentid.co.uk
+Privacy: dpo@silentid.co.uk
+
+---
+
+### REGULATORY COMPLIANCE
+
+**Data Protection:**
+ICO Registration Number: [To be inserted]
+We comply with UK GDPR and the Data Protection Act 2018.
+
+**Payment Processing:**
+Payments are processed by Stripe, a regulated payment service provider. SILENTSALE LTD is NOT a payment service provider.
+
+---
+
+### WHAT WE ARE NOT
+
+SilentID is **NOT**:
+- A credit reference agency
+- A background check service
+- A financial institution or bank
+- An insurance provider
+- A marketplace or transaction platform
+- A guarantee of trustworthiness
+
+**SilentID provides trust signals to help you make safer decisions. We do not guarantee outcomes or verify accuracy of third-party information.**
+
+---
+
+### OUR TEAM
+
+SilentID is built by a small team in the UK dedicated to making the internet safer for everyone.
+
+We're always looking for talented people to join us. If you're passionate about trust, security, and user privacy, get in touch: careers@silentid.co.uk
+
+---
+
+### GET IN TOUCH
+
+**Support:**
+If you need help, visit our Help Center or email support@silentid.co.uk
+
+**Press & Media:**
+For press enquiries, email press@silentid.co.uk
+
+**Partnerships:**
+Interested in integrating SilentID into your platform? Email partnerships@silentid.co.uk
+
+**Legal:**
+For legal matters, email legal@silentid.co.uk
+
+---
+
+### LEGAL DOCUMENTS
+
+- **Terms of Use:** Section 43
+- **Privacy Policy:** Section 44
+- **Cookie Policy:** Section 45
+
+---
+
+### COPYRIGHT
+
+© 2025 SILENTSALE LTD. All rights reserved.
+
+**SilentID**, the SilentID logo, and **"Honest people rise. Scammers fail."** are trademarks of SILENTSALE LTD.
+
+---
+
+**END OF ABOUT US / LEGAL IMPRINT**
+
+---
 ## END OF MASTER SPECIFICATION
 
 This document contains the complete, authoritative specification for SilentID.
@@ -4691,164 +9661,36 @@ This document contains the complete, authoritative specification for SilentID.
 - **Section 18:** Domain Structure (Official Configuration)
 - **Section 19:** SilentID Help Center System (Auto-Generated Support Content)
 - **Section 20:** Critical System Requirements (Missing Items)
-- **Section 21:** SilentID Landing Page (Sync Rules & Specification) — NEW
+- **Section 21:** SilentID Landing Page (Sync Rules & Specification)
+- **Section 22:** Partner TrustSignal API (External Integration)
+- **Section 23:** QR Trust Passport System
+- **Section 24:** TrustScore Appeal & Review System
+- **Section 25:** Risk & Anomaly Signals (Detailed Specification)
+- **Section 26:** Evidence Integrity Engine
+- **Section 27:** Evidence Deletion & Evidence Lifecycle
+- **Section 28:** Admin Roles, Permissions & Audit Logging
+- **Section 29:** Security Alerts & Notifications
+- **Section 30:** Web & Desktop Access Rules
+- **Section 31:** Internationalisation (i18n) Plan
+- **Section 32:** Data Retention & Privacy Durations
+- **Section 33:** Legal Documents Plan (T&Cs, Privacy, Cookies)
+- **Section 34:** Performance, Rate Limiting & Scalability Requirements
+- **Section 35:** Backup, Resilience & Disaster Recovery
+- **Section 36:** Security Incident & Breach Response
+- **Section 37:** Fraud Case Bundling & Cross-Platform Pattern Detection
+- **Section 38:** Business / Professional Profiles (Future Extension)
+- **Section 39:** SilentID App UI — Profile, Settings & Navigation Rules
+- **Section 40:** UI Info Points & In-App Education System
+- **Section 41:** AI Architecture & Model Usage (Azure-Hosted)
+- **Section 42:** SilentID Legal & Compliance Overview (Consumer) — NEW (Publication-Ready)
+- **Section 43:** SilentID Consumer Terms of Use — NEW (Publication-Ready)
+- **Section 44:** SilentID Privacy Policy (UK GDPR-Aligned) — NEW (Publication-Ready)
+- **Section 45:** SilentID Cookie & Tracking Policy — NEW (Publication-Ready)
+- **Section 46:** About SilentID – About Us / Legal Imprint — NEW (Publication-Ready)
 
-**Next Steps:**
-1. Answer the 18 mandatory questions from Section 13
-2. Confirm readiness to proceed
-3. Begin Phase 0: Environment Setup
 
-**Document Version:** 1.4.0
-**Last Updated:** 2025-11-21
+
+**Document Version:** 1.8.0
+**Last Updated:** 2025-11-23
 **Created:** 2025-11-21
 **Purpose:** Master reference for SilentID development
-
----
-- You are an ORCHESTRATOR and TEAM LEAD for the SilentID project.
-
-Your job is to spin up and coordinate FOUR specialist agents that work IN PARALLEL using all available MCP tools (filesystem, code index, git, http, playwright, etc.).
-
-Very important:
-- SilentID already has some code and specs.
-- Before changing anything, agents MUST check what is already implemented and documented.
-- Agents must not duplicate work; they must extend and improve what exists.
-
-====================
-PROJECT CONTEXT
-====================
-
-Product: SilentID – a standalone, bank-grade, passwordless “trust passport” app.
-
-Key points:
-- 100% PASSWORDLESS. No passwords anywhere in code or UI.
-- Allowed auth methods ONLY:
-  1) Apple Sign-In
-  2) Google Sign-In
-  3) Passkeys (WebAuthn / FIDO2)
-  4) Email OTP (6-digit code)
-
-- Backend: ASP.NET Core Web API
-- Database: PostgreSQL (local DB in dev)
-- Frontend: Flutter (iOS + Android)
-- Identity verification: Stripe Identity
-- Subscriptions: Stripe Billing (Free / Premium / Pro)
-- Hosting: local dev for now; Azure later
-- Critical: Anti-duplicate-account logic (one real person = one SilentID account).
-
-Use the existing repo and docs as the source of truth. Wherever possible, follow the design already captured in claude.md / ARCHITECTURE files, and only change them deliberately.
-
-====================
-AGENT SETUP
-====================
-
-Create and coordinate these 4 agents:
-
-1) AGENT A – ARCHITECT & COORDINATOR
-   - Responsibilities:
-     - First, use filesystem/code-index MCPs to scan the repo:
-       - Find existing docs (claude.md, ARCHITECTURE.md, PRDs, etc.)
-       - Find existing backend and frontend structure.
-       - Produce a concise summary of “what is already implemented” in a central doc.
-     - Maintain and update a single architecture file (e.g. /docs/ARCHITECTURE.md).
-     - Maintain a shared task board (e.g. /docs/TASK_BOARD.md) with small, clear tickets for Agents B, C, D.
-     - Define and keep API contracts and data models consistent between backend and frontend.
-     - Resolve conflicts if agents disagree (Architect makes final decision, updates docs).
-     - Regularly ask other agents to report progress and integrate their findings into the docs.
-
-2) AGENT B – BACKEND & SECURITY ENGINEER
-   - Responsibilities:
-     - Use code-index/filesystem MCPs to examine existing ASP.NET backend and DB migrations.
-       - Identify what endpoints, models, and auth flows already exist.
-       - Do NOT re-implement features that are already there; extend/refactor them if needed.
-     - Enforce passwordless auth (Apple, Google, Passkey, OTP) and remove any password-related remnants if present.
-     - Implement and/or refine:
-       - User model (no password fields).
-       - IdentityVerification (Stripe Identity).
-       - Evidence models and endpoints (receipts, screenshots, profile links).
-       - Mutual transaction verification APIs.
-       - TrustScore and RiskSignals logic.
-       - Anti-duplicate-account logic (email as primary anchor, linking providers, device/IP checks).
-     - Keep DB schema in sync with architecture docs and update migrations when needed.
-     - After each change, write a short entry in /docs/BACKEND_CHANGELOG.md describing:
-       - What changed
-       - Which files were touched
-       - How to test it (exact HTTP calls).
-
-3) AGENT C – FRONTEND & UX ENGINEER (FLUTTER)
-   - Responsibilities:
-     - Use filesystem/code-index MCPs to inspect the existing Flutter project:
-       - What screens, routes, and services exist already?
-       - What auth UI is already wired?
-     - Do not create duplicate screens; extend or clean up what’s already there.
-     - Implement/complete:
-       - Onboarding + auth flows for Apple, Google, Passkey, and Email OTP only.
-       - Bottom navigation with 4 tabs: Home, Evidence, Verify, Settings.
-       - Real API integration for login, TrustScore, evidence lists, mutual verifications, and settings.
-     - Apply the brand:
-       - Primary colour: royal purple #5A3EB8
-       - Bank-grade, secure look (no cartoonish styles).
-     - Document all added/updated screens in /docs/FRONTEND_NOTES.md, including:
-       - Screen name
-       - Route
-       - API dependencies
-       - Current TODOs.
-
-4) AGENT D – QA, TEST & AUTOMATION
-   - Responsibilities:
-     - Use MCP tools (http, playwright/browser, code-index, etc.) to:
-       - Probe backend endpoints and validate responses.
-       - Confirm auth flows behave correctly (no passwords; only allowed methods).
-       - Check for duplicate-account edge cases where the same email/provider could create multiple users.
-     - Maintain /docs/QA_CHECKLIST.md with:
-       - Test cases
-       - Manual and automated checks
-       - Bugs found and which agent should fix them.
-     - Ensure that each major feature added by B and C has at least:
-       - One happy-path test
-       - One basic failure/edge-case test
-     - Alert Architect (Agent A) when behaviour deviates from the spec so docs and code can be reconciled.
-
-====================
-WORKING MODE
-====================
-
-- All four agents must run CONCURRENTLY and COOPERATIVELY.
-- Before starting new work, each agent must ALWAYS:
-  - Check existing code and docs using MCP tools.
-  - Confirm whether the feature already exists or partially exists.
-  - Only then decide whether to extend, refactor, or add.
-
-- Agents must frequently sync via:
-  - ARCHITECTURE.md
-  - TASK_BOARD.md
-  - BACKEND_CHANGELOG.md
-  - FRONTEND_NOTES.md
-  - QA_CHECKLIST.md
-
-- No agent is allowed to make major changes that contradict ARCHITECTURE.md without:
-  - Updating the doc
-  - Informing others via the task board
-
-====================
-FIRST STEPS
-====================
-
-1. Architect (Agent A):
-   - Scan repo and docs via MCP.
-   - Summarise current status: what backend, frontend, and infra already exist.
-   - Create or update /docs/ARCHITECTURE.md and /docs/TASK_BOARD.md.
-
-2. Backend (Agent B), Frontend (Agent C), QA (Agent D):
-   - Each scans existing code with code-index/filesystem MCPs.
-   - Each writes a short “CURRENT STATE” section into their own doc:
-     - BACKEND_CHANGELOG.md (overview at top)
-     - FRONTEND_NOTES.md (overview at top)
-     - QA_CHECKLIST.md (what can already be tested).
-
-3. Architect then:
-   - Breaks next tasks into small items.
-   - Assigns them on TASK_BOARD.md to B, C, D.
-   - Ensures no duplication of effort.
-
-Proceed now as the orchestrator: create and coordinate these 4 agents, run them in parallel, and start with the discovery phase (what already exists) before implementing new features.
- recconect any mcp if they are not connected and you need to use them. it is a must you need to recconect the mcp servers if they are disconnected.

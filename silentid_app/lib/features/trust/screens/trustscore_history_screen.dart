@@ -153,7 +153,7 @@ class _TrustScoreHistoryScreenState extends State<TrustScoreHistoryScreen> {
       return Container(
         height: 250,
         decoration: BoxDecoration(
-          color: AppTheme.softLilac.withOpacity(0.3),
+          color: AppTheme.softLilac.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Center(
@@ -195,7 +195,7 @@ class _TrustScoreHistoryScreenState extends State<TrustScoreHistoryScreen> {
         border: Border.all(color: AppTheme.neutralGray300),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -209,7 +209,7 @@ class _TrustScoreHistoryScreenState extends State<TrustScoreHistoryScreen> {
             horizontalInterval: 50,
             getDrawingHorizontalLine: (value) {
               return FlLine(
-                color: AppTheme.neutralGray300.withOpacity(0.5),
+                color: AppTheme.neutralGray300.withValues(alpha: 0.5),
                 strokeWidth: 1,
               );
             },
@@ -281,7 +281,7 @@ class _TrustScoreHistoryScreenState extends State<TrustScoreHistoryScreen> {
               isCurved: true,
               gradient: LinearGradient(
                 colors: [
-                  AppTheme.primaryPurple.withOpacity(0.8),
+                  AppTheme.primaryPurple.withValues(alpha: 0.8),
                   AppTheme.primaryPurple,
                 ],
               ),
@@ -302,8 +302,8 @@ class _TrustScoreHistoryScreenState extends State<TrustScoreHistoryScreen> {
                 show: true,
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.primaryPurple.withOpacity(0.2),
-                    AppTheme.primaryPurple.withOpacity(0.05),
+                    AppTheme.primaryPurple.withValues(alpha: 0.2),
+                    AppTheme.primaryPurple.withValues(alpha: 0.05),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,

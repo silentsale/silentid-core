@@ -195,7 +195,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppTheme.softLilac.withOpacity(0.3),
+                        color: AppTheme.softLilac.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -247,7 +247,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppTheme.neutralGray300.withOpacity(0.2),
+            color: AppTheme.neutralGray300.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppTheme.neutralGray300),
           ),
@@ -275,7 +275,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppTheme.successGreen.withOpacity(0.1),
+                    color: AppTheme.successGreen.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(

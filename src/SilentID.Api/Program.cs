@@ -48,6 +48,9 @@ builder.Services.AddScoped<IEvidenceService, EvidenceService>();
 builder.Services.AddScoped<ITrustScoreService, TrustScoreService>();
 builder.Services.AddScoped<IMutualVerificationService, MutualVerificationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+builder.Services.AddScoped<IRiskEngineService, RiskEngineService>();
 
 // Add JWT authentication
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
@@ -86,7 +89,31 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+// Custom authorization policies (Section 28: Admin Roles & Permissions)
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireAssertion(context =>
+        {
+            // Extract user ID from token
+            var userIdClaim = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return false;
+
+            // Check if user has Admin AccountType
+            var httpContext = context.Resource as Microsoft.AspNetCore.Http.HttpContext;
+            if (httpContext == null)
+                return false;
+
+            // Get DbContext from request services
+            var dbContext = httpContext.RequestServices.GetRequiredService<SilentID.Api.Data.SilentIdDbContext>();
+
+            // Check user AccountType (synchronous check - consider caching in production)
+            var user = dbContext.Users.FirstOrDefault(u => u.Id == userId);
+            return user != null && user.AccountType == SilentID.Api.Models.AccountType.Admin;
+        })
+    );
+});
 
 // Add CORS for Flutter development
 builder.Services.AddCors(options =>

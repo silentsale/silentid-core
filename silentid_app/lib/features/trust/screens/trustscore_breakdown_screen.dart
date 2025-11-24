@@ -188,7 +188,7 @@ class _TrustScoreBreakdownScreenState
         gradient: LinearGradient(
           colors: [
             AppTheme.primaryPurple,
-            AppTheme.primaryPurple.withOpacity(0.8),
+            AppTheme.primaryPurple.withValues(alpha: 0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -196,7 +196,7 @@ class _TrustScoreBreakdownScreenState
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryPurple.withOpacity(0.3),
+            color: AppTheme.primaryPurple.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -255,7 +255,7 @@ class _TrustScoreBreakdownScreenState
         border: Border.all(color: AppTheme.neutralGray300),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

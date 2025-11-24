@@ -107,7 +107,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppTheme.dangerRed.withOpacity(0.1),
+                color: AppTheme.dangerRed.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -250,10 +250,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.dangerRed.withOpacity(0.05),
+        color: AppTheme.dangerRed.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.dangerRed.withOpacity(0.2),
+          color: AppTheme.dangerRed.withValues(alpha: 0.2),
         ),
       ),
       child: Text(

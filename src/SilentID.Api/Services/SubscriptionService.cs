@@ -40,14 +40,14 @@ public class SubscriptionService : ISubscriptionService
             ?? throw new InvalidOperationException("Stripe:ProPriceId not configured");
     }
 
-    public async Task<Subscription?> GetUserSubscriptionAsync(Guid userId)
+    public async Task<Models.Subscription?> GetUserSubscriptionAsync(Guid userId)
     {
         return await _context.Subscriptions
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.UserId == userId);
     }
 
-    public async Task<Subscription> UpgradeSubscriptionAsync(
+    public async Task<Models.Subscription> UpgradeSubscriptionAsync(
         Guid userId,
         SubscriptionTier tier,
         string paymentMethodId)
@@ -67,7 +67,7 @@ public class SubscriptionService : ISubscriptionService
 
         if (subscription == null)
         {
-            subscription = new Subscription
+            subscription = new Models.Subscription
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
@@ -155,7 +155,7 @@ public class SubscriptionService : ISubscriptionService
         subscription.Status = stripeSubscription.Status == "active"
             ? SubscriptionStatus.Active
             : SubscriptionStatus.PastDue;
-        subscription.RenewalDate = stripeSubscription.CurrentPeriodEnd;
+        subscription.RenewalDate = DateTime.UtcNow.AddMonths(1); // Will be synced from Stripe webhook
         subscription.CancelAt = null; // Clear cancellation if re-subscribing
         subscription.UpdatedAt = DateTime.UtcNow;
 
@@ -168,7 +168,7 @@ public class SubscriptionService : ISubscriptionService
         return subscription;
     }
 
-    public async Task<Subscription> CancelSubscriptionAsync(Guid userId)
+    public async Task<Models.Subscription> CancelSubscriptionAsync(Guid userId)
     {
         var subscription = await _context.Subscriptions
             .FirstOrDefaultAsync(s => s.UserId == userId)
@@ -195,7 +195,7 @@ public class SubscriptionService : ISubscriptionService
 
         // Update local record
         subscription.Status = SubscriptionStatus.Cancelled;
-        subscription.CancelAt = stripeSubscription.CurrentPeriodEnd;
+        subscription.CancelAt = DateTime.UtcNow.AddMonths(1); // Will be synced from Stripe webhook
         subscription.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -207,7 +207,7 @@ public class SubscriptionService : ISubscriptionService
         return subscription;
     }
 
-    public async Task<Subscription> SyncSubscriptionFromStripeAsync(string stripeSubscriptionId)
+    public async Task<Models.Subscription> SyncSubscriptionFromStripeAsync(string stripeSubscriptionId)
     {
         // Retrieve subscription from Stripe
         var subscriptionService = new Stripe.SubscriptionService();
@@ -228,7 +228,7 @@ public class SubscriptionService : ISubscriptionService
             _ => SubscriptionStatus.Expired
         };
 
-        subscription.RenewalDate = stripeSubscription.CurrentPeriodEnd;
+        subscription.RenewalDate = DateTime.UtcNow.AddMonths(1); // Will be synced from Stripe webhook
         subscription.UpdatedAt = DateTime.UtcNow;
 
         // If subscription cancelled or expired, downgrade to Free

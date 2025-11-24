@@ -26,21 +26,24 @@ class SafetyReport {
   });
 
   factory SafetyReport.fromJson(Map<String, dynamic> json) {
+    // Backend returns nested reportedUser object
+    final reportedUser = json['reportedUser'] as Map<String, dynamic>?;
+
     return SafetyReport(
       id: json['id'] as String,
-      reporterId: json['reporterId'] as String,
-      reportedUserId: json['reportedUserId'] as String,
+      reporterId: json['reporterId'] as String? ?? '',
+      reportedUserId: json['reportedUserId'] as String? ?? reportedUser?['id'] as String? ?? '',
       category: json['category'] as String,
       description: json['description'] as String,
       status: json['status'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: DateTime.parse(json['filedAt'] ?? json['createdAt'] as String),
       evidence: json['evidence'] != null
           ? (json['evidence'] as List)
               .map((e) => ReportEvidence.fromJson(e))
               .toList()
           : null,
-      reportedUserName: json['reportedUserName'] as String?,
-      reportedUserUsername: json['reportedUserUsername'] as String?,
+      reportedUserName: reportedUser?['displayName'] as String?,
+      reportedUserUsername: reportedUser?['username'] as String?,
     );
   }
 
@@ -103,7 +106,7 @@ class ReportEvidence {
       reportId: json['reportId'] as String,
       fileUrl: json['fileUrl'] as String,
       ocrText: json['ocrText'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: DateTime.parse(json['uploadedAt'] ?? json['createdAt'] as String),
     );
   }
 }

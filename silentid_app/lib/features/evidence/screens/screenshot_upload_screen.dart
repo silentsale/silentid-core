@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -81,9 +82,22 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
       final uploadUrl = uploadUrlResponse.data['uploadUrl'];
       final fileUrl = uploadUrlResponse.data['fileUrl'];
 
-      // Step 2: Upload file to Azure Blob Storage (or similar)
-      // TODO: Implement actual file upload to cloud storage
-      // For now, we'll skip this step and go directly to metadata submission
+      // Step 2: Upload file to Azure Blob Storage
+      final file = File(_selectedImage!.path);
+      final fileBytes = await file.readAsBytes();
+
+      // Create Dio instance for blob upload (without auth interceptor)
+      final blobDio = Dio();
+      await blobDio.put(
+        uploadUrl,
+        data: fileBytes,
+        options: Options(
+          headers: {
+            'Content-Type': 'image/jpeg', // or detect from file
+            'x-ms-blob-type': 'BlockBlob',
+          },
+        ),
+      );
 
       // Step 3: Submit metadata to backend
       await _api.post(
@@ -252,7 +266,7 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.warningAmber.withOpacity(0.1),
+                  color: AppTheme.warningAmber.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppTheme.warningAmber),
                 ),
