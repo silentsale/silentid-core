@@ -67,6 +67,16 @@ node_modules/
 # Stripe
 stripe_keys.txt
 
+# Azurite (local storage emulator)
+__azurite_db_*.json
+__blobstorage__/
+
+# SuperPowers (Claude Code)
+superpowers/
+
+# Test files (local development)
+test-*.js
+
 # Claude & MCP Servers (local development only)
 .claude/
 .mcp.json
