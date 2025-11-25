@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:dio/dio.dart';
 import '../models/safety_report.dart';
 import 'api_service.dart';
 

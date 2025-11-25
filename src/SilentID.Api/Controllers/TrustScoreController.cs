@@ -48,6 +48,7 @@ public class TrustScoreController : ControllerBase
                 evidenceScore = snapshot.EvidenceScore,
                 behaviourScore = snapshot.BehaviourScore,
                 peerScore = snapshot.PeerScore,
+                ursScore = snapshot.UrsScore, // Section 47: URS component
                 lastCalculated = snapshot.CreatedAt
             });
         }
@@ -118,6 +119,17 @@ public class TrustScoreController : ControllerBase
                             points = i.Points,
                             status = i.Status
                         })
+                    },
+                    urs = new // Section 47: URS component
+                    {
+                        score = breakdown.Urs.Score,
+                        maxScore = breakdown.Urs.MaxScore,
+                        items = breakdown.Urs.Items.Select(i => new
+                        {
+                            description = i.Description,
+                            points = i.Points,
+                            status = i.Status
+                        })
                     }
                 }
             });
@@ -154,6 +166,7 @@ public class TrustScoreController : ControllerBase
                     evidenceScore = s.EvidenceScore,
                     behaviourScore = s.BehaviourScore,
                     peerScore = s.PeerScore,
+                    ursScore = s.UrsScore, // Section 47: URS component
                     date = s.CreatedAt
                 }),
                 count = snapshots.Count
@@ -185,6 +198,7 @@ public class TrustScoreController : ControllerBase
                 evidenceScore = snapshot.EvidenceScore,
                 behaviourScore = snapshot.BehaviourScore,
                 peerScore = snapshot.PeerScore,
+                ursScore = snapshot.UrsScore, // Section 47: URS component
                 calculatedAt = snapshot.CreatedAt,
                 message = "TrustScore recalculated successfully."
             });

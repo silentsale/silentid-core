@@ -18,6 +18,7 @@ public class TrustScoreBreakdown
     public EvidenceBreakdown Evidence { get; set; } = new();
     public BehaviourBreakdown Behaviour { get; set; } = new();
     public PeerBreakdown Peer { get; set; } = new();
+    public UrsBreakdown Urs { get; set; } = new(); // Section 47: URS component
 }
 
 public class IdentityBreakdown
@@ -42,6 +43,13 @@ public class BehaviourBreakdown
 }
 
 public class PeerBreakdown
+{
+    public int Score { get; set; }
+    public int MaxScore { get; set; } = 200;
+    public List<ScoreItem> Items { get; set; } = new();
+}
+
+public class UrsBreakdown
 {
     public int Score { get; set; }
     public int MaxScore { get; set; } = 200;

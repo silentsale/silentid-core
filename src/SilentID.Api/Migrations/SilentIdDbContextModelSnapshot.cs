@@ -106,6 +106,65 @@ namespace SilentID.Api.Migrations
                     b.ToTable("AuthDevices");
                 });
 
+            modelBuilder.Entity("SilentID.Api.Models.ExternalRating", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AccountAge")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("AccountAgeWeight")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("CombinedWeight")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("NormalizedRating")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("Platform")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<decimal>("PlatformRating")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("ProfileLinkId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ReviewCount")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("ReviewCountWeight")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("ScrapedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("WeightedScore")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfileLinkId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ExternalRatings");
+                });
+
             modelBuilder.Entity("SilentID.Api.Models.IdentityVerification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -218,11 +277,21 @@ namespace SilentID.Api.Migrations
                     b.Property<int>("IntegrityScore")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("NextReverifyAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("OwnershipLockedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("Platform")
                         .HasColumnType("integer");
 
                     b.Property<string>("ScrapeDataJson")
                         .HasColumnType("text");
+
+                    b.Property<string>("SnapshotHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("URL")
                         .IsRequired()
@@ -237,6 +306,17 @@ namespace SilentID.Api.Migrations
 
                     b.Property<int>("UsernameMatchScore")
                         .HasColumnType("integer");
+
+                    b.Property<int>("VerificationLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("VerificationMethod")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("VerificationToken")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
@@ -265,8 +345,15 @@ namespace SilentID.Api.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("EmailMetadataJson")
+                        .HasColumnType("text");
+
                     b.Property<int>("EvidenceState")
                         .HasColumnType("integer");
+
+                    b.Property<string>("ForwardingAlias")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<bool>("FraudFlag")
                         .HasColumnType("boolean");
@@ -284,6 +371,9 @@ namespace SilentID.Api.Migrations
 
                     b.Property<int>("Platform")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("RawEmailDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("RawHash")
                         .IsRequired()
@@ -620,6 +710,9 @@ namespace SilentID.Api.Migrations
                     b.Property<int>("Score")
                         .HasColumnType("integer");
 
+                    b.Property<int>("UrsScore")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
@@ -712,6 +805,25 @@ namespace SilentID.Api.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SilentID.Api.Models.ExternalRating", b =>
+                {
+                    b.HasOne("SilentID.Api.Models.ProfileLinkEvidence", "ProfileLink")
+                        .WithMany()
+                        .HasForeignKey("ProfileLinkId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SilentID.Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProfileLink");
 
                     b.Navigation("User");
                 });

@@ -207,7 +207,7 @@ class _ProfileLinkScreenState extends State<ProfileLinkScreen> {
                     platform: entry.key,
                     examples: entry.value,
                   );
-                }).toList(),
+                }),
 
                 const SizedBox(height: 32),
 
@@ -285,7 +285,7 @@ class _ProfileLinkScreenState extends State<ProfileLinkScreen> {
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

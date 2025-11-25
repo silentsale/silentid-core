@@ -1,8 +1,8 @@
 # SILENTID - MASTER SPECIFICATION DOCUMENT
 
-**Version:** 1.7.0
-**Last Updated:** 2025-11-23
-**Status:** Pre-Development - Complete Specification
+**Version:** 1.8.0
+**Last Updated:** 2025-11-24
+**Status:** Pre-Development - Complete Specification (Updated with 5-Component TrustScore)
 
 ---
 
@@ -306,18 +306,29 @@ A **portable, evidence-backed trust profile** that works everywhere:
    - Fully legal (only public pages, user explicitly requests)
 
 ### TrustScore Engine (0–1000)
-**Breakdown:**
+
+**Version 1.8.0 Update:** TrustScore now uses **5 components** with raw max of 1200 points, normalized to 1000.
+
+**Calculation Formula:**
+```
+Raw Score = Identity + Evidence + Behaviour + Peer + URS (max 1200)
+Final TrustScore = (Raw Score / 1200) × 1000 (normalized to 0-1000)
+```
+
+**5-Component Breakdown:**
 - **Identity (200 pts):** Stripe verification, email verified, phone verified, device consistency
-- **Evidence (300 pts):** receipts, screenshots, public profile data, evidence quality
+- **Evidence (300 pts):** receipts, screenshots, public profile data, evidence quality (capped at 15% per vault)
 - **Behaviour (300 pts):** no reports, on-time shipping, account longevity, cross-platform consistency
 - **Peer Verification (200 pts):** mutual endorsements, returning partner transactions
+- **URS - Universal Reputation Score (200 pts):** Cross-platform ratings aggregation from verified external profiles
 
-**Score Labels:**
-- 801–1000: Very High Trust
-- 601–800: High Trust
-- 401–600: Moderate Trust
-- 201–400: Low Trust
-- 0–200: High Risk
+**Score Labels (Updated):**
+- 850–1000: Exceptional Trust (NEW)
+- 700–849: Very High Trust
+- 550–699: High Trust
+- 400–549: Moderate Trust
+- 250–399: Low Trust
+- 0–249: High Risk
 
 **Regenerates weekly.**
 
@@ -623,9 +634,73 @@ SignupDeviceId VARCHAR(200) NULL    -- For duplicate detection
 
 ### Evidence Collection (3 Streams)
 **1. Email Receipts:**
-- Connection: Gmail OAuth, Outlook OAuth, IMAP, Forward to my@silentid.app
-- Parsing: date, platform, amount, item, buyer/seller role, order ID
-- AI fraud checks: fake headers, DKIM, SPF, hash detection
+
+**Expensify-Inspired Email Model:**
+
+SilentID uses a **unique forwarding alias** system inspired by Expensify's receipt scanning approach. This ensures maximum privacy while enabling automated receipt detection.
+
+**How It Works:**
+
+**1. Unique Forwarding Alias:**
+- Each user receives a unique email forwarding address:
+  - Format: `{userId}.{randomString}@receipts.silentid.co.uk`
+  - Example: `user12345.a7b3c9@receipts.silentid.co.uk`
+- User forwards receipts to this alias (or sets up automatic forwarding)
+
+**2. Shared Inbox Routing:**
+- All aliases route to a single shared inbox: `receipts@silentid.co.uk`
+- Backend processes incoming emails in real-time
+- Email alias used to identify user (no inbox connection required)
+
+**3. Metadata-Only Extraction:**
+SilentID extracts ONLY:
+- **Seller/Platform:** eBay, Vinted, Depop, Etsy, PayPal, Stripe
+- **Transaction Date:** When order was placed
+- **Amount:** Transaction value (£, €, $)
+- **Item Description:** What was purchased/sold
+- **Order ID:** Platform's order reference number
+- **Buyer/Seller Role:** Whether user was buyer or seller
+
+**SilentID does NOT store:**
+- ❌ Full email body
+- ❌ Email subject lines (beyond sender detection)
+- ❌ Sender's personal email address
+- ❌ Any personal correspondence
+
+**4. Immediate Deletion:**
+- After extraction, raw email is **immediately deleted** from server
+- Only metadata summary is stored in `ReceiptEvidence` table
+- Retention: Summary stored until user deletes account (max 7 years for legal compliance)
+
+**5. Supported Senders:**
+- Vinted: `noreply@vinted.com`, `receipts@vinted.co.uk`
+- eBay: `ebay@ebay.com`, `ebay@ebay.co.uk`
+- Depop: `hello@depop.com`, `receipts@depop.com`
+- Etsy: `transaction@etsy.com`
+- PayPal: `service@paypal.com`
+- Stripe: `receipts@stripe.com`
+- Facebook Marketplace: `notification@facebookmail.com`
+
+**Optional: Limited Gmail API (Alternative Method):**
+
+If user prefers NOT to forward emails:
+
+**Gmail OAuth Scope (Read-Only, Receipt-Only):**
+- Scope: `https://www.googleapis.com/auth/gmail.readonly`
+- Filter: Only emails from known marketplace senders
+- Query: `from:(vinted.com OR ebay.com OR depop.com OR etsy.com OR paypal.com OR stripe.com)`
+- Frequency: Daily batch scan (not real-time)
+- Same extraction + immediate deletion rules apply
+
+**User chooses ONE method:**
+1. **Forwarding Alias** (recommended, no inbox access required)
+2. **Gmail OAuth** (requires limited inbox permission)
+
+**Privacy Guarantees:**
+- No access to personal emails
+- No storage of full email content
+- DKIM/SPF validation for authenticity
+- Immediate deletion after metadata extraction
 
 **2. Screenshot OCR:**
 - Upload: marketplace reviews, profile stats, sales history, ratings, badges
@@ -636,6 +711,288 @@ SignupDeviceId VARCHAR(200) NULL    -- For duplicate detection
 - Input: Vinted, Depop, eBay, Etsy, Facebook Marketplace, LinkedIn URLs
 - Scraping: Playwright-based, headless, rate-limited, anti-fraud aware
 - Extracts: ratings, review count, join date, listing patterns, username consistency
+
+### Level 3 Profile Verification (v1.8.0 NEW)
+
+**Purpose:** Cryptographically prove ownership of external marketplace profiles to prevent impersonation and fake profile linking.
+
+**Two Verification Methods:**
+
+#### **Method A: Token-in-Bio (for Type A Platforms)**
+**Supported Platforms:** Vinted, Depop, eBay (any platform where users can edit profile bio/description)
+
+**Flow:**
+1. User submits external profile URL to SilentID
+2. SilentID generates unique verification token: `SILENTID-VERIFY-{random-8-chars}`
+3. User instructed to add token to their profile bio/description
+4. User confirms "I've added the token"
+5. SilentID scrapes profile via Playwright MCP
+6. System checks for exact token match in bio text
+7. If match found:
+   - Profile marked as **Level 3 Verified**
+   - Ownership locked (cannot be claimed by another SilentID account)
+   - Profile snapshot hash (SHA-256) stored
+   - User can remove token after verification
+8. If not found: Verification fails, user can retry
+
+**Security:**
+- Token expires after 24 hours if not used
+- Profile can only be verified by ONE SilentID account (ownership locking)
+- Re-verification required every 90 days
+- If profile deleted/unavailable during re-verify: verification drops to Level 1
+
+#### **Method B: Share-Intent Verification (for Type B Platforms)**
+**Supported Platforms:** Instagram, TikTok, X/Twitter (platforms with share buttons but no editable bio)
+
+**Flow:**
+1. User submits external profile URL
+2. SilentID generates unique verification link: `https://silentid.co.uk/verify/{token}`
+3. User instructed to:
+   - Open their external profile
+   - Tap "Share" button
+   - Select "Copy Link" or "Share to another app"
+   - Paste link into SilentID verification field
+4. System validates:
+   - URL matches submitted profile
+   - Share action timestamp (must be within 5 minutes)
+   - Device fingerprint consistency
+5. If valid:
+   - Profile marked as **Level 3 Verified**
+   - Ownership locked
+   - Profile snapshot stored
+6. If invalid: User shown troubleshooting steps
+
+**Security:**
+- Share link expires after 5 minutes
+- Device fingerprint must match SilentID session
+- Profile can only be verified by ONE account
+- Re-verification every 90 days
+
+#### **Verification Levels Comparison:**
+
+| Level | Method | Security | TrustScore Impact |
+|-------|--------|----------|-------------------|
+| **Level 1** | URL submission only | Low (no ownership proof) | Base profile weight |
+| **Level 2** | Username cross-check | Medium (fuzzy matching) | +10% profile weight |
+| **Level 3** | Token-in-Bio or Share-Intent | High (cryptographic proof) | +50% profile weight + URS eligibility |
+
+**Anti-Fraud Rules:**
+- Only Level 3 verified profiles contribute to URS (Universal Reputation Score)
+- Level 1/2 profiles contribute to Evidence component only (limited weight)
+- If user attempts to verify profile already owned by another account → flagged for admin review
+- Bulk profile submissions (>5 in 24h) → suspicious activity flag
+
+**Database Schema (New Fields in ProfileLinkEvidence):**
+```sql
+VerificationLevel INT (1, 2, or 3)
+VerificationMethod VARCHAR(50) ('TokenInBio', 'ShareIntent', 'None')
+VerificationToken VARCHAR(100) (for Token-in-Bio)
+OwnershipLockedAt TIMESTAMP
+SnapshotHash VARCHAR(64) (SHA-256 of profile at verification time)
+NextReverifyAt TIMESTAMP (90 days from verification)
+```
+
+### URS: Universal Reputation Score (v1.8.0 NEW)
+
+**Definition:** URS aggregates ratings and reviews from **Level 3 verified** external profiles into a unified reputation score (0-200 points).
+
+**Purpose:**
+- Leverage existing trust users have built on other platforms
+- Reward consistent cross-platform good behaviour
+- Detect rating discrepancies (red flag for fraud)
+
+**Calculation Method:**
+
+**Step 1: Extract Platform Ratings (from Level 3 verified profiles only)**
+
+For each verified profile, extract:
+- **Platform Rating:** e.g., 4.8/5.0 on Vinted, 98% positive on eBay
+- **Review Count:** Number of reviews/ratings
+- **Account Age:** How long account has existed (in days)
+
+**Step 2: Normalize Ratings to Common Scale**
+
+Different platforms use different scales:
+- Vinted: 5-star system (0-5)
+- eBay: Percentage positive (0-100%)
+- Depop: 5-star system (0-5)
+- Etsy: 5-star system (0-5)
+
+**Normalization Formula:**
+```
+Normalized Rating = (Platform Rating / Platform Max) × 100
+```
+
+Examples:
+- Vinted 4.8/5.0 → (4.8/5.0) × 100 = 96%
+- eBay 98% positive → Already 98%
+- Depop 5.0/5.0 → (5.0/5.0) × 100 = 100%
+
+**Step 3: Weight by Review Count & Account Age**
+
+**Review Count Weight:**
+- 1-10 reviews: 0.5x weight
+- 11-50 reviews: 0.75x weight
+- 51-100 reviews: 1.0x weight
+- 101-500 reviews: 1.25x weight
+- 500+ reviews: 1.5x weight
+
+**Account Age Weight:**
+- < 3 months: 0.5x weight
+- 3-12 months: 0.75x weight
+- 1-3 years: 1.0x weight
+- 3-5 years: 1.25x weight
+- 5+ years: 1.5x weight
+
+**Combined Weight:**
+```
+Weight = (Review Count Weight + Account Age Weight) / 2
+```
+
+**Step 4: Calculate Weighted Average**
+
+```
+Weighted Score = Σ(Normalized Rating × Weight) / Σ(Weight)
+```
+
+**Step 5: Convert to 0-200 Point Scale**
+
+```
+URS Points = (Weighted Score / 100) × 200
+```
+
+**Example Calculation:**
+
+User has 3 Level 3 verified profiles:
+
+1. **Vinted:**
+   - Rating: 4.9/5.0 → 98% normalized
+   - Reviews: 150 (1.25x weight)
+   - Age: 2 years (1.0x weight)
+   - Combined Weight: (1.25 + 1.0) / 2 = 1.125
+   - Weighted Score: 98 × 1.125 = 110.25
+
+2. **eBay:**
+   - Rating: 99% positive
+   - Reviews: 420 (1.25x weight)
+   - Age: 5 years (1.5x weight)
+   - Combined Weight: (1.25 + 1.5) / 2 = 1.375
+   - Weighted Score: 99 × 1.375 = 136.125
+
+3. **Depop:**
+   - Rating: 4.7/5.0 → 94% normalized
+   - Reviews: 45 (0.75x weight)
+   - Age: 1 year (1.0x weight)
+   - Combined Weight: (0.75 + 1.0) / 2 = 0.875
+   - Weighted Score: 94 × 0.875 = 82.25
+
+**Final Weighted Average:**
+```
+(110.25 + 136.125 + 82.25) / (1.125 + 1.375 + 0.875) = 328.625 / 3.375 = 97.4%
+```
+
+**URS Points:**
+```
+(97.4 / 100) × 200 = 194.8 ≈ 195 points
+```
+
+**Anti-Fraud URS Rules:**
+
+1. **Consistency Check:**
+   - If rating variance > 20% between platforms → Flag for admin review
+   - Example: Vinted 98%, eBay 60% → Suspicious
+
+2. **Freshness Requirement:**
+   - Ratings older than 180 days → 50% weight reduction
+   - Profiles not re-verified in 90 days → Excluded from URS
+
+3. **Minimum Threshold:**
+   - Profile must have ≥10 reviews to contribute to URS
+   - Profile must be ≥3 months old
+
+4. **Cap per Platform:**
+   - Maximum 3 profiles per platform type (e.g., max 3 eBay profiles)
+   - Prevents gaming by creating multiple accounts on same platform
+
+**Database Schema (New Table):**
+```sql
+CREATE TABLE ExternalRatings (
+  Id UUID PRIMARY KEY,
+  ProfileLinkId UUID REFERENCES ProfileLinkEvidence(Id),
+  UserId UUID REFERENCES Users(Id),
+  Platform VARCHAR(50), -- Vinted, eBay, Depop, Etsy
+  PlatformRating DECIMAL(5,2), -- Raw rating from platform
+  ReviewCount INT,
+  AccountAge INT, -- In days
+  NormalizedRating DECIMAL(5,2), -- 0-100 scale
+  ReviewCountWeight DECIMAL(3,2),
+  AccountAgeWeight DECIMAL(3,2),
+  CombinedWeight DECIMAL(3,2),
+  WeightedScore DECIMAL(6,2),
+  ScrapedAt TIMESTAMP,
+  ExpiresAt TIMESTAMP, -- 180 days from scrape
+  CreatedAt TIMESTAMP
+);
+```
+
+### Email Receipt Model Update (v1.8.0 - Expensify Model)
+
+**Previous Model (v1.7.0):**
+- User connects full inbox via OAuth/IMAP
+- SilentID scans entire inbox for receipts
+- Privacy concern: access to all emails
+
+**New Model (v1.8.0):**
+**Inspired by Expensify's receipt forwarding system**
+
+**How It Works:**
+
+1. **Unique Forwarding Alias:**
+   - Each user receives unique email address: `{userId}.{random}@receipts.silentid.co.uk`
+   - Example: `ab12cd34.x9kf@receipts.silentid.co.uk`
+
+2. **User Setup:**
+   - User creates email forwarding rule in their email client:
+     - Gmail: Filter → Forward to SilentID alias
+     - Outlook: Rules → Forward to SilentID alias
+   - Filter rule: "From: *@vinted.co.uk OR *@ebay.com OR *@depop.com → Forward to SilentID"
+
+3. **Processing:**
+   - SilentID receives forwarded receipt
+   - Extracts metadata ONLY:
+     - Sender domain (vinted.co.uk, ebay.com)
+     - Date
+     - Order ID
+     - Amount (if parsable)
+     - Transaction type (order, shipment, refund)
+   - Validates DKIM/SPF
+   - **Immediately deletes raw email** after extraction
+
+4. **Storage:**
+   - Store: Extracted metadata summary (JSON)
+   - Do NOT store: Full email body, attachments, personal content
+   - Retention: Summary stored until user deletes or account closed
+
+**Privacy Advantages:**
+- ✅ SilentID never sees personal emails (only forwarded receipts)
+- ✅ User controls which emails to forward
+- ✅ No inbox OAuth access required
+- ✅ Raw email deleted immediately (GDPR-compliant)
+- ✅ User can stop forwarding anytime (just delete email rule)
+
+**Security:**
+- Unique alias per user prevents cross-contamination
+- DKIM/SPF validation prevents spoofed receipts
+- Rate limiting: Max 50 receipts per day per user
+- Suspicious patterns (e.g., 100 identical receipts) → flagged
+
+**Database Schema (Updated ReceiptEvidence):**
+```sql
+-- Add new columns:
+ForwardingAlias VARCHAR(255) UNIQUE, -- User's unique receipt email
+EmailMetadataJson JSONB, -- Extracted metadata (NOT full email)
+RawEmailDeleted BOOLEAN DEFAULT TRUE -- Confirms raw email removed
+```
 
 ### Mutual Transaction Verification
 **Flow:**
@@ -896,6 +1253,57 @@ Review carefully before proceeding.
 ### The Unbreakable Rule
 **"SilentID prioritizes safety over convenience."**
 If it feels suspicious → block it, review it, or verify it.
+
+**SCAM #10: Fake External Ratings & Profile Ownership Fraud**
+- **Attack:** User links to someone else's high-rated marketplace profile, or manually enters fake star ratings
+- **Defense:**
+  - **Level 3 Verification Required:** Ratings ONLY extracted from profiles with proven ownership (Token-in-Bio or Share-Intent)
+  - **No Manual Entry:** Users CANNOT manually input ratings or star scores
+  - **Screenshot Ratings Ignored:** Screenshots of star ratings contribute ZERO to URS (only live-scraped data from verified profiles)
+  - **Ownership Locking:** One profile can only be verified by ONE SilentID account
+  - **Snapshot Hashing:** Profile HTML snapshot hashed (SHA-256) at verification time; if profile changes significantly after verification, re-verification required
+  - **Cross-Platform Consistency:** If user has 4.9★ on Vinted but 2.1★ on eBay (verified), system flags outlier and reduces URS weight
+- **Result:** Fake ratings = ZERO contribution to URS, unverified profiles = ZERO, ownership fraud detected = account suspended
+
+**STRENGTHENED ANTI-FAKE GUARANTEE:**
+
+**What CANNOT be faked in SilentID:**
+
+1. **Identity:**
+   - ✅ Stripe Identity verification (government ID + selfie liveness)
+   - ✅ Cannot fake: ID documents, biometric selfies
+   - ✅ If attempted: Stripe detects fake IDs, account suspended
+
+2. **External Ratings (URS):**
+   - ✅ ONLY from Level 3 verified profiles (ownership proven)
+   - ✅ Cannot fake: Token-in-Bio requires account control, Share-Intent requires platform authentication
+   - ✅ Screenshots of ratings: IGNORED (contribute ZERO)
+   - ✅ Manual entry: DISABLED (no UI to input ratings)
+   - ✅ Linking to others' profiles: BLOCKED by ownership locking
+
+3. **Email Receipts:**
+   - ✅ DKIM/SPF validation required
+   - ✅ Cannot fake: Receipts without valid signatures flagged
+   - ✅ If attempted: Fake forwarded emails rejected, user flagged
+
+4. **Evidence Vault (Screenshots/Docs):**
+   - ✅ Max 15% of TrustScore (45 pts cap)
+   - ✅ Tampered screenshots: Detected by image integrity engine (Section 26)
+   - ✅ Bulk fake uploads: Detected by pattern analysis
+   - ✅ Cannot override: Vault evidence NEVER overrides verified behavior
+
+5. **Mutual Verifications:**
+   - ✅ Requires both parties to confirm transaction
+   - ✅ Collusion rings: Detected by graph analysis (Section 37)
+   - ✅ Cannot fake: Circular patterns flagged, IP/device clustering detected
+
+**ANTI-FAKE ENFORCEMENT:**
+
+If user attempts to fake any component:
+1. **First attempt:** Warning + evidence rejected
+2. **Second attempt:** RiskScore increased (+30), evidence uploads disabled for 7 days
+3. **Third attempt:** Account suspended, manual admin review required
+4. **Confirmed fraud:** Permanent ban, all TrustScore contributions set to zero
 
 ---
 
@@ -5333,22 +5741,238 @@ CREATE TABLE EvidenceHashes (
   - RiskSignal created
   - Admin review triggered
 
-### 26.8 Impact on TrustScore
+### 26.8 Impact on TrustScore & Evidence Vault Weighting Rules
 
-**High-Quality Evidence:**
-- IntegrityScore 90-100
-- Full weight applied to Evidence component (up to 300 points)
+**CRITICAL VAULT RULE:**
 
-**Questionable Evidence:**
-- IntegrityScore 50-69
+**Evidence Vault contributes MAXIMUM 10-15% of TrustScore.**
+
+**Definition:** "Evidence Vault" = User-uploaded screenshots, documents, and supporting materials (NOT including Level 3 verified profiles or email receipts).
+
+**Rationale:**
+- Vault evidence is EASILY FAKED (Photoshop, fake PDFs)
+- Vault acts as REINFORCEMENT, not primary trust source
+- Primary trust comes from: Identity verification, Level 3 profiles, email receipts, peer confirmations
+
+**Vault Contribution Cap:**
+- TrustScore max: 1000 points
+- Evidence component max: 300 points
+- Vault max: 45 points (15% of 300)
+
+**Vault Evidence Types:**
+- Screenshots of marketplace reviews/stats
+- Uploaded receipts (manually added, NOT via email parsing)
+- Profile screenshots (NOT Level 3 verified URLs)
+- Supporting documents (shipping labels, tracking info)
+
+**How Vault Evidence is Weighted:**
+
+**High-Quality Vault Evidence (IntegrityScore 90-100):**
+- First 5 items: 5 pts each (25 pts total)
+- Next 5 items: 2 pts each (10 pts total)
+- Additional items: 1 pt each (max 10 pts total)
+- **Maximum from Vault: 45 points**
+
+**Acceptable Vault Evidence (IntegrityScore 70-89):**
 - 50% weight applied
-- User encouraged to upload better quality evidence
+- First 5 items: 2.5 pts each
+- Encouragement: "Upload higher quality evidence for full credit"
 
-**Rejected Evidence:**
-- IntegrityScore < 50
+**Questionable Vault Evidence (IntegrityScore 50-69):**
+- 25% weight applied
+- Flagged for admin review
+- User notified: "This evidence quality is low"
+
+**Rejected Vault Evidence (IntegrityScore < 50):**
 - Zero weight
-- RiskSignal created
+- RiskSignal created (type: FraudulentEvidence)
 - User notified: "This evidence could not be verified"
+
+**Vault Reinforcement Rules:**
+
+**Vault evidence ONLY contributes if it MATCHES verified platform behavior:**
+
+**Example 1: Consistent**
+- User has Level 3 verified Vinted profile (4.8★, 300 transactions)
+- User uploads 10 high-quality Vinted screenshots showing transactions
+- Screenshots match profile username, dates, transaction count
+- **Vault contribution: 25 points** (reinforces verified behavior)
+
+**Example 2: Inconsistent**
+- User has Level 3 verified Vinted profile (50 transactions)
+- User uploads 100 screenshots claiming 500 transactions
+- Mismatch detected: screenshots don't align with verified profile
+- **Vault contribution: 0 points** (inconsistent, likely fake)
+
+**Example 3: No Verification**
+- User has NO Level 3 verified profiles
+- User uploads 50 screenshots from various platforms
+- No way to verify legitimacy
+- **Vault contribution: 5-10 points MAX** (assumed low quality without verification)
+
+**Multi-Year Consistency Adds Trust:**
+- User uploads receipts spanning 3+ years
+- Receipts align with verified profile join date and activity patterns
+- **Bonus: +10 points** (long-term consistent behavior)
+
+**Bulk Upload Detection:**
+- User uploads 100+ items in <1 hour
+- **Red flag:** Possible automated fake evidence generation
+- **Action:** All items flagged for review, Vault contribution paused until admin verification
+
+**Vault Fraud Patterns (Zero Contribution):**
+- All screenshots identical resolution/format (batch-generated)
+- All screenshots from same date (fake timestamp)
+- Duplicate evidence across multiple users (hash collision)
+- Evidence metadata doesn't match user's device/IP history
+- OCR text extraction shows copy-paste patterns
+
+**Evidence Component Distribution (Updated):**
+```
+Evidence (300 pts) =
+  Level 3 Verified Profiles (0-150 pts) +
+  Email Receipts (0-75 pts) +
+  Evidence Vault (0-45 pts) +
+  Mutual Verifications moved to Peer (30 pts transferred)
+```
+
+**Vault UI Display:**
+```
+Evidence Vault: 12/45 pts
+⚠️ Vault evidence contributes max 15% of TrustScore.
+💡 Verify your profiles to increase trust.
+```
+
+**Admin Override:**
+- If admin determines vault evidence is exceptionally high-quality AND user has strong identity verification
+- Admin can manually boost vault contribution by max +10 pts
+- Requires justification + logged in AdminAuditLogs
+
+### 26.9 Anti-Fake Reinforcement Rules
+
+**CRITICAL: Evidence Vault Cannot Override Verified Behavior**
+
+**Vault Evidence Hierarchy:**
+
+1. **Level 3 Verified Profiles (Highest Trust):**
+   - Live-scraped ratings from ownership-proven profiles
+   - Contributes 0-150 pts to Evidence component
+   - **Cannot be faked** (ownership locked, snapshot hashed)
+
+2. **Email Receipts (High Trust):**
+   - DKIM/SPF validated transaction confirmations
+   - Contributes 0-75 pts to Evidence component
+   - **Difficult to fake** (requires email sender authentication)
+
+3. **Evidence Vault (Low Trust, Capped at 45 pts):**
+   - User-uploaded screenshots and documents
+   - Contributes MAX 45 pts (15% of Evidence component)
+   - **Easily fakeable** (Photoshop, fabricated docs)
+   - **MUST align with verified behavior** to contribute
+
+**Vault Rejection Rules:**
+
+**Automatic Rejection (Zero Contribution):**
+- Screenshot tampered (detected by Layer 3 tampering detection)
+- OCR text inconsistent with known platform formats
+- Metadata suspicious (wrong device, wrong timezone)
+- Duplicate hash across multiple users
+- Uploaded in bulk (>20 items in <10 minutes)
+
+**Flagged for Review (Zero Contribution Until Verified):**
+- IntegrityScore < 50
+- Vault evidence contradicts Level 3 verified profile data
+- User uploads 10+ items from platform they have NO verified profile on
+- Evidence quality suddenly improves (suggests outsourcing/buying fake evidence)
+
+**Reinforcement-Only Rule:**
+
+**Vault evidence ONLY adds points if it REINFORCES already-verified behavior.**
+
+**Example 1: Reinforcement (Allowed)**
+- User has Level 3 verified Vinted profile: 4.8★, 300 transactions
+- User uploads 15 Vinted screenshots showing transactions from past 2 years
+- Screenshots match verified username, dates align with account age
+- **Vault contribution: 20 points** (reinforces verified behavior)
+
+**Example 2: Contradiction (Rejected)**
+- User has Level 3 verified eBay profile: 3.2★, 50 transactions
+- User uploads 100 eBay screenshots claiming 500 transactions, 4.9★
+- Screenshots contradict verified profile data
+- **Vault contribution: 0 points** (inconsistent, likely fake)
+
+**Example 3: No Verification (Limited)**
+- User has NO Level 3 verified profiles
+- User uploads 50 screenshots from multiple platforms
+- No way to verify legitimacy
+- **Vault contribution: 5-10 points MAX** (assumed low quality)
+
+**Fake Screenshot Detection (Enhanced):**
+
+**Layer 1: Metadata Forensics**
+- EXIF data tampered or missing → IntegrityScore -20
+- Screenshot timestamp in future → Rejected
+- Device model inconsistent with user's known devices → Flagged
+
+**Layer 2: Visual Analysis**
+- Known platform UI doesn't match screenshot layout → Rejected
+- Font rendering inconsistent with platform branding → Flagged
+- Color palette doesn't match platform colors → IntegrityScore -15
+
+**Layer 3: Pixel-Level Tampering**
+- Clone stamping detected → Rejected
+- Copy-paste artifacts detected → Rejected
+- Edge inconsistencies (text overlayed) → IntegrityScore -30
+
+**Layer 4: Cross-Reference Validation**
+- Username in screenshot doesn't match verified profile → Rejected
+- Rating in screenshot doesn't match live-scraped rating → Rejected
+- Transaction count in screenshot wildly different from verified profile → Flagged
+
+**If ANY Layer fails → Screenshot contributes ZERO to TrustScore**
+
+**Fake Receipt Detection (Enhanced):**
+
+**DKIM/SPF Validation (Mandatory):**
+- Receipt forwarded without valid DKIM signature → 50% weight
+- Receipt forwarded without valid SPF record → Flagged for review
+- Receipt with forged headers → Rejected + RiskSignal created
+
+**Sender Domain Validation:**
+- Receipt claims to be from `vinted.com` but sent from `gmail.com` → Rejected
+- Receipt HTML doesn't match known marketplace templates → Flagged
+- Receipt contains suspicious links or attachments → Rejected
+
+**Cross-User Duplicate Detection:**
+- Same order ID submitted by multiple users → Both users flagged
+- Same receipt hash across accounts → RiskSignal + admin review
+
+**Timestamp Validation:**
+- Receipt date in future → Rejected
+- Receipt date >5 years old → 50% weight (outdated evidence)
+- Receipt date doesn't align with user's account age → Flagged
+
+**Anti-Fake Guarantee Statement:**
+
+**SilentID's TrustScore is designed to be UNFAKEABLE:**
+
+1. **Identity Component (200 pts):** Requires Stripe Identity (government ID + liveness) — Cannot be faked
+2. **Evidence Component (300 pts):**
+   - Level 3 Verified Profiles (0-150 pts): Ownership-proven, live-scraped — Cannot be faked
+   - Email Receipts (0-75 pts): DKIM/SPF validated — Difficult to fake
+   - Evidence Vault (0-45 pts): Capped at 15%, reinforcement-only — Minimal impact if faked
+3. **Behaviour Component (300 pts):** Based on platform activity, no safety reports — Cannot be faked (external data)
+4. **Peer Component (200 pts):** Mutual verifications, collusion-detected — Difficult to fake at scale
+5. **URS Component (200 pts):** Live-scraped from verified profiles only — Cannot be faked
+
+**Total: 1000 points (normalized from 1200 raw)**
+
+**If user attempts to fake ANY component:**
+- Evidence rejected → Zero contribution
+- RiskScore increased → Account restrictions
+- Repeated attempts → Permanent ban
+
+**SilentID's Mission: Honest people rise. Scammers fail.**
 
 ---
 
@@ -9649,6 +10273,1044 @@ For legal matters, email legal@silentid.co.uk
 **END OF ABOUT US / LEGAL IMPRINT**
 
 ---
+
+## SECTION 47: SILENTID DIGITAL TRUST PASSPORT — PUBLIC PROFILE & STAR DISPLAY RULES
+
+### 47.1 Purpose
+
+Define how SilentID publicly displays verified marketplace ratings (stars) and trust credentials on user profiles, ensuring:
+- Factual accuracy (never inflate, estimate, or round up stars)
+- Legal safety (display facts, not editorial judgments)
+- User control (users choose what's public)
+- Platform resilience (handle platform HTML changes, account issues, edge cases)
+- Privacy protection (TrustScore calculation kept private, only stars shown)
+
+**Core Philosophy:** SilentID's public profile is a **"Digital Trust Passport"** — a verifiable, portable credential showing real-world marketplace performance.
+
+---
+
+### 47.2 Core Principle: Facts vs. Judgments
+
+**Public = Verified Facts (Low Legal Risk)**
+- ✅ Star ratings from verified marketplace profiles (e.g., "4.9 ★ on Vinted")
+- ✅ Review counts (e.g., "327 reviews")
+- ✅ Account age (e.g., "Member since Jan 2023")
+- ✅ Identity verification status (e.g., "Identity Verified via Stripe")
+
+**Private = SilentID Calculations (Higher Legal Risk)**
+- ❌ TrustScore (0-1000) — Internal calculation, NOT shown publicly
+- ❌ URS (Unified Reputation Score) — Internal weighted average, NOT shown publicly
+- ❌ Risk signals or fraud flags — Internal only
+
+**Why?**
+- **Factual reporting** (displaying stars from Vinted) = minimal legal exposure
+- **Editorial judgment** (saying "this person is trustworthy") = defamation risk
+- By keeping TrustScore **private** (user sees it, public doesn't), SilentID avoids making public trust judgments
+
+---
+
+### 47.3 Digital Trust Passport — Public Profile Specification
+
+**Public Profile URL:**
+```
+silentid.co.uk/u/{username}
+```
+
+**Example:**
+```
+silentid.co.uk/u/sarahtrusted
+```
+
+**Visual Layout:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│  [SilentID Logo]          DIGITAL TRUST PASSPORT    │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│   [Avatar]    Sarah M.                              │
+│               @sarahtrusted                         │
+│               ✅ Identity Verified                  │
+│               🌍 Active on 3 platforms              │
+│               📅 Member since Jan 2024              │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│  VERIFIED MARKETPLACE RATINGS                       │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  🛍️ Vinted                                          │
+│     ★★★★★ 4.9  (327 reviews)                        │
+│     Last updated: 2 days ago                        │
+│     [Level 3 Verified ✓]                            │
+│                                                     │
+│  📦 eBay                                             │
+│     ★★★★★ 99.2% positive  (542 ratings)             │
+│     Last updated: 5 days ago                        │
+│     [Level 3 Verified ✓]                            │
+│                                                     │
+│  👗 Depop                                            │
+│     ★★★★★ 5.0  (89 reviews)                         │
+│     Last updated: 1 day ago                         │
+│     [Level 3 Verified ✓]                            │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│  VERIFICATION BADGES                                │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  ✅ Identity Verified (Stripe)                      │
+│  📧 Email Verified                                  │
+│  🔗 3 Platforms Connected                           │
+│  ⏱️ Account Active 287 days                        │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│  [QR Code]                                          │
+│  Scan to verify this Digital Trust Passport        │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+### 47.4 What is Shown Publicly
+
+**Always Shown (Default):**
+1. **Display Name:** "Sarah M." (first name + initial, never full surname)
+2. **Username:** "@sarahtrusted"
+3. **Identity Verification Badge:** "✅ Identity Verified" (if completed)
+4. **Star Ratings from Verified Platforms:**
+   - Platform name (Vinted, eBay, Depop, etc.)
+   - Star rating (exact, e.g., "4.9 ★" or "99.2% positive")
+   - Review/rating count
+   - Freshness indicator ("Last updated: X days ago")
+   - Level 3 verification badge
+5. **Account Age:** "Member since [Month Year]" or "Active for X days"
+6. **Platform Count:** "Active on X platforms"
+7. **QR Code:** For in-person verification
+
+**Optional (User Can Enable/Disable in Settings):**
+- Profile photo/avatar
+- Bio text (max 160 characters)
+- Location (city/region only, e.g., "London, UK" — never full address)
+
+---
+
+### 47.5 What is Never Shown Publicly
+
+**Absolutely Private (Never Displayed):**
+1. **TrustScore (0-1000):** Internal calculation, user sees it in private dashboard
+2. **URS (Unified Reputation Score):** Internal weighted average
+3. **Evidence Vault Contents:** Screenshots, receipts, documents
+4. **Email Receipts:** Transaction summaries
+5. **Risk Signals or Fraud Flags:** Internal risk data
+6. **Full Legal Name:** Only first name + initial shown
+7. **Date of Birth:** Never displayed
+8. **Email Address or Phone Number:** Never displayed
+9. **Home Address:** Never displayed (city/region at most, if user opts in)
+10. **Device IDs or IP Addresses:** Never displayed
+
+**Why TrustScore is Private:**
+- **Legal Protection:** Public TrustScores = editorial judgment = potential defamation claims
+- **User Control:** Users share verified facts (stars), not SilentID's opinion
+- **Platform Neutrality:** Stars come from external platforms (Vinted, eBay), not SilentID
+- **Privacy:** TrustScore may include sensitive behavior patterns
+
+---
+
+### 47.6 Private Dashboard — User's View
+
+**What User Sees (Logged In):**
+
+```
+┌─────────────────────────────────────────────────────┐
+│  YOUR SILENTID DASHBOARD                            │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  YOUR TRUSTSCORE (PRIVATE)                          │
+│  ████████████████████░░░ 847 / 1000                 │
+│  Very High Trust                                    │
+│                                                     │
+│  [View Breakdown]  [Improve Score]                  │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│  WHAT OTHERS SEE (Public Profile Preview)          │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  [Public Profile Card - Same as 47.3]               │
+│                                                     │
+│  Note: Your TrustScore (847) is PRIVATE.            │
+│  Only star ratings from verified platforms are      │
+│  shown publicly.                                    │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│  [Share Your Passport]  [Edit Visibility]           │
+└─────────────────────────────────────────────────────┘
+```
+
+**Transparency Message (Shown to User):**
+> "Your TrustScore (847) is **private** — only you can see it. Your public profile shows your **verified star ratings** from marketplaces (Vinted, eBay, etc.). This protects your privacy and reduces legal risk."
+
+---
+
+### 47.7 Star Rating Display Rules
+
+**Accuracy Requirements:**
+
+1. **Never Round Up:**
+   - Actual rating: 4.87 → Display: "4.9 ★" (rounded to 1 decimal)
+   - Actual rating: 4.84 → Display: "4.8 ★" (NOT 4.9)
+   - Actual rating: 4.00 → Display: "4.0 ★" (show decimal even if zero)
+
+2. **Never Estimate:**
+   - If platform rating unavailable → Show "Rating unavailable" (NOT "~4.5 ★")
+   - If scraping fails → Show "Last known: 4.9 ★ (as of [date])"
+
+3. **Never Inflate:**
+   - If user has 4.9★ on Vinted → Display exactly "4.9 ★"
+   - Do NOT aggregate across platforms into a single "average" star rating
+
+4. **Show Freshness:**
+   - "Last updated: 2 days ago" (scraped recently)
+   - "Last updated: 14 days ago" (older, but still valid)
+   - "Last updated: 90+ days ago" (stale, user should re-verify)
+
+5. **Platform-Specific Formats:**
+   - **Vinted:** "4.9 ★ (327 reviews)"
+   - **eBay:** "99.2% positive (542 ratings)"
+   - **Depop:** "5.0 ★ (89 reviews)"
+   - **Etsy:** "4.8 ★ (1,204 sales)"
+   - **Amazon:** "4.6 ★ (89 ratings)" (future)
+
+**Visual Design Rules:**
+- Use exact star count: ★★★★★ (5 stars), ★★★★☆ (4 stars), etc.
+- Color: Gold `#FFD700` for filled stars, Gray `#DADADA` for empty stars
+- Font: Inter Semibold, 18-20pt
+- Never use half-star icons (round to nearest 0.1)
+
+---
+
+### 47.8 Digital Passport Visual Design Requirements
+
+**Brand Identity:**
+- Must feel like a **real passport** — official, trustworthy, verifiable
+- Color scheme: Royal Purple `#5A3EB8` for header, white background, neutral grays
+- Typography: Inter (consistent with SilentID brand)
+- Layout: Clean, structured, scannable
+
+**Header:**
+```
+┌─────────────────────────────────────────────────────┐
+│  [SilentID Logo]          DIGITAL TRUST PASSPORT    │
+└─────────────────────────────────────────────────────┘
+```
+- "DIGITAL TRUST PASSPORT" in bold, uppercase
+- Royal purple background `#5A3EB8`, white text
+
+**Profile Section:**
+- Avatar: 80×80px circular, top-left
+- Name: Inter Bold, 24pt, black
+- Username: Inter Regular, 16pt, gray
+- Badges: Small icons with text labels (✅, 📧, 🌍)
+
+**Marketplace Ratings Section:**
+- Each platform: Card-style layout
+- Platform icon/logo (if available)
+- Star rating: Large, gold stars
+- Review count: Gray text below stars
+- Freshness indicator: Small text, gray
+- Level 3 Verified badge: Green checkmark
+
+**Verification Badges Section:**
+- List format, each badge on separate line
+- Icon + text label
+- Gray background for secondary badges
+
+**QR Code:**
+- 200×200px, bottom-center
+- Label: "Scan to verify this Digital Trust Passport"
+- QR encodes: `https://silentid.co.uk/u/{username}`
+
+**Responsive Design:**
+- Mobile: Single column, full-width cards
+- Desktop: Two-column layout (profile left, ratings right)
+
+---
+
+### 47.9 QR Code Passport Feature
+
+**Purpose:** Enable in-person trust verification (meetups, rental viewings, local trades)
+
+**How It Works:**
+1. User opens SilentID app → "Share Profile" → "Show QR Code"
+2. QR code displayed full-screen
+3. Other person scans with phone camera
+4. Redirects to public profile: `silentid.co.uk/u/{username}`
+5. Scanner sees Digital Trust Passport (star ratings, verification badges)
+
+**Security:**
+- QR code is **static** (encodes public profile URL only)
+- No personal data embedded in QR code
+- User can disable public profile to invalidate QR code
+- QR code regenerates if username changes
+
+**Use Cases:**
+- Marketplace meetups (Vinted, Facebook Marketplace)
+- Rental viewings (landlord verifies tenant, or vice versa)
+- Community group introductions
+- Dating app pre-meet verification (optional)
+
+**Design:**
+- Full-screen QR code
+- Username displayed below: "@sarahtrusted"
+- Star summary: "4.9 ★ across 3 platforms"
+- Instruction text: "Scan to view my verified marketplace ratings"
+
+---
+
+### 47.10 Marketing Language — Keep Your Stars
+
+**Tagline:** "Your stars. Your proof. Your passport."
+
+**User Messaging:**
+> "You've earned those 5-star reviews on Vinted, eBay, and Depop. Now carry them with you — everywhere you trade online."
+
+> "Your Digital Trust Passport shows your real marketplace performance. No fluff. Just facts."
+
+> "SilentID doesn't give you a score — it shows the world the scores you've already earned."
+
+**Public Profile Sharing Copy:**
+- "Share your verified marketplace ratings"
+- "Let others see your 4.9★ reputation before you meet"
+- "Prove you're trustworthy — with receipts."
+
+**In-App Prompts:**
+- "Connect your Vinted account to show your 4.9★ rating publicly"
+- "Your 327 5-star reviews on eBay? Show them off."
+- "Make your marketplace success portable."
+
+---
+
+### 47.11 Legal Positioning for Public Star Display
+
+**Why This is Legally Safe:**
+
+1. **Factual Reporting (Not Editorial):**
+   - SilentID displays **facts** (e.g., "4.9 ★ on Vinted, verified via Level 3 ownership proof")
+   - SilentID does NOT say "This person is trustworthy" (editorial judgment)
+   - Legal precedent: Displaying factual ratings from public sources = protected speech
+
+2. **User Consent:**
+   - User explicitly connects their marketplace accounts
+   - User chooses to make ratings public
+   - User can revoke public display anytime
+
+3. **Source Attribution:**
+   - Each rating clearly labeled with platform (Vinted, eBay, etc.)
+   - "Level 3 Verified" badge proves ownership
+   - Freshness indicator shows data recency
+
+4. **No Aggregation into Single Score:**
+   - SilentID does NOT combine stars into one "SilentID Rating"
+   - Each platform shown separately
+   - User's internal TrustScore kept **private** (not shown publicly)
+
+5. **Defamation-Safe Language:**
+   - Never say "scammer," "fraudster," "untrustworthy"
+   - Always use neutral, factual language: "Multiple reports received" (NOT "This person is dangerous")
+
+**Legal Disclaimer (Displayed on Public Profile):**
+> "Star ratings are sourced from verified marketplace accounts and displayed factually. SilentID does not endorse, guarantee, or make judgments about users. Use marketplace ratings as one factor in your decision-making."
+
+---
+
+### 47.12 Integration with Partner Marketplaces
+
+**Purpose:** Enable partner platforms to request and display SilentID Digital Trust Passports for their users.
+
+**Integration Model:**
+
+**Option A: Partner API Access (Recommended)**
+- Partner platforms use Partner TrustSignal API (Section 22)
+- Partner requests: `GET /api/partner/v1/passport/{username}`
+- Response includes:
+  - Public profile data (display name, username, verification badges)
+  - Verified star ratings from external platforms
+  - QR code link
+  - Profile freshness indicator
+
+**Option B: Embeddable Widget (Future)**
+- Partner platforms embed SilentID widget on user profiles
+- Widget displays Digital Trust Passport (read-only)
+- Updates automatically when user's ratings change
+- Requires partner API key and user consent
+
+**Option C: Deep Link Integration**
+- Partner platforms link to SilentID public profile: `silentid.co.uk/u/{username}`
+- User taps link → Opens SilentID web view or app
+- Seamless for users already on SilentID
+
+**Data Shared with Partners:**
+✅ **CAN Share (with user consent):**
+- Display name, username
+- Identity verification status
+- Star ratings from verified platforms
+- Review counts
+- Account age
+- Platform count
+
+❌ **CANNOT Share:**
+- TrustScore (private)
+- URS (internal calculation)
+- Evidence Vault contents
+- Risk signals
+- Email address or phone number
+- Full legal name
+
+**User Control:**
+- User must explicitly enable "Share with [Partner Name]" in SilentID settings
+- User can revoke access anytime
+- User sees audit log of which partners accessed their passport
+
+**Partner Branding:**
+- Partner platforms can customize widget appearance (colors, fonts) within brand guidelines
+- SilentID logo and "Verified via SilentID" badge must remain visible
+- No white-labeling (SilentID branding must be present)
+
+**Rate Limiting (Partner API):**
+- 100 requests/minute per partner
+- 10,000 requests/day per partner
+- Burst allowance: 150 requests/minute for 10 seconds
+
+**Legal Agreement Required:**
+- Partner must sign Data Processing Agreement (DPA)
+- Partner must respect user privacy (no scraping or unauthorized use)
+- Partner must display SilentID attribution
+- Violation = API key revoked
+
+---
+
+### 47.13 Edge Case Handling — Platform HTML Changes
+
+**Problem:** External marketplace (e.g., Vinted) changes their website HTML structure, breaking SilentID's scraper.
+
+**5-Layer Resilience System:**
+
+**Layer 1: Selector Redundancy**
+- Store **3-5 fallback CSS selectors** for each data point
+- Example for Vinted star rating:
+  - Primary: `.user-rating .stars`
+  - Fallback 1: `[data-testid="user-rating"]`
+  - Fallback 2: `.profile-stats .rating-value`
+  - Fallback 3: Text extraction from `<span>` containing "★"
+- If primary fails → Try fallback selectors sequentially
+
+**Layer 2: Platform Health Monitoring**
+- Canary profiles: 5-10 known-good test accounts per platform
+- Check canaries every 6 hours
+- If >50% of canaries fail → Platform HTML likely changed
+- Trigger alert to engineering team
+
+**Layer 3: Graceful Degradation**
+- If scraping fails → Don't delete existing star rating
+- Display: "Last known: 4.9 ★ (as of [date])"
+- Add freshness warning: "⚠️ Rating not recently updated (90+ days)"
+- User sees stale data, but profile doesn't go blank
+
+**Layer 4: User Notification**
+- If scraping fails for 14+ days → Email user:
+  > "We couldn't update your Vinted rating. Please re-verify your profile or contact support."
+- Provide "Re-verify" button in app
+
+**Layer 5: Engineering Fix SLA**
+- **Critical platforms** (Vinted, eBay, Depop): Fix within 24 hours
+- **Secondary platforms** (Etsy, Poshmark): Fix within 72 hours
+- **Niche platforms** (local marketplaces): Fix within 7 days
+
+**Fallback: Manual Admin Override**
+- If automated scraping broken, admin can manually enter star rating
+- Requires: Screenshot proof from user + admin verification
+- Marked as "Manually verified" with timestamp
+
+---
+
+### 47.14 Edge Case Handling — Account Hacked and Reviews Deleted
+
+**Problem:** User's marketplace account (e.g., Vinted) is hacked. Hacker deletes all reviews, tanking star rating from 4.9★ to 0★. SilentID scrapes the compromised profile, updating user's passport to show "0★" or "No rating."
+
+**Protection System:**
+
+**Detection: Anomaly Detection**
+- Monitor for sudden, drastic rating changes:
+  - Rating drops by >1.0 stars in <7 days
+  - Review count drops by >50% in <7 days
+  - Account suspension detected
+- If anomaly detected → **Don't auto-update star rating**
+
+**Action: Freeze & Investigate**
+1. Freeze star rating at last known good value
+2. Add warning badge: "⚠️ Rating under review (unusual activity detected)"
+3. Email user:
+   > "We noticed unusual changes to your Vinted account (rating dropped from 4.9★ to 0★). This may indicate a security issue. Please verify your account and contact support if needed."
+
+**User Recovery Options:**
+1. **User confirms account compromised:**
+   - User files report with SilentID support
+   - Provides proof of account recovery (e.g., marketplace support email)
+   - SilentID temporarily displays: "Rating unavailable (account recovery in progress)"
+   - After recovery confirmed → Re-scrape profile
+
+2. **User confirms changes are legitimate:**
+   - User clicks "These changes are correct"
+   - SilentID updates star rating to new value
+   - Logs user confirmation for audit trail
+
+**Grace Period:**
+- If user doesn't respond within 14 days → SilentID updates rating to new value (but flags as "Recently changed" for 60 days)
+- If user responds within 14 days → Rating frozen until resolved
+
+**Historical Baseline Protection:**
+- Store **12 months of rating snapshots** (weekly)
+- If current rating is statistical outlier (>2 standard deviations from historical average) → Trigger anomaly detection
+- Example: User had 4.8-4.9★ for 10 months, suddenly 0★ → Likely fraud/hack, not legitimate change
+
+---
+
+### 47.15 Edge Case Handling — Shared Device Between Legitimate Users
+
+**Problem:** Two legitimate users (e.g., housemates, siblings, business partners) share the same device. SilentID's fraud detection flags them as duplicate accounts due to matching device fingerprints.
+
+**Solution: Household Declaration**
+
+**User Flow:**
+1. User A creates SilentID account from Device X
+2. User B tries to create account from same Device X
+3. System detects duplicate device fingerprint
+4. Instead of blocking, show prompt:
+   > "This device is already associated with another SilentID account (@user-a). Do you share this device with someone?"
+   >
+   > [Yes, we share this device] [No, this is my device only]
+
+**If "Yes, we share this device":**
+- Allow account creation
+- Link both accounts with "Household" flag
+- Store relationship: Device X → User A (primary), User B (secondary, household member)
+- Both users can use Device X without fraud flags
+
+**Fraud Prevention (Household Model):**
+- **Limit: Max 3 accounts per device** (reasonable for household)
+- **Cross-check:** If User A and User B mutually verify each other → Flag for admin review (possible collusion)
+- **Behavioral monitoring:** If User A and User B always log in at same times, upload evidence simultaneously → Flag for review
+- **Legitimacy indicators:**
+  - Different email providers (user-a@gmail.com vs user-b@outlook.com) = more legitimate
+  - Different identity verification IDs (different people in Stripe) = legitimate
+  - Same identity verification ID (same person) = fraud
+
+**Admin Review Trigger:**
+- If 2+ household accounts:
+  - Mutually verify each other's transactions
+  - Both have high TrustScores (>800)
+  - Both actively trade on same platforms
+- → Flag for admin review to confirm not collusion ring
+
+**Transparency:**
+- User sees in Settings: "Shared Device: This device is also used by @user-b (household member)"
+- User can report "I no longer share this device" → Unlink accounts
+
+---
+
+### 47.16 Edge Case Handling — Unfair Platform Suspension
+
+**Problem:** User is unfairly suspended from marketplace (e.g., Vinted) due to false report or platform error. SilentID scrapes the profile and sees "Account suspended," potentially displaying this on public passport.
+
+**Protection System:**
+
+**Detection:**
+- Scraper detects account suspension indicators:
+  - Profile shows "This account has been suspended"
+  - Profile is no longer accessible (404 error)
+  - Star rating/reviews hidden by platform
+
+**Action: Isolation (Don't Propagate Suspension to SilentID):**
+1. **Don't auto-update star rating to "Suspended"**
+2. Keep last known good star rating displayed
+3. Add neutral note: "Profile verification temporarily unavailable"
+4. **Do NOT display**: "Account suspended" (assumes guilt)
+
+**User Notification:**
+- Email user:
+  > "We couldn't access your Vinted profile during our recent verification check. If your account has been suspended or restricted, you can provide proof of resolution to restore full verification."
+
+**User Response Options:**
+
+**Option A: User confirms suspension is legitimate:**
+- User acknowledges: "Yes, my account was suspended"
+- SilentID removes Vinted rating from public passport
+- Other platforms (eBay, Depop) remain visible
+- User's TrustScore recalculated without Vinted data
+
+**Option B: User disputes suspension (unfair):**
+- User provides proof of appeal/resolution (e.g., marketplace support email)
+- SilentID temporarily marks Vinted as "Under dispute"
+- If user successfully appeals and account restored → SilentID re-verifies profile
+- If appeal denied → SilentID removes Vinted rating
+
+**Option C: User doesn't respond:**
+- After 60 days of profile inaccessibility → SilentID auto-removes Vinted rating
+- User notified: "Vinted verification removed due to prolonged unavailability"
+
+**Multi-Platform Resilience:**
+- If user has **3+ verified platforms**, loss of 1 platform (Vinted) has minimal impact
+- Example: User loses Vinted (4.9★) but keeps eBay (99% positive), Depop (5.0★), Etsy (4.8★)
+- Public passport still shows strong ratings
+- **This is why multi-platform verification is critical** — one bad platform doesn't tank entire reputation
+
+**Grace Period:**
+- **60 days** from first detection of suspension
+- During grace period: Last known rating displayed with note: "Verification in progress"
+- After 60 days: Rating removed if still inaccessible
+
+---
+
+### 47.17 Edge Case Design Principles
+
+**5 Core Principles for Handling Edge Cases:**
+
+1. **Assume Innocence First:**
+   - Don't assume account issues = user fraud
+   - Could be platform error, hack, or legitimate dispute
+   - Give user benefit of doubt + chance to explain
+
+2. **Preserve Context, Don't Blank Data:**
+   - If rating unavailable → Show "Last known: 4.9 ★ (as of [date])"
+   - Don't delete historical data
+   - Don't display "0★" or "No rating" unless confirmed accurate
+
+3. **Multi-Platform Resilience:**
+   - Encourage users to verify 3+ platforms
+   - Loss of 1 platform shouldn't destroy entire passport
+   - Diversification = robustness
+
+4. **Transparent Communication:**
+   - Always tell user what happened: "Vinted profile unavailable"
+   - Explain impact: "Your Vinted rating is temporarily hidden"
+   - Provide action steps: "Re-verify your account" or "Contact support"
+
+5. **Manual Override Available:**
+   - Admin can manually adjust ratings with justification
+   - User can appeal automated decisions
+   - Human judgment available for complex cases
+
+---
+
+### 47.18 Integration with Existing Sections
+
+**Section 47 connects with:**
+
+**Section 3 (System Overview):**
+- Digital Trust Passport is the **Public Profile Layer**
+- Star ratings sourced from Level 3 verified profiles (Section 3)
+- TrustScore remains private (internal calculation), stars shown publicly
+
+**Section 5 (Core Features - Level 3 Verification):**
+- Only Level 3 verified profiles contribute stars to public passport
+- Token-in-Bio and Share-Intent methods ensure ownership
+- Ownership locking prevents profile impersonation
+
+**Section 5 (URS - Unified Reputation Score):**
+- URS calculates weighted average of star ratings (0-200 points)
+- URS is **private** (used in TrustScore calculation)
+- Public passport shows **raw stars** from each platform, NOT aggregated URS
+
+**Section 22 (Partner TrustSignal API):**
+- Partner platforms can request public passport data via API
+- Section 47.12 defines integration model and data sharing rules
+- User consent required for partner access
+
+**Section 23 (QR Trust Passport System):**
+- QR code encodes public profile URL (silentid.co.uk/u/{username})
+- Section 47.9 defines QR code visual design and use cases
+- QR code displays Digital Trust Passport when scanned
+
+**Section 26 (Evidence Integrity Engine):**
+- Evidence Vault contributes max 15% of TrustScore (45 points)
+- Vault evidence **not shown publicly** (only stars from verified platforms)
+- Reinforcement-only rule applies (vault matches verified behavior)
+
+**Section 39 (UI Navigation Rules):**
+- "Profile" tab in bottom navigation shows user's private TrustScore dashboard
+- "Share Profile" option generates QR code and public profile link
+- Public profile preview shown to user before sharing
+
+**Section 40 (UI Info Points):**
+- Info point (ⓘ) next to "Digital Trust Passport" explains: "Your verified marketplace ratings shown publicly. Your TrustScore is private."
+- Info point next to star ratings explains: "Stars sourced from Level 3 verified profiles. Updated weekly."
+
+---
+
+### 47.19 Summary
+
+**What Section 47 Defines:**
+
+1. **Digital Trust Passport:** A passport-like public profile showing verified marketplace star ratings
+2. **Facts vs. Judgments:** Public = facts (stars), Private = calculations (TrustScore)
+3. **Star Display Rules:** Accuracy requirements (never round up, never estimate, show freshness)
+4. **Visual Design:** Passport-inspired layout with header, star ratings, verification badges, QR code
+5. **QR Code Feature:** In-person verification for meetups and local trades
+6. **Legal Positioning:** Factual reporting (low risk) vs. editorial judgment (high risk)
+7. **Partner Integration:** API access for partner platforms to display passports
+8. **Edge Case Handling:** Platform HTML changes, account hacks, shared devices, unfair suspensions
+9. **Integration:** Connects with Level 3 Verification, URS, Partner API, QR Passport, UI systems
+
+**Key Takeaway:**
+SilentID's Digital Trust Passport is a **portable, verifiable credential** that displays users' real-world marketplace performance (star ratings) while keeping internal trust calculations (TrustScore, URS) **private** for legal protection and user privacy.
+
+---
+
+**END OF SECTION 47**
+
+---
+
+# SECTION 48: MODULAR PLATFORM CONFIGURATION SYSTEM
+
+-----
+
+## 48.1 Purpose
+
+Make platform scraping configurable rather than hardcoded. When a marketplace changes their HTML structure, admin updates a configuration file instead of deploying new code. This dramatically reduces recovery time from hours or days to minutes.
+
+-----
+
+## 48.2 The Problem with Hardcoded Scraping
+
+**Current approach in most systems:**
+
+Platform logic is embedded in code. Each platform has a dedicated scraper class. Selectors are hardcoded as strings in code files. When Vinted changes CSS classes, developers must modify code, test changes, deploy to staging, test again, and deploy to production. Recovery time is 6 to 12 hours minimum. Requires developer intervention every time.
+
+**This creates risk.**
+
+Platform changes happen without warning. Changes can occur during weekends or holidays. One platform change can break thousands of verifications. User trust erodes when profiles show stale data or errors.
+
+-----
+
+## 48.3 Solution: Configuration-Driven Platform System
+
+**Core concept:**
+
+Store all platform-specific logic in database configuration rather than code. Each platform has a configuration record defining selectors, extraction rules, rating formats, and verification methods. When a platform changes, admin updates the configuration through admin dashboard. Changes take effect immediately without code deployment.
+
+-----
+
+## 48.4 Platform Configuration Schema
+
+**Database Table: PlatformConfigurations**
+
+Store one record per platform with the following fields.
+
+**Platform Identifier**
+
+Platform name such as Vinted or eBay or Depop or Etsy or Facebook Marketplace. Platform ID as unique identifier. Status as active or deprecated or maintenance or disabled.
+
+**Base Configuration**
+
+Platform base URL pattern for profile pages. Example pattern for Vinted is http://vinted.co.uk/member/{username} or http://vinted.com/member/{username}. Platform display name for UI showing as Vinted or eBay. Platform logo URL for display. Platform colour hex code for badges and UI elements.
+
+**Scraping Configuration**
+
+This is the critical section that makes the system modular.
+
+**Selector Sets with Priority**
+
+Each data point such as rating or review count or join date or username has multiple selector sets ordered by priority.
+
+For rating extraction, define primary selector as the first choice such as `div.rating-stars > span.score`. Define fallback selector 1 as the second choice such as data attribute with `data-testid="user-rating"`. Define fallback selector 2 as the third choice such as XPath expression `//div[contains(@class, 'rating')]//span[1]`. Define fallback selector 3 as the fourth choice using regex pattern on page text `(\d\.\d)\s*stars?`. Define fallback selector 4 as the fifth choice using JSON-LD structured data extraction if platform provides it.
+
+For review count extraction, define primary selector such as `span.review-count`. Define fallback selectors using similar multi-layer approach.
+
+For join date extraction, define primary selector such as `div.member-since > time`. Define fallback selectors using similar approach.
+
+For username extraction, define primary selector such as `h1.username`. Define fallback selectors using similar approach.
+
+**Extraction Rules**
+
+Define how to parse extracted text into usable data.
+
+For rating scale, specify whether platform uses 1 to 5 stars or 0 to 100 percent or other scale. Define conversion formula to normalize to 0 to 100 scale for URS calculation.
+
+For review count parsing, define regex pattern to extract number from text such as extracting 487 from "487 reviews" or "487 total ratings".
+
+For date parsing, define expected date format such as ISO 8601 or DD/MM/YYYY or relative dates like "Member for 3 years".
+
+For username normalization, define rules such as remove @ symbol or lowercase or trim whitespace.
+
+**Validation Rules**
+
+Define sanity checks for extracted data.
+
+For rating validation, rating must be between 0 and maximum for platform such as 5.0 for star systems. Flag as suspicious if rating is exactly 5.0 with fewer than 10 reviews suggesting fake or new account.
+
+For review count validation, review count must be non-negative integer. Flag as suspicious if count drops by more than 30 percent between checks suggesting deleted reviews or hack.
+
+For join date validation, join date cannot be in the future. Join date cannot change by more than 7 days between checks as platform might adjust dates slightly. Flag if join date resets to recent date suggesting account recreated or hacked.
+
+**Platform-Specific Features**
+
+Each platform has unique characteristics that configuration must capture.
+
+Rate limiting configuration defines requests per minute allowed such as 10 for Vinted or 20 for eBay. Define backoff strategy when rate limited such as exponential backoff or fixed delay.
+
+Authentication requirements define whether scraping requires login such as some Facebook Marketplace profiles require login. Define whether platform allows public scraping or requires API key.
+
+Verification method defines how user proves ownership. Token-in-bio platforms like Vinted and eBay and Depop allow users to add token to bio text. Share-intent platforms like Facebook allow share button verification. API-based platforms like eBay provide official verification API.
+
+-----
+
+## 48.5 Configuration Management Interface
+
+**Admin Dashboard: Platform Configuration Manager**
+
+Location is `admin.silentid.co.uk/platforms/config`.
+
+**List View**
+
+Display all configured platforms with platform name and logo, current status as active or maintenance or disabled, last successful scrape timestamp, current failure rate as percentage, selector version number, and quick actions to edit or test or disable.
+
+**Edit Platform Configuration**
+
+Click edit on any platform to open configuration editor.
+
+**Selector Editor Interface**
+
+For each data point such as rating or reviews or join date, display current selectors in priority order showing selector 1 primary as the main selector with success rate percentage, selector 2 fallback showing alternate selector with success rate percentage, and similar for additional fallback selectors.
+
+Provide add new selector button to insert additional fallback. Provide test selector button to test against live profiles. Provide reorder buttons to change priority. Provide delete button to remove selector.
+
+**Real-Time Selector Testing**
+
+Admin enters test profile URLs such as 3 to 5 known working profiles. System attempts extraction using each selector in priority order. Display results showing which selector succeeded, what data was extracted, and extraction time in milliseconds. Colour-code results as green for successful extraction, yellow for extracted but suspicious value, and red for extraction failed.
+
+Admin can immediately see if new selectors work before saving configuration.
+
+**Version Control**
+
+Each configuration change creates new version. Store complete history of all selector changes with change timestamp, admin who made change, reason for change as free text, and rollback capability to previous version.
+
+If new selectors break more than current selectors, admin rolls back to previous version with one click.
+
+-----
+
+## 48.6 Automatic Selector Rotation
+
+**When Primary Selector Fails**
+
+System automatically tries fallback selectors in priority order. If primary selector fails but fallback 2 succeeds, system logs the failure of primary and success of fallback. If fallback succeeds for more than 50 percent of attempts over 24 hours, system sends alert to admin suggesting primary selector may be broken. Admin reviews and potentially promotes fallback to primary position.
+
+**Success Rate Tracking**
+
+Track success rate per selector over rolling 7-day window. Display in admin dashboard as percentage. Primary selector with success rate below 80 percent triggers warning. Primary selector with success rate below 50 percent triggers critical alert and automatic investigation.
+
+-----
+
+## 48.7 Platform Health Monitoring with Configuration
+
+**Canary Profile System**
+
+For each platform, maintain list of 10 to 20 canary profiles. These are real profiles with known expected values. Store expected values in configuration such as expected rating of 4.9, expected review count of 487, expected username, and expected join date.
+
+**Automated Health Checks**
+
+Every 6 hours, scrape all canary profiles for each platform. Compare extracted values to expected values. Calculate match percentage as number of successful matches divided by total canaries.
+
+Health status determined by match percentage. Healthy is 90 to 100 percent matches. Degraded is 70 to 89 percent matches triggering warning to admins. Down is below 70 percent matches triggering critical alert and auto-disable scraping. Maintenance is manually set by admin when updating configuration.
+
+**Automatic Recovery Attempt**
+
+When platform status becomes degraded, system automatically attempts recovery. Try each fallback selector in sequence against canary profiles. If any fallback selector achieves more than 90 percent success rate, temporarily promote that selector to primary. Alert admin of automatic promotion. Continue monitoring to ensure promoted selector remains stable.
+
+-----
+
+## 48.8 Configuration Deployment Process
+
+**When Admin Updates Configuration**
+
+Admin edits selectors or extraction rules in dashboard. Admin clicks save configuration. System validates configuration structure ensuring all required fields present, selectors have valid CSS or XPath syntax, and extraction rules have valid regex patterns.
+
+If validation passes, system creates new configuration version, deploys immediately to scraping system with no code deployment required, and begins health check using canary profiles.
+
+If canary health check shows more than 90 percent success rate, configuration is marked as verified and becomes active. If canary health check shows less than 90 percent success rate, system alerts admin of potential issue and offers rollback option but does not auto-rollback to allow admin investigation.
+
+**Staged Rollout Option**
+
+For major selector changes, admin can enable staged rollout. New selectors apply to 10 percent of scraping requests for first hour. If success rate remains above 85 percent, expand to 50 percent for next 2 hours. If success rate remains above 85 percent, expand to 100 percent. If success rate drops below 85 percent at any stage, halt rollout and alert admin.
+
+-----
+
+## 48.9 Emergency Override System
+
+**When Platform Breaks and Admin Not Available**
+
+System includes emergency failsafe mode. If platform health drops below 50 percent and remains there for more than 2 hours, system sends escalating alerts via email to all admins, SMS to on-call admin, and Slack alert to engineering channel.
+
+If health remains below 50 percent for 6 hours with no admin response, system automatically enters graceful degradation as described in edge case handling. Freeze all TrustScores using that platform data. Display last known good data with staleness indicator. Extend re-verification deadline for affected users. Prevent new Level 3 verifications for that platform until health restored.
+
+**Manual Override**
+
+Admin can manually force platform into maintenance mode from anywhere using admin mobile app or emergency dashboard. This immediately stops scraping, preserves user scores, and displays maintenance message to users attempting to verify that platform.
+
+-----
+
+## 48.10 Multi-Region Platform Support
+
+**Same Platform, Different Regions**
+
+Vinted operates in UK as `vinted.co.uk` and in France as `vinted.fr` and in US as `vinted.com`. Each region may have different HTML structure, different selectors, and different rate limits.
+
+**Configuration Approach**
+
+Treat each region as separate platform configuration. Vinted UK has configuration ID `vinted-uk` with base URL `vinted.co.uk` and UK-specific selectors. Vinted France has configuration ID `vinted-fr` with base URL `vinted.fr` and France-specific selectors. Vinted US has configuration ID `vinted-us` with base URL `vinted.com` and US-specific selectors.
+
+User enters Vinted profile URL during verification. System detects region from URL domain. System selects appropriate configuration for that region. System applies region-specific selectors and rules.
+
+**Shared Fallbacks**
+
+If regions share common structure, configuration can reference shared selector sets. Primary selectors may differ by region but fallback selectors can be shared if HTML structure is similar across regions.
+
+-----
+
+## 48.11 Platform API Integration
+
+**Some Platforms Provide Official APIs**
+
+eBay has public API for seller feedback at `api.ebay.com/commerce/reputation/v1`. Etsy has seller API at `openapi.etsy.com/v3/public`. These APIs are more reliable than scraping.
+
+**Configuration for API-Based Platforms**
+
+For platforms with APIs, configuration includes API endpoint URL, authentication method such as API key or OAuth, rate limit from API provider such as 5000 requests per day, request format as JSON or XML, and response parsing rules to extract rating and reviews from API response.
+
+**Hybrid Approach**
+
+Configuration can specify API as primary method and scraping as fallback. If API is available and working, use API for all extractions. If API is rate-limited or down, fall back to scraping. This provides best reliability while respecting API provider limits.
+
+-----
+
+## 48.12 Configuration Backup and Disaster Recovery
+
+**Automatic Configuration Backup**
+
+Every configuration change is backed up automatically. Store full configuration history in database. Export configuration snapshots to Azure Blob Storage daily. Retention policy keeps all versions for 90 days and monthly snapshots for 7 years to meet compliance requirements.
+
+**Configuration Restoration**
+
+If configuration becomes corrupted or all selectors break simultaneously, admin can restore from any previous backup. Select backup from list showing timestamp and admin who made change. Preview backup configuration before restoring. Restore with one click returning all selectors to previous working state.
+
+**Cross-Platform Configuration Templates**
+
+Create templates for common platform patterns. Star-based marketplace template for platforms using 1 to 5 star ratings. Percentage-based marketplace template for platforms using percent positive ratings. Social profile template for platforms with follower counts and engagement metrics.
+
+When adding new platform, admin selects appropriate template as starting point. Template provides pre-configured selector patterns that admin customizes for specific platform. This dramatically reduces configuration time for new platforms from hours to minutes.
+
+-----
+
+## 48.13 Performance Optimization
+
+**Configuration Caching**
+
+Platform configurations are loaded into memory cache at application startup. Cache expires every 5 minutes or when configuration changes. This ensures scraping system always uses latest configuration while minimizing database queries. Cache hit rate should exceed 99.9 percent for production system.
+
+**Selector Compilation**
+
+CSS selectors and XPath expressions are pre-compiled when configuration loads. Compiled selectors are cached for faster execution. Regular expressions are compiled once and reused across all scraping requests. This reduces extraction time by 40 to 60 percent compared to runtime compilation.
+
+-----
+
+## 48.14 Documentation and Training
+
+**Configuration Documentation**
+
+Each platform configuration includes documentation field. Admin documents what each selector extracts and why specific selector pattern was chosen. Document known issues such as "Vinted sometimes nests rating in additional div on profile pages with >1000 reviews". Document date of last successful extraction. Document admin contact for platform-specific questions.
+
+**Admin Training**
+
+Provide admin training guide covering how to identify broken selectors from monitoring alerts, how to test new selectors using canary system, how to deploy configuration changes safely, how to rollback if changes break scraping, and when to use staged rollout versus immediate deployment.
+
+**Runbook for Platform Breaks**
+
+Create incident response runbook. Step 1 is check platform health dashboard to confirm which platform is affected. Step 2 is review recent configuration changes to see if internal change caused issue. Step 3 is manually visit platform to confirm HTML structure changed. Step 4 is use browser developer tools to identify new selectors. Step 5 is add new selectors to configuration as fallbacks. Step 6 is test new selectors against canary profiles. Step 7 is deploy configuration update. Step 8 is monitor health dashboard to confirm recovery. Step 9 is document incident and resolution for future reference.
+
+-----
+
+## 48.15 Benefits of Modular Configuration System
+
+**Faster Recovery from Platform Changes**
+
+Without modular system, recovery requires code changes and full deployment cycle taking 6 to 12 hours. With modular system, recovery requires configuration update through dashboard taking 15 to 30 minutes. This 20x improvement in recovery time dramatically reduces user impact from platform changes.
+
+**Non-Technical Admin Can Fix Issues**
+
+Without modular system, only developers can update selectors requiring technical knowledge of codebase. With modular system, trained admin can update selectors using web interface requiring no coding knowledge. This enables 24/7 response even when developers are unavailable.
+
+**Reduced Code Complexity**
+
+Without modular system, codebase contains platform-specific logic scattered across multiple files creating maintenance burden. With modular system, single generic scraper reads configuration making codebase simpler and more maintainable. Adding new platform requires zero code changes only configuration entry.
+
+**Better Testing and Validation**
+
+Without modular system, testing selector changes requires full development cycle. With modular system, admin tests selectors in real-time against live profiles before deployment. This catches issues immediately rather than discovering them in production.
+
+**Audit Trail and Rollback**
+
+Without modular system, selector changes are buried in git commits requiring developer to trace history. With modular system, every configuration change is tracked with timestamp, admin name, and reason. Rollback to any previous version takes one click.
+
+**Scaling to Many Platforms**
+
+Without modular system, adding 10 new platforms means writing 10 new scraper classes taking weeks of development. With modular system, adding 10 new platforms means creating 10 configuration entries taking hours. This enables rapid expansion to support more marketplaces.
+
+-----
+
+## 48.16 Implementation Priority
+
+**Phase 1: Core Configuration System**
+
+Build PlatformConfigurations database table. Build configuration API for CRUD operations. Build configuration caching layer. Build basic selector rotation logic. Estimated 2 weeks development time.
+
+**Phase 2: Admin Dashboard Interface**
+
+Build platform list view in admin dashboard. Build configuration editor UI. Build real-time selector testing. Build version history and rollback. Estimated 2 weeks development time.
+
+**Phase 3: Health Monitoring Integration**
+
+Build canary profile system. Build automated health checks. Build automatic selector promotion. Build alert system. Estimated 1 week development time.
+
+**Phase 4: Advanced Features**
+
+Build staged rollout system. Build emergency override. Build configuration templates. Build API integration support. Estimated 2 weeks development time.
+
+**Total estimated time is 7 weeks for complete modular configuration system.**
+
+This investment pays for itself after first major platform change. Without this system, one Vinted HTML change could break 50,000 verifications for 12 hours causing massive user trust damage. With this system, same change is resolved in 20 minutes with zero user impact.
+
+-----
+
+## 48.17 Integration with Existing Sections
+
+This section integrates with Section 5 Core Features where Level 3 verification relies on platform scraping now made configurable.
+
+This section integrates with Section 14 Admin Dashboard where platform configuration manager is added as new admin tool.
+
+This section integrates with Section 47 Edge Case Handling where graceful degradation depends on platform health monitoring enabled by configuration system.
+
+**No Conflicts**
+
+Level 3 verification logic unchanged. Scraping functionality unchanged. Only implementation method changes from hardcoded to configuration-driven. All existing features continue working with improved reliability and maintainability.
+
+-----
+
+## 48.18 Summary
+
+The modular platform configuration system transforms platform scraping from fragile hardcoded implementation to flexible configuration-driven system. When marketplaces change HTML structure, admin updates configuration through dashboard instead of waiting for code deployment. Recovery time reduces from hours to minutes. Non-technical admin can fix issues. System scales easily to support many platforms. This system is essential for maintaining user trust when external platforms change without warning.
+
+-----
+
+**END OF SECTION 48**
+
+---
 ## END OF MASTER SPECIFICATION
 
 This document contains the complete, authoritative specification for SilentID.
@@ -9687,6 +11349,7 @@ This document contains the complete, authoritative specification for SilentID.
 - **Section 44:** SilentID Privacy Policy (UK GDPR-Aligned) — NEW (Publication-Ready)
 - **Section 45:** SilentID Cookie & Tracking Policy — NEW (Publication-Ready)
 - **Section 46:** About SilentID – About Us / Legal Imprint — NEW (Publication-Ready)
+- **Section 47:** SilentID Digital Trust Passport — Public Profile & Star Display Rules — NEW
 
 
 

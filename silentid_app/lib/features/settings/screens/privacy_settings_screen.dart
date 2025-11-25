@@ -188,7 +188,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppTheme.primaryPurple,
+            activeThumbColor: AppTheme.primaryPurple,
           ),
         ],
       ),

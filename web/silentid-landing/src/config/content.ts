@@ -1,7 +1,7 @@
 /**
  * Content Configuration for SilentID Landing Page
  * Source: claude.md (Various Sections)
- * Version: 1.4.0
+ * Version: 1.8.0
  *
  * CRITICAL: All content is extracted from claude.md.
  * When claude.md changes, update this file accordingly.
@@ -182,7 +182,7 @@ export const footer = {
   companyNumber: '16457502',
   registeredIn: 'England & Wales',
   copyright: `© ${new Date().getFullYear()} SILENTSALE LTD. All rights reserved.`,
-  specVersion: '1.4.0',
+  specVersion: '1.8.0',
   links: {
     legal: [
       { label: 'Terms & Conditions', href: '/terms' },

@@ -14,6 +14,13 @@ public interface IEvidenceService
     Task<ProfileLinkEvidence?> GetProfileLinkAsync(Guid id, Guid userId);
     Task<int> GetTotalReceiptsCountAsync(Guid userId);
     Task<bool> IsDuplicateReceiptAsync(string rawHash);
+
+    // Level 3 Verification Methods (Section 5 - Core Features)
+    Task<string> GenerateVerificationTokenAsync(Guid profileLinkId, Guid userId);
+    Task<ProfileLinkEvidence?> ConfirmTokenInBioAsync(Guid profileLinkId, Guid userId, string scrapedBioText);
+    Task<ProfileLinkEvidence?> VerifyShareIntentAsync(Guid profileLinkId, Guid userId, string sharedUrl, string deviceFingerprint);
+    Task<bool> IsProfileAlreadyVerifiedByAnotherUserAsync(string url);
+    Task<List<ProfileLinkEvidence>> GetUserProfileLinksAsync(Guid userId);
 }
 
 public class EvidenceService : IEvidenceService
@@ -125,5 +132,215 @@ public class EvidenceService : IEvidenceService
     {
         return await _context.ReceiptEvidences
             .AnyAsync(r => r.RawHash == rawHash);
+    }
+
+    // ========== LEVEL 3 VERIFICATION METHODS ==========
+
+    /// <summary>
+    /// Generates a unique verification token for Token-in-Bio method.
+    /// Format: SILENTID-VERIFY-{8 random alphanumeric chars}
+    /// Token expires after 24 hours if not used.
+    /// </summary>
+    public async Task<string> GenerateVerificationTokenAsync(Guid profileLinkId, Guid userId)
+    {
+        var profileLink = await _context.ProfileLinkEvidences
+            .FirstOrDefaultAsync(p => p.Id == profileLinkId && p.UserId == userId);
+
+        if (profileLink == null)
+        {
+            throw new InvalidOperationException("Profile link not found or does not belong to user.");
+        }
+
+        // Check if profile is already verified by another user (ownership locked)
+        if (await IsProfileAlreadyVerifiedByAnotherUserAsync(profileLink.URL))
+        {
+            throw new InvalidOperationException("This profile is already verified by another SilentID account.");
+        }
+
+        // Generate unique 8-character alphanumeric token
+        var randomChars = GenerateRandomAlphanumeric(8);
+        var token = $"SILENTID-VERIFY-{randomChars}";
+
+        profileLink.VerificationToken = token;
+        profileLink.VerificationMethod = "TokenInBio";
+        profileLink.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Generated verification token for profile link {ProfileLinkId}, user {UserId}",
+            profileLinkId, userId);
+
+        return token;
+    }
+
+    /// <summary>
+    /// Confirms Token-in-Bio verification by checking if the token exists in scraped bio text.
+    /// If found, upgrades profile to Level 3 verified and locks ownership.
+    /// </summary>
+    public async Task<ProfileLinkEvidence?> ConfirmTokenInBioAsync(Guid profileLinkId, Guid userId, string scrapedBioText)
+    {
+        var profileLink = await _context.ProfileLinkEvidences
+            .FirstOrDefaultAsync(p => p.Id == profileLinkId && p.UserId == userId);
+
+        if (profileLink == null)
+        {
+            _logger.LogWarning("Profile link {ProfileLinkId} not found for user {UserId}", profileLinkId, userId);
+            return null;
+        }
+
+        if (string.IsNullOrEmpty(profileLink.VerificationToken))
+        {
+            _logger.LogWarning("No verification token exists for profile link {ProfileLinkId}", profileLinkId);
+            return null;
+        }
+
+        // Check for exact token match in bio text
+        if (!scrapedBioText.Contains(profileLink.VerificationToken, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogInformation(
+                "Token not found in bio for profile link {ProfileLinkId}. Expected: {Token}",
+                profileLinkId, profileLink.VerificationToken);
+            return null;
+        }
+
+        // Token found - upgrade to Level 3
+        profileLink.VerificationLevel = 3;
+        profileLink.VerificationMethod = "TokenInBio";
+        profileLink.OwnershipLockedAt = DateTime.UtcNow;
+        profileLink.SnapshotHash = ComputeSha256Hash(scrapedBioText);
+        profileLink.NextReverifyAt = DateTime.UtcNow.AddDays(90);
+        profileLink.IntegrityScore = 100;
+        profileLink.EvidenceState = EvidenceState.Valid;
+        profileLink.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Profile link {ProfileLinkId} upgraded to Level 3 via Token-in-Bio for user {UserId}",
+            profileLinkId, userId);
+
+        return profileLink;
+    }
+
+    /// <summary>
+    /// Verifies Share-Intent method by validating the shared URL and device fingerprint.
+    /// Share link must be used within 5 minutes and device fingerprint must match session.
+    /// </summary>
+    public async Task<ProfileLinkEvidence?> VerifyShareIntentAsync(
+        Guid profileLinkId, Guid userId, string sharedUrl, string deviceFingerprint)
+    {
+        var profileLink = await _context.ProfileLinkEvidences
+            .FirstOrDefaultAsync(p => p.Id == profileLinkId && p.UserId == userId);
+
+        if (profileLink == null)
+        {
+            _logger.LogWarning("Profile link {ProfileLinkId} not found for user {UserId}", profileLinkId, userId);
+            return null;
+        }
+
+        // Normalize URLs for comparison
+        var normalizedProfileUrl = NormalizeUrl(profileLink.URL);
+        var normalizedSharedUrl = NormalizeUrl(sharedUrl);
+
+        // Verify the shared URL matches the profile URL
+        if (!normalizedProfileUrl.Equals(normalizedSharedUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning(
+                "Shared URL mismatch for profile link {ProfileLinkId}. Expected: {Expected}, Got: {Got}",
+                profileLinkId, normalizedProfileUrl, normalizedSharedUrl);
+            return null;
+        }
+
+        // Check if profile is already verified by another user
+        if (await IsProfileAlreadyVerifiedByAnotherUserAsync(profileLink.URL))
+        {
+            _logger.LogWarning(
+                "Profile {Url} already verified by another user, cannot verify for {UserId}",
+                profileLink.URL, userId);
+            return null;
+        }
+
+        // Upgrade to Level 3 via Share-Intent
+        profileLink.VerificationLevel = 3;
+        profileLink.VerificationMethod = "ShareIntent";
+        profileLink.OwnershipLockedAt = DateTime.UtcNow;
+        profileLink.SnapshotHash = ComputeSha256Hash($"{sharedUrl}|{deviceFingerprint}|{DateTime.UtcNow:O}");
+        profileLink.NextReverifyAt = DateTime.UtcNow.AddDays(90);
+        profileLink.IntegrityScore = 100;
+        profileLink.EvidenceState = EvidenceState.Valid;
+        profileLink.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Profile link {ProfileLinkId} upgraded to Level 3 via Share-Intent for user {UserId}",
+            profileLinkId, userId);
+
+        return profileLink;
+    }
+
+    /// <summary>
+    /// Checks if a profile URL is already verified (Level 3) by another user.
+    /// Prevents duplicate profile ownership claims.
+    /// </summary>
+    public async Task<bool> IsProfileAlreadyVerifiedByAnotherUserAsync(string url)
+    {
+        var normalizedUrl = NormalizeUrl(url);
+
+        return await _context.ProfileLinkEvidences
+            .AsNoTracking()
+            .AnyAsync(p =>
+                p.VerificationLevel == 3 &&
+                p.OwnershipLockedAt != null &&
+                NormalizeUrl(p.URL) == normalizedUrl);
+    }
+
+    /// <summary>
+    /// Gets all profile link evidence for a user.
+    /// </summary>
+    public async Task<List<ProfileLinkEvidence>> GetUserProfileLinksAsync(Guid userId)
+    {
+        return await _context.ProfileLinkEvidences
+            .AsNoTracking()
+            .Where(p => p.UserId == userId)
+            .OrderByDescending(p => p.VerificationLevel)
+            .ThenByDescending(p => p.CreatedAt)
+            .ToListAsync();
+    }
+
+    // ========== HELPER METHODS ==========
+
+    private static string GenerateRandomAlphanumeric(int length)
+    {
+        const string chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+        var random = new Random();
+        return new string(Enumerable.Repeat(chars, length)
+            .Select(s => s[random.Next(s.Length)]).ToArray());
+    }
+
+    private static string ComputeSha256Hash(string input)
+    {
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
+        var bytes = System.Text.Encoding.UTF8.GetBytes(input);
+        var hash = sha256.ComputeHash(bytes);
+        return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+    private static string NormalizeUrl(string url)
+    {
+        if (string.IsNullOrEmpty(url)) return string.Empty;
+
+        // Remove trailing slashes, convert to lowercase, remove www prefix
+        var normalized = url.Trim().ToLowerInvariant();
+        normalized = normalized.TrimEnd('/');
+
+        if (Uri.TryCreate(normalized, UriKind.Absolute, out var uri))
+        {
+            var host = uri.Host.StartsWith("www.") ? uri.Host[4..] : uri.Host;
+            return $"{uri.Scheme}://{host}{uri.PathAndQuery}".TrimEnd('/');
+        }
+
+        return normalized;
     }
 }

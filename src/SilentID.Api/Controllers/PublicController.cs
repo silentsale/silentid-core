@@ -34,12 +34,20 @@ public class PublicController : ControllerBase
         public int BadgeCount { get; set; }
     }
 
+    public class PlatformRatingDto
+    {
+        public string Platform { get; set; } = string.Empty;
+        public decimal Rating { get; set; }
+        public int ReviewCount { get; set; }
+        public string DisplayRating { get; set; } = string.Empty; // e.g., "4.9 ★" or "99.2% positive"
+        public DateTime LastUpdated { get; set; }
+        public bool IsLevel3Verified { get; set; }
+    }
+
     public class PublicProfileDto
     {
         public string Username { get; set; } = string.Empty;
         public string DisplayName { get; set; } = string.Empty;
-        public int TrustScore { get; set; }
-        public string TrustScoreLabel { get; set; } = string.Empty;
         public bool IdentityVerified { get; set; }
         public string AccountAge { get; set; } = string.Empty;
         public List<string> VerifiedPlatforms { get; set; } = new();
@@ -48,6 +56,7 @@ public class PublicController : ControllerBase
         public List<string> Badges { get; set; } = new();
         public string? RiskWarning { get; set; }
         public DateTime CreatedAt { get; set; }
+        public List<PlatformRatingDto> PlatformRatings { get; set; } = new();
     }
 
     public class UsernameAvailabilityDto
@@ -144,16 +153,6 @@ public class PublicController : ControllerBase
             return NotFound(new { error = "username_not_found", message = "This username does not exist." });
         }
 
-        // Get latest TrustScore snapshot
-        var latestTrustScore = await _context.TrustScoreSnapshots
-            .AsNoTracking()
-            .Where(t => t.UserId == user.Id)
-            .OrderByDescending(t => t.CreatedAt)
-            .FirstOrDefaultAsync();
-
-        var trustScore = latestTrustScore?.Score ?? 0;
-        var trustScoreLabel = GetTrustScoreLabel(trustScore);
-
         // Get identity verification status
         var identityVerification = await _context.IdentityVerifications
             .AsNoTracking()
@@ -186,7 +185,7 @@ public class PublicController : ControllerBase
         var accountAge = accountAgeDays == 0 ? "Today" : $"{accountAgeDays} days";
 
         // Generate badges
-        var badges = GenerateBadges(identityVerified, verifiedTransactionCount, trustScore, mutualVerificationCount);
+        var badges = GenerateBadges(identityVerified, verifiedTransactionCount, mutualVerificationCount);
 
         // Check for verified safety reports (≥3 verified reports = public warning)
         var verifiedReportCount = await _context.Reports
@@ -202,12 +201,63 @@ public class PublicController : ControllerBase
             _logger.LogInformation("Risk warning displayed for user {Username}: {Count} verified reports", cleanUsername, verifiedReportCount);
         }
 
+        // Get platform ratings from ExternalRatings (Section 47: Digital Trust Passport)
+        // Only show non-expired ratings with Level 3 verification status
+        var externalRatings = await _context.ExternalRatings
+            .AsNoTracking()
+            .Where(er => er.UserId == user.Id && er.ExpiresAt > DateTime.UtcNow)
+            .ToListAsync();
+
+        // Get Level 3 verification status for each platform
+        var profileLinks = await _context.ProfileLinkEvidences
+            .AsNoTracking()
+            .Where(p => p.UserId == user.Id && p.EvidenceState == EvidenceState.Valid)
+            .ToListAsync();
+
+        // Map to PlatformRatingDto with formatted display
+        var platformRatings = externalRatings
+            .GroupBy(er => er.Platform)
+            .Select(g =>
+            {
+                var latestRating = g.OrderByDescending(r => r.ScrapedAt).First();
+                var profileLink = profileLinks.FirstOrDefault(p => p.Platform.ToString() == latestRating.Platform);
+                var isLevel3 = profileLink?.VerificationLevel == 3;
+                var totalReviews = g.Sum(r => r.ReviewCount);
+
+                // Format display rating based on platform type (Section 47.7)
+                string displayRating;
+                if (latestRating.Platform.ToLower() == "ebay")
+                {
+                    // eBay uses percentage format
+                    displayRating = $"{latestRating.NormalizedRating:F1}% positive";
+                }
+                else
+                {
+                    // Most platforms use star format (Vinted, Depop, Etsy)
+                    var starRating = (latestRating.PlatformRating / 20m); // Convert 0-100 to 0-5 if needed
+                    if (latestRating.PlatformRating <= 5)
+                        starRating = latestRating.PlatformRating; // Already in 0-5 scale
+                    displayRating = $"{starRating:F1} ★";
+                }
+
+                return new PlatformRatingDto
+                {
+                    Platform = latestRating.Platform,
+                    Rating = latestRating.PlatformRating,
+                    ReviewCount = totalReviews,
+                    DisplayRating = displayRating,
+                    LastUpdated = latestRating.ScrapedAt,
+                    IsLevel3Verified = isLevel3
+                };
+            })
+            .OrderByDescending(r => r.IsLevel3Verified)
+            .ThenByDescending(r => r.ReviewCount)
+            .ToList();
+
         var profile = new PublicProfileDto
         {
             Username = $"@{user.Username}",
             DisplayName = user.DisplayName,
-            TrustScore = trustScore,
-            TrustScoreLabel = trustScoreLabel,
             IdentityVerified = identityVerified,
             AccountAge = accountAge,
             VerifiedPlatforms = verifiedPlatforms,
@@ -215,11 +265,12 @@ public class PublicController : ControllerBase
             MutualVerificationCount = mutualVerificationCount,
             Badges = badges,
             RiskWarning = riskWarning,
-            CreatedAt = user.CreatedAt
+            CreatedAt = user.CreatedAt,
+            PlatformRatings = platformRatings
         };
 
-        _logger.LogInformation("Public profile returned for {Username}: TrustScore={TrustScore}, Verified={Verified}",
-            cleanUsername, trustScore, identityVerified);
+        _logger.LogInformation("Public profile returned for {Username}: Verified={Verified}",
+            cleanUsername, identityVerified);
 
         return Ok(profile);
     }
@@ -314,7 +365,7 @@ public class PublicController : ControllerBase
     /// <summary>
     /// Generates user-facing badges based on verification status and activity.
     /// </summary>
-    private static List<string> GenerateBadges(bool identityVerified, int transactionCount, int trustScore, int mutualVerificationCount)
+    private static List<string> GenerateBadges(bool identityVerified, int transactionCount, int mutualVerificationCount)
     {
         var badges = new List<string>();
 
@@ -327,11 +378,6 @@ public class PublicController : ControllerBase
             badges.Add("100+ verified transactions");
         else if (transactionCount >= 50)
             badges.Add("50+ verified transactions");
-
-        if (trustScore >= 800)
-            badges.Add("Excellent behaviour");
-        else if (trustScore >= 600)
-            badges.Add("Good behaviour");
 
         if (mutualVerificationCount >= 20)
             badges.Add("Peer-verified user");

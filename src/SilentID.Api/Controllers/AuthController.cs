@@ -17,6 +17,7 @@ public class AuthController : ControllerBase
     private readonly IOtpService _otpService;
     private readonly IDuplicateDetectionService _duplicateDetection;
     private readonly IEmailService _emailService;
+    private readonly IPasskeyService _passkeyService;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
@@ -25,6 +26,7 @@ public class AuthController : ControllerBase
         IOtpService otpService,
         IDuplicateDetectionService duplicateDetection,
         IEmailService emailService,
+        IPasskeyService passkeyService,
         ILogger<AuthController> logger)
     {
         _context = context;
@@ -32,6 +34,7 @@ public class AuthController : ControllerBase
         _otpService = otpService;
         _duplicateDetection = duplicateDetection;
         _emailService = emailService;
+        _passkeyService = passkeyService;
         _logger = logger;
     }
 
@@ -347,6 +350,340 @@ public class AuthController : ControllerBase
         _logger.LogInformation("User logged out: {UserId}", userId);
 
         return Ok(new { message = "Logged out successfully." });
+    }
+
+    // ==================== PASSKEY ENDPOINTS ====================
+
+    /// <summary>
+    /// Generate passkey registration options (challenge)
+    /// </summary>
+    [Authorize]
+    [HttpPost("passkey/register/options")]
+    public async Task<IActionResult> PasskeyRegisterOptions()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+        {
+            return NotFound(new { error = "user_not_found", message = "User not found." });
+        }
+
+        try
+        {
+            var options = await _passkeyService.GenerateRegistrationOptionsAsync(user);
+
+            _logger.LogInformation("Passkey registration options generated for user {UserId}", userId);
+
+            return Ok(options);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating passkey registration options for user {UserId}", userId);
+            return StatusCode(500, new
+            {
+                error = "internal_error",
+                message = "Failed to generate passkey registration options."
+            });
+        }
+    }
+
+    /// <summary>
+    /// Complete passkey registration
+    /// </summary>
+    [Authorize]
+    [HttpPost("passkey/register/complete")]
+    public async Task<IActionResult> PasskeyRegisterComplete([FromBody] PasskeyRegisterCompleteRequest request)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        if (string.IsNullOrWhiteSpace(request.CredentialId) || string.IsNullOrWhiteSpace(request.PublicKey))
+        {
+            return BadRequest(new { error = "invalid_request", message = "Credential ID and public key are required." });
+        }
+
+        try
+        {
+            var credential = await _passkeyService.CompleteRegistrationAsync(
+                userId,
+                request.CredentialId,
+                request.PublicKey,
+                request.SignatureCounter,
+                request.AaGuid,
+                request.DeviceName,
+                request.AttestationFormat,
+                request.UserVerified);
+
+            _logger.LogInformation("Passkey registered for user {UserId}, credential {CredentialId}", userId, request.CredentialId);
+
+            return Ok(new
+            {
+                id = credential.Id,
+                deviceName = credential.DeviceName,
+                createdAt = credential.CreatedAt,
+                message = "Passkey registered successfully."
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Passkey registration failed for user {UserId}", userId);
+            return Conflict(new { error = "credential_exists", message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error completing passkey registration for user {UserId}", userId);
+            return StatusCode(500, new
+            {
+                error = "internal_error",
+                message = "Failed to complete passkey registration."
+            });
+        }
+    }
+
+    /// <summary>
+    /// Generate passkey authentication options (challenge)
+    /// </summary>
+    [HttpPost("passkey/authenticate/options")]
+    public async Task<IActionResult> PasskeyAuthenticateOptions([FromBody] PasskeyAuthenticateOptionsRequest? request)
+    {
+        try
+        {
+            var options = await _passkeyService.GenerateAuthenticationOptionsAsync(request?.Email);
+
+            _logger.LogInformation("Passkey authentication options generated");
+
+            return Ok(options);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating passkey authentication options");
+            return StatusCode(500, new
+            {
+                error = "internal_error",
+                message = "Failed to generate passkey authentication options."
+            });
+        }
+    }
+
+    /// <summary>
+    /// Complete passkey authentication and return JWT tokens
+    /// </summary>
+    [HttpPost("passkey/authenticate/complete")]
+    public async Task<IActionResult> PasskeyAuthenticateComplete([FromBody] PasskeyAuthenticateCompleteRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.CredentialId))
+        {
+            return BadRequest(new { error = "invalid_request", message = "Credential ID is required." });
+        }
+
+        try
+        {
+            var result = await _passkeyService.CompleteAuthenticationAsync(
+                request.CredentialId,
+                request.AuthenticatorData,
+                request.ClientDataJson,
+                request.Signature,
+                request.SignatureCounter);
+
+            if (!result.Success || result.User == null)
+            {
+                _logger.LogWarning("Passkey authentication failed: {Error}", result.ErrorMessage);
+                return Unauthorized(new
+                {
+                    error = "authentication_failed",
+                    message = result.ErrorMessage ?? "Passkey authentication failed."
+                });
+            }
+
+            var user = result.User;
+
+            // Generate tokens
+            var accessToken = _tokenService.GenerateAccessToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
+            var refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
+
+            // Store session
+            var session = new Session
+            {
+                UserId = user.Id,
+                RefreshTokenHash = refreshTokenHash,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                IP = GetClientIpAddress(),
+                DeviceId = request.DeviceId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Sessions.Add(session);
+            await _context.SaveChangesAsync();
+
+            // Track device if provided
+            if (!string.IsNullOrWhiteSpace(request.DeviceId))
+            {
+                await TrackDeviceAsync(user.Id, request.DeviceId, request.DeviceModel, request.OS, request.Browser);
+            }
+
+            _logger.LogInformation("User authenticated via passkey: {UserId}", user.Id);
+
+            return Ok(new
+            {
+                accessToken,
+                refreshToken,
+                expiresIn = 900, // 15 minutes in seconds
+                tokenType = "Bearer",
+                user = new
+                {
+                    id = user.Id,
+                    email = user.Email,
+                    username = user.Username,
+                    displayName = user.DisplayName,
+                    accountType = user.AccountType.ToString(),
+                    isEmailVerified = user.IsEmailVerified,
+                    isNewUser = false
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during passkey authentication");
+            return StatusCode(500, new
+            {
+                error = "internal_error",
+                message = "Failed to complete passkey authentication."
+            });
+        }
+    }
+
+    /// <summary>
+    /// List user's registered passkeys
+    /// </summary>
+    [Authorize]
+    [HttpGet("passkey")]
+    public async Task<IActionResult> ListPasskeys()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var passkeys = await _passkeyService.GetUserPasskeysAsync(userId);
+
+            return Ok(new
+            {
+                passkeys = passkeys.Select(p => new
+                {
+                    id = p.Id,
+                    deviceName = p.DeviceName,
+                    credentialType = p.CredentialType,
+                    isActive = p.IsActive,
+                    lastUsedAt = p.LastUsedAt,
+                    createdAt = p.CreatedAt
+                })
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error listing passkeys for user {UserId}", userId);
+            return StatusCode(500, new
+            {
+                error = "internal_error",
+                message = "Failed to list passkeys."
+            });
+        }
+    }
+
+    /// <summary>
+    /// Delete a passkey
+    /// </summary>
+    [Authorize]
+    [HttpDelete("passkey/{id:guid}")]
+    public async Task<IActionResult> DeletePasskey(Guid id)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var deleted = await _passkeyService.DeletePasskeyAsync(userId, id);
+
+            if (!deleted)
+            {
+                return NotFound(new { error = "passkey_not_found", message = "Passkey not found." });
+            }
+
+            _logger.LogInformation("Passkey {PasskeyId} deleted for user {UserId}", id, userId);
+
+            return Ok(new { message = "Passkey deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting passkey {PasskeyId} for user {UserId}", id, userId);
+            return StatusCode(500, new
+            {
+                error = "internal_error",
+                message = "Failed to delete passkey."
+            });
+        }
+    }
+
+    /// <summary>
+    /// Update passkey device name
+    /// </summary>
+    [Authorize]
+    [HttpPatch("passkey/{id:guid}")]
+    public async Task<IActionResult> UpdatePasskeyName(Guid id, [FromBody] UpdatePasskeyNameRequest request)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        if (string.IsNullOrWhiteSpace(request.DeviceName))
+        {
+            return BadRequest(new { error = "invalid_request", message = "Device name is required." });
+        }
+
+        try
+        {
+            var updated = await _passkeyService.UpdatePasskeyNameAsync(userId, id, request.DeviceName);
+
+            if (!updated)
+            {
+                return NotFound(new { error = "passkey_not_found", message = "Passkey not found." });
+            }
+
+            _logger.LogInformation("Passkey {PasskeyId} renamed for user {UserId}", id, userId);
+
+            return Ok(new { message = "Passkey name updated successfully." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating passkey {PasskeyId} for user {UserId}", id, userId);
+            return StatusCode(500, new
+            {
+                error = "internal_error",
+                message = "Failed to update passkey name."
+            });
+        }
     }
 
     // Helper methods

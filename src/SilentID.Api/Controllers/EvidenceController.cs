@@ -358,6 +358,11 @@ public class EvidenceController : ControllerBase
                 usernameMatchScore = profileLink.UsernameMatchScore,
                 integrityScore = profileLink.IntegrityScore,
                 evidenceState = profileLink.EvidenceState.ToString(),
+                verificationLevel = profileLink.VerificationLevel,
+                verificationMethod = profileLink.VerificationMethod,
+                verificationToken = profileLink.VerificationToken,
+                ownershipLockedAt = profileLink.OwnershipLockedAt,
+                nextReverifyAt = profileLink.NextReverifyAt,
                 createdAt = profileLink.CreatedAt,
                 updatedAt = profileLink.UpdatedAt
             });
@@ -366,6 +371,226 @@ public class EvidenceController : ControllerBase
         {
             _logger.LogError(ex, "Error retrieving profile link {ProfileLinkId}", id);
             return StatusCode(500, new { error = "internal_error", message = "Failed to retrieve profile link." });
+        }
+    }
+
+    /// <summary>
+    /// GET /v1/evidence/profile-links - Get all user's profile links
+    /// </summary>
+    [HttpGet("profile-links")]
+    public async Task<IActionResult> GetProfileLinks()
+    {
+        try
+        {
+            var userId = GetUserId();
+
+            var profileLinks = await _evidenceService.GetUserProfileLinksAsync(userId);
+
+            return Ok(new
+            {
+                profileLinks = profileLinks.Select(p => new
+                {
+                    id = p.Id,
+                    url = p.URL,
+                    platform = p.Platform.ToString(),
+                    usernameMatchScore = p.UsernameMatchScore,
+                    integrityScore = p.IntegrityScore,
+                    evidenceState = p.EvidenceState.ToString(),
+                    verificationLevel = p.VerificationLevel,
+                    verificationMethod = p.VerificationMethod,
+                    ownershipLockedAt = p.OwnershipLockedAt,
+                    nextReverifyAt = p.NextReverifyAt,
+                    createdAt = p.CreatedAt,
+                    updatedAt = p.UpdatedAt
+                }),
+                count = profileLinks.Count
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving profile links");
+            return StatusCode(500, new { error = "internal_error", message = "Failed to retrieve profile links." });
+        }
+    }
+
+    // ========== LEVEL 3 VERIFICATION ENDPOINTS ==========
+
+    /// <summary>
+    /// POST /v1/evidence/profile-links/{id}/generate-token - Generate Token-in-Bio verification token
+    /// </summary>
+    [HttpPost("profile-links/{id}/generate-token")]
+    public async Task<IActionResult> GenerateVerificationToken(Guid id)
+    {
+        try
+        {
+            var userId = GetUserId();
+
+            var token = await _evidenceService.GenerateVerificationTokenAsync(id, userId);
+
+            _logger.LogInformation("Verification token generated for profile link {ProfileLinkId}, user {UserId}", id, userId);
+
+            return Ok(new
+            {
+                profileLinkId = id,
+                verificationToken = token,
+                method = "TokenInBio",
+                instructions = "Add this token to your profile bio/description, then call the confirm-token endpoint.",
+                expiresIn = "24 hours"
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Failed to generate token for profile link {ProfileLinkId}", id);
+            return BadRequest(new { error = "token_generation_failed", message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating verification token for profile link {ProfileLinkId}", id);
+            return StatusCode(500, new { error = "internal_error", message = "Failed to generate verification token." });
+        }
+    }
+
+    /// <summary>
+    /// POST /v1/evidence/profile-links/{id}/confirm-token - Confirm Token-in-Bio verification
+    /// </summary>
+    [HttpPost("profile-links/{id}/confirm-token")]
+    public async Task<IActionResult> ConfirmTokenInBio(Guid id, [FromBody] ConfirmTokenRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ScrapedBioText))
+        {
+            return BadRequest(new { error = "invalid_request", message = "ScrapedBioText is required." });
+        }
+
+        try
+        {
+            var userId = GetUserId();
+
+            var profileLink = await _evidenceService.ConfirmTokenInBioAsync(id, userId, request.ScrapedBioText);
+
+            if (profileLink == null)
+            {
+                return BadRequest(new { error = "verification_failed", message = "Token not found in bio text. Please ensure you added the exact token to your profile bio." });
+            }
+
+            _logger.LogInformation("Token-in-Bio verification confirmed for profile link {ProfileLinkId}, user {UserId}", id, userId);
+
+            return Ok(new
+            {
+                id = profileLink.Id,
+                url = profileLink.URL,
+                platform = profileLink.Platform.ToString(),
+                verificationLevel = profileLink.VerificationLevel,
+                verificationMethod = profileLink.VerificationMethod,
+                ownershipLockedAt = profileLink.OwnershipLockedAt,
+                nextReverifyAt = profileLink.NextReverifyAt,
+                integrityScore = profileLink.IntegrityScore,
+                message = "Profile successfully verified via Token-in-Bio! You can now remove the token from your bio."
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Token confirmation failed for profile link {ProfileLinkId}", id);
+            return BadRequest(new { error = "confirmation_failed", message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error confirming token for profile link {ProfileLinkId}", id);
+            return StatusCode(500, new { error = "internal_error", message = "Failed to confirm verification token." });
+        }
+    }
+
+    /// <summary>
+    /// POST /v1/evidence/profile-links/{id}/verify-intent - Verify via Share-Intent method
+    /// </summary>
+    [HttpPost("profile-links/{id}/verify-intent")]
+    public async Task<IActionResult> VerifyShareIntent(Guid id, [FromBody] VerifyShareIntentRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        if (string.IsNullOrWhiteSpace(request.SharedUrl))
+        {
+            return BadRequest(new { error = "invalid_request", message = "SharedUrl is required." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.DeviceFingerprint))
+        {
+            return BadRequest(new { error = "invalid_request", message = "DeviceFingerprint is required." });
+        }
+
+        try
+        {
+            var userId = GetUserId();
+
+            var profileLink = await _evidenceService.VerifyShareIntentAsync(id, userId, request.SharedUrl, request.DeviceFingerprint);
+
+            if (profileLink == null)
+            {
+                return BadRequest(new { error = "verification_failed", message = "Share-Intent verification failed. Please ensure the shared URL matches your profile URL." });
+            }
+
+            _logger.LogInformation("Share-Intent verification confirmed for profile link {ProfileLinkId}, user {UserId}", id, userId);
+
+            return Ok(new
+            {
+                id = profileLink.Id,
+                url = profileLink.URL,
+                platform = profileLink.Platform.ToString(),
+                verificationLevel = profileLink.VerificationLevel,
+                verificationMethod = profileLink.VerificationMethod,
+                ownershipLockedAt = profileLink.OwnershipLockedAt,
+                nextReverifyAt = profileLink.NextReverifyAt,
+                integrityScore = profileLink.IntegrityScore,
+                message = "Profile successfully verified via Share-Intent!"
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Share-Intent verification failed for profile link {ProfileLinkId}", id);
+            return BadRequest(new { error = "verification_failed", message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error verifying share intent for profile link {ProfileLinkId}", id);
+            return StatusCode(500, new { error = "internal_error", message = "Failed to verify share intent." });
+        }
+    }
+
+    /// <summary>
+    /// GET /v1/evidence/profile-links/{id}/ownership-check - Check if profile URL is already verified by another user
+    /// </summary>
+    [HttpGet("profile-links/ownership-check")]
+    public async Task<IActionResult> CheckProfileOwnership([FromQuery] string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return BadRequest(new { error = "invalid_request", message = "URL is required." });
+        }
+
+        try
+        {
+            var isOwned = await _evidenceService.IsProfileAlreadyVerifiedByAnotherUserAsync(url);
+
+            return Ok(new
+            {
+                url = url,
+                isOwnedByAnother = isOwned,
+                message = isOwned
+                    ? "This profile is already verified by another SilentID account."
+                    : "This profile is available for verification."
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking profile ownership for URL {Url}", url);
+            return StatusCode(500, new { error = "internal_error", message = "Failed to check profile ownership." });
         }
     }
 

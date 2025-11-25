@@ -72,17 +72,22 @@ public class TrustScoreService : ITrustScoreService
 
         var accountAgeDays = (DateTime.UtcNow - user.CreatedAt).Days;
 
-        // Build breakdown
+        // Build breakdown (5 components: Identity, Evidence, Behaviour, Peer, URS)
         var breakdown = new TrustScoreBreakdown
         {
             Identity = BuildIdentityBreakdown(user, identityVerification, accountAgeDays),
             Evidence = BuildEvidenceBreakdown(receiptsCount, screenshotsCount, profileLinksCount),
             Behaviour = BuildBehaviourBreakdown(reportsCount, accountAgeDays),
-            Peer = BuildPeerBreakdown(mutualVerificationsCount)
+            Peer = BuildPeerBreakdown(mutualVerificationsCount),
+            Urs = await BuildUrsBreakdownAsync(userId)
         };
 
-        breakdown.TotalScore = breakdown.Identity.Score + breakdown.Evidence.Score +
-                               breakdown.Behaviour.Score + breakdown.Peer.Score;
+        // Section 47: New 5-component formula
+        // Raw score = Identity (200) + Evidence (300) + Behaviour (300) + Peer (200) + URS (200) = max 1200
+        // Final TrustScore = (Raw Score / 1200) × 1000 (normalized to 0-1000)
+        var rawScore = breakdown.Identity.Score + breakdown.Evidence.Score +
+                       breakdown.Behaviour.Score + breakdown.Peer.Score + breakdown.Urs.Score;
+        breakdown.TotalScore = (int)Math.Round((rawScore / 1200.0) * 1000);
         breakdown.Label = GetTrustLabel(breakdown.TotalScore);
 
         return breakdown;
@@ -113,6 +118,7 @@ public class TrustScoreService : ITrustScoreService
             EvidenceScore = breakdown.Evidence.Score,
             BehaviourScore = breakdown.Behaviour.Score,
             PeerScore = breakdown.Peer.Score,
+            UrsScore = breakdown.Urs.Score, // Section 47: Add URS component
             BreakdownJson = System.Text.Json.JsonSerializer.Serialize(breakdown),
             CreatedAt = DateTime.UtcNow
         };
@@ -120,7 +126,8 @@ public class TrustScoreService : ITrustScoreService
         _context.TrustScoreSnapshots.Add(snapshot);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("TrustScore calculated for user {UserId}: {Score}", userId, snapshot.Score);
+        _logger.LogInformation("TrustScore calculated for user {UserId}: {Score} (Identity:{Identity} Evidence:{Evidence} Behaviour:{Behaviour} Peer:{Peer} URS:{Urs})",
+            userId, snapshot.Score, snapshot.IdentityScore, snapshot.EvidenceScore, snapshot.BehaviourScore, snapshot.PeerScore, snapshot.UrsScore);
 
         return snapshot;
     }
@@ -356,6 +363,60 @@ public class TrustScoreService : ITrustScoreService
                 Description = "No mutual verifications yet",
                 Points = 0,
                 Status = "missing"
+            });
+        }
+
+        breakdown.Items = items;
+        return breakdown;
+    }
+
+    private async Task<UrsBreakdown> BuildUrsBreakdownAsync(Guid userId)
+    {
+        var breakdown = new UrsBreakdown();
+        var items = new List<ScoreItem>();
+
+        // Get all non-expired external ratings for this user
+        var externalRatings = await _context.ExternalRatings
+            .AsNoTracking()
+            .Where(er => er.UserId == userId && er.ExpiresAt > DateTime.UtcNow)
+            .ToListAsync();
+
+        if (externalRatings.Count == 0)
+        {
+            items.Add(new ScoreItem
+            {
+                Description = "No verified platform ratings yet",
+                Points = 0,
+                Status = "missing"
+            });
+            breakdown.Items = items;
+            return breakdown;
+        }
+
+        // Calculate weighted average URS
+        // Formula: Sum(WeightedScore) / Sum(CombinedWeight) normalized to 0-200 scale
+        decimal totalWeightedScore = externalRatings.Sum(er => er.WeightedScore);
+        decimal totalWeight = externalRatings.Sum(er => er.CombinedWeight);
+
+        decimal averageScore = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;
+
+        // Convert from 0-100 (normalized rating) to 0-200 (URS points)
+        int ursPoints = (int)Math.Round((averageScore / 100.0m) * 200);
+        breakdown.Score = Math.Min(ursPoints, 200); // Cap at 200
+
+        // Add breakdown items for each platform
+        var platformGroups = externalRatings.GroupBy(er => er.Platform);
+        foreach (var group in platformGroups)
+        {
+            var platformRatings = group.ToList();
+            var avgPlatformRating = platformRatings.Average(r => r.NormalizedRating);
+            var totalReviews = platformRatings.Sum(r => r.ReviewCount);
+
+            items.Add(new ScoreItem
+            {
+                Description = $"{group.Key}: {avgPlatformRating:F1}/100 rating ({totalReviews} reviews)",
+                Points = (int)Math.Round((avgPlatformRating / 100.0m) * 50), // Max 50 points per platform shown
+                Status = "completed"
             });
         }
 

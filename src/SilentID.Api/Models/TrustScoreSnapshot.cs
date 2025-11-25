@@ -40,6 +40,12 @@ public class TrustScoreSnapshot
     public int PeerScore { get; set; }
 
     /// <summary>
+    /// URS (Universal Reputation Score) component score (0-200).
+    /// Calculated from Level 3 verified platform star ratings.
+    /// </summary>
+    public int UrsScore { get; set; }
+
+    /// <summary>
     /// Detailed breakdown as JSON (reasons, contributing factors, etc.).
     /// </summary>
     public string? BreakdownJson { get; set; }

@@ -20,6 +20,7 @@ public class SilentIdDbContext : DbContext
     public DbSet<ReceiptEvidence> ReceiptEvidences { get; set; } = null!;
     public DbSet<ScreenshotEvidence> ScreenshotEvidences { get; set; } = null!;
     public DbSet<ProfileLinkEvidence> ProfileLinkEvidences { get; set; } = null!;
+    public DbSet<ExternalRating> ExternalRatings { get; set; } = null!;
 
     // Trust & verification tables
     public DbSet<MutualVerification> MutualVerifications { get; set; } = null!;
@@ -36,6 +37,9 @@ public class SilentIdDbContext : DbContext
 
     // Security Center tables
     public DbSet<SecurityAlert> SecurityAlerts { get; set; } = null!;
+
+    // Passkey/WebAuthn tables
+    public DbSet<PasskeyCredential> PasskeyCredentials { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -255,6 +259,30 @@ public class SilentIdDbContext : DbContext
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.Type);
             entity.HasIndex(e => e.IsRead);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // PasskeyCredential configuration
+        modelBuilder.Entity<PasskeyCredential>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.CredentialId).IsUnique();
+
+            entity.Property(e => e.CredentialId)
+                .IsRequired()
+                .HasMaxLength(1024);
+
+            entity.Property(e => e.PublicKey)
+                .IsRequired();
+
+            entity.Property(e => e.CredentialType)
+                .HasMaxLength(50)
+                .HasDefaultValue("public-key");
 
             entity.HasOne(e => e.User)
                 .WithMany()

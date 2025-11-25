@@ -80,6 +80,27 @@ public class ReceiptEvidence
     /// </summary>
     public EvidenceState EvidenceState { get; set; } = EvidenceState.Valid;
 
+    // ========== EMAIL FORWARDING (EXPENSIFY MODEL) FIELDS (Section 47.4) ==========
+
+    /// <summary>
+    /// Unique email alias for receipt forwarding (e.g., ab12cd34.x9kf@receipts.silentid.co.uk).
+    /// Each user gets a unique alias for privacy-protected email scanning.
+    /// </summary>
+    [MaxLength(255)]
+    public string? ForwardingAlias { get; set; }
+
+    /// <summary>
+    /// Extracted metadata from email (NOT full email body).
+    /// Stores: sender domain, date, order ID, amount, transaction type (JSON).
+    /// GDPR compliant - raw email deleted immediately after extraction.
+    /// </summary>
+    public string? EmailMetadataJson { get; set; }
+
+    /// <summary>
+    /// Confirms raw email was deleted after metadata extraction (privacy protection).
+    /// </summary>
+    public bool RawEmailDeleted { get; set; } = true;
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 

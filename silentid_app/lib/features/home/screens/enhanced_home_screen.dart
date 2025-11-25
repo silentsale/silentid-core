@@ -21,9 +21,9 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
   bool _isOnline = true; // TODO: Implement connectivity check
 
   // Badge counts (placeholder - integrate with real data)
-  int _evidenceBadgeCount = 0;
-  int _verifyBadgeCount = 2; // Example: 2 pending verification requests
-  int _profileBadgeCount = 1; // Example: 1 security alert
+  final int _evidenceBadgeCount = 0;
+  final int _verifyBadgeCount = 2; // Example: 2 pending verification requests
+  final int _profileBadgeCount = 1; // Example: 1 security alert
 
   @override
   void initState() {

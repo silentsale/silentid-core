@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/skeleton_loader.dart';
 import '../../../models/mutual_verification.dart';
 import '../../../services/api_service.dart';
 import '../../../services/mutual_verification_service.dart';

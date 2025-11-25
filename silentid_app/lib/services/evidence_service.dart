@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:dio/dio.dart';
 import '../models/evidence_models.dart';
 import 'api_service.dart';
 
