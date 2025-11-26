@@ -74,6 +74,15 @@ Three streams:
 - **Phase 5 - Network Growth**: Referrals (+50 TrustScore bonus), viral loop
 - See: `CLAUDE.md Section 50 - User Growth Strategy`
 
+### Public Trust Passport Sharing & Visibility
+
+- **Link sharing**: Public identity URL with TrustScore (if public), verification tiers, proofs
+- **Badge sharing**: QR-enabled image with "SilentID Verified" header, works everywhere
+- **Smart fallback**: Auto-detects platform restrictions, chooses link or badge
+- **Visibility control**: Public mode (score visible) or Private mode (verified only)
+- **Growth loop**: Each shared badge/passport includes QR link back to SilentID
+- See: `CLAUDE.md Section 51 - Public Trust Passport Sharing`
+
 ### Anti-Fraud Engine
 9 layers including: evidence integrity, device fingerprinting, collusion detection, RiskScore (0-100)
 - See: `CLAUDE.md Section 7 & 25 - Anti-Fraud`
@@ -183,6 +192,7 @@ See: `CLAUDE.md Section 12 & 16 - Monetisation`
 | Platform Configuration | Section 48 |
 | Level 3 Verification | Section 49 |
 | User Growth Strategy | Section 50 |
+| Public Trust Passport Sharing | Section 51 |
 
 ---
 
@@ -208,5 +218,5 @@ See: `CLAUDE.md Section 17 - Safe Development Rules`
 
 ---
 
-*Last Updated: 2025-11-26 (Added Section 50 - User Growth Strategy)*
+*Last Updated: 2025-11-26 (Added Sections 50-51: User Growth Strategy, Public Trust Passport Sharing)*
 *Full Spec: CLAUDE.md v1.8.0*
