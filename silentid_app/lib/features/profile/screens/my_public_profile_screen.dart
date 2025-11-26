@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/widgets/trust_score_star_rating.dart';
 import '../widgets/share_profile_sheet.dart';
 import '../../../models/public_profile.dart';
 import '../../../services/public_profile_service.dart';
@@ -17,7 +18,6 @@ class MyPublicProfileScreen extends StatefulWidget {
 class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
   bool _isLoading = true;
   PublicProfile? _profile;
-  String? _error;
   late final PublicProfileService _publicProfileService;
   final _storage = StorageService();
 
@@ -31,25 +31,16 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
   Future<void> _loadProfile() async {
     setState(() {
       _isLoading = true;
-      _error = null;
     });
 
     try {
       // Get current user's username from storage
-      final userId = await _storage.getUserId();
-      if (userId == null) {
-        throw Exception('Not logged in');
+      final username = await _storage.getUsername();
+      if (username == null || username.isEmpty) {
+        throw Exception('Username not found. Please complete your profile setup.');
       }
 
-      // TODO: Replace with GET /v1/users/me endpoint to get username
-      // For now, we'll use a mock username or fetch from auth service
-      // In production, we need an endpoint that returns the current user's username
-
-      // Temporary: Use a mock username
-      // In real implementation, this should come from GET /v1/users/me
-      final mockUsername = 'sarah_trusted'; // Replace with real username from API
-
-      final profile = await _publicProfileService.getPublicProfile(mockUsername);
+      final profile = await _publicProfileService.getPublicProfile(username);
 
       setState(() {
         _profile = profile;
@@ -57,7 +48,6 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
       });
     } catch (e) {
       setState(() {
-        _error = e.toString();
         _isLoading = false;
       });
 
@@ -294,6 +284,12 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
               color: Colors.white,
               fontWeight: FontWeight.w500,
             ),
+          ),
+          const SizedBox(height: 8),
+          TrustScoreStarRating.large(
+            trustScore: _profile!.trustScore,
+            showNumericScore: false,
+            colorOverride: Colors.white,
           ),
         ],
       ),

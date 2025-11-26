@@ -52,18 +52,30 @@ class StorageService {
     return await _storage.read(key: ApiConstants.userEmailKey);
   }
 
+  // Save username
+  Future<void> saveUsername(String username) async {
+    await _storage.write(key: ApiConstants.usernameKey, value: username);
+  }
+
+  // Get username
+  Future<String?> getUsername() async {
+    return await _storage.read(key: ApiConstants.usernameKey);
+  }
+
   // Save all auth data
   Future<void> saveAuthData({
     required String accessToken,
     required String refreshToken,
     required String userId,
     required String email,
+    String? username,
   }) async {
     await Future.wait([
       saveAccessToken(accessToken),
       saveRefreshToken(refreshToken),
       saveUserId(userId),
       saveUserEmail(email),
+      if (username != null) saveUsername(username),
     ]);
   }
 
@@ -80,6 +92,7 @@ class StorageService {
       _storage.delete(key: ApiConstants.refreshTokenKey),
       _storage.delete(key: ApiConstants.userIdKey),
       _storage.delete(key: ApiConstants.userEmailKey),
+      _storage.delete(key: ApiConstants.usernameKey),
     ]);
   }
 

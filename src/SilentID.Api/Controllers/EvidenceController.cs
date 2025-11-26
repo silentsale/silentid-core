@@ -621,3 +621,14 @@ public class AddProfileLinkRequest
     public string Url { get; set; } = string.Empty;
     public Platform Platform { get; set; }
 }
+
+public class ConfirmTokenRequest
+{
+    public string ScrapedBioText { get; set; } = string.Empty;
+}
+
+public class VerifyShareIntentRequest
+{
+    public string SharedUrl { get; set; } = string.Empty;
+    public string DeviceFingerprint { get; set; } = string.Empty;
+}

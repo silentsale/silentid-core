@@ -29,9 +29,11 @@ class ShareProfileSheet extends StatelessWidget {
   }
 
   Future<void> _shareProfile() async {
-    await Share.share(
-      'Check out my SilentID trust profile: $profileUrl',
-      subject: 'My SilentID Profile',
+    await SharePlus.instance.share(
+      ShareParams(
+        text: 'Check out my SilentID trust profile: $profileUrl',
+        subject: 'My SilentID Profile',
+      ),
     );
   }
 

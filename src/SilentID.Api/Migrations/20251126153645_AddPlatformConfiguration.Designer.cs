@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SilentID.Api.Data;
@@ -11,9 +12,11 @@ using SilentID.Api.Data;
 namespace SilentID.Api.Migrations
 {
     [DbContext(typeof(SilentIdDbContext))]
-    partial class SilentIdDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251126153645_AddPlatformConfiguration")]
+    partial class AddPlatformConfiguration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -420,161 +423,7 @@ namespace SilentID.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Domain");
-
-                    b.HasIndex("PlatformId")
-                        .IsUnique();
-
                     b.ToTable("PlatformConfigurations");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            BackoffStrategy = 0,
-                            BioFieldSelector = "div[data-testid='user-about'] p",
-                            BrandColor = "#09B1BA",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DisplayName = "Vinted UK",
-                            Domain = "vinted.co.uk",
-                            LogoUrl = "https://assets.vinted.com/logo.png",
-                            PlatformId = "vinted-uk",
-                            RateLimitPerMinute = 10,
-                            RatingFormat = 0,
-                            RatingMax = 5.0m,
-                            RatingSelectorsJson = "[{\"priority\":1,\"selector\":\"div[data-testid='user-rating'] span\",\"type\":\"css\"}]",
-                            RatingSourceMode = 1,
-                            ReviewCountSelectorsJson = "[{\"priority\":1,\"selector\":\"span[data-testid='review-count']\",\"type\":\"css\"}]",
-                            SelectorVersion = 1,
-                            ShareIntentPatternsJson = "[\"vinted://member/([^/]+)\"]",
-                            Status = 0,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UrlPatternsJson = "[\"https?://(?:www\\\\.)?vinted\\\\.co\\\\.uk/member/([^/]+)\"]",
-                            UsernameSelectorsJson = "[{\"priority\":1,\"selector\":\"h1[data-testid='username']\",\"type\":\"css\"}]",
-                            VerificationMethodsJson = "[\"ShareIntent\",\"TokenInBio\"]"
-                        },
-                        new
-                        {
-                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            BackoffStrategy = 0,
-                            BioFieldSelector = "div.bio span.desc",
-                            BrandColor = "#E53238",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DisplayName = "eBay UK",
-                            Domain = "ebay.co.uk",
-                            LogoUrl = "https://ir.ebaystatic.com/logo.png",
-                            PlatformId = "ebay-uk",
-                            RateLimitPerMinute = 10,
-                            RatingFormat = 1,
-                            RatingMax = 100.0m,
-                            RatingSelectorsJson = "[{\"priority\":1,\"selector\":\"span.star-rating span.num\",\"type\":\"css\"}]",
-                            RatingSourceMode = 1,
-                            ReviewCountSelectorsJson = "[{\"priority\":1,\"selector\":\"span.reviews a\",\"type\":\"css\"}]",
-                            SelectorVersion = 1,
-                            ShareIntentPatternsJson = "[\"ebay://user/([^/]+)\"]",
-                            Status = 0,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UrlPatternsJson = "[\"https?://(?:www\\\\.)?ebay\\\\.co\\\\.uk/usr/([^/?]+)\"]",
-                            UsernameSelectorsJson = "[{\"priority\":1,\"selector\":\"h1.usr-id\",\"type\":\"css\"}]",
-                            VerificationMethodsJson = "[\"ShareIntent\",\"TokenInBio\"]"
-                        },
-                        new
-                        {
-                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
-                            BackoffStrategy = 0,
-                            BioFieldSelector = "p[data-testid='sellerBio']",
-                            BrandColor = "#FF2300",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DisplayName = "Depop",
-                            Domain = "depop.com",
-                            LogoUrl = "https://assets.depop.com/logo.png",
-                            PlatformId = "depop",
-                            RateLimitPerMinute = 10,
-                            RatingFormat = 0,
-                            RatingMax = 5.0m,
-                            RatingSelectorsJson = "[{\"priority\":1,\"selector\":\"div[data-testid='seller-reviews'] span\",\"type\":\"css\"}]",
-                            RatingSourceMode = 1,
-                            ReviewCountSelectorsJson = "[{\"priority\":1,\"selector\":\"span[data-testid='reviews-count']\",\"type\":\"css\"}]",
-                            SelectorVersion = 1,
-                            ShareIntentPatternsJson = "[\"depop://user/([^/]+)\"]",
-                            Status = 0,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UrlPatternsJson = "[\"https?://(?:www\\\\.)?depop\\\\.com/([^/?]+)\"]",
-                            UsernameSelectorsJson = "[{\"priority\":1,\"selector\":\"h1[data-testid='username']\",\"type\":\"css\"}]",
-                            VerificationMethodsJson = "[\"ShareIntent\",\"TokenInBio\"]"
-                        },
-                        new
-                        {
-                            Id = new Guid("44444444-4444-4444-4444-444444444444"),
-                            BackoffStrategy = 0,
-                            BrandColor = "#1877F2",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DisplayName = "Facebook Marketplace",
-                            Domain = "facebook.com",
-                            LogoUrl = "https://static.xx.fbcdn.net/logo.png",
-                            PlatformId = "facebook-marketplace",
-                            RateLimitPerMinute = 5,
-                            RatingFormat = 0,
-                            RatingMax = 5.0m,
-                            RatingSelectorsJson = "[{\"priority\":1,\"selector\":\"span[data-testid='rating-value']\",\"type\":\"css\"}]",
-                            RatingSourceMode = 1,
-                            ReviewCountSelectorsJson = "[{\"priority\":1,\"selector\":\"span[data-testid='rating-count']\",\"type\":\"css\"}]",
-                            SelectorVersion = 1,
-                            ShareIntentPatternsJson = "[\"fb://marketplace/profile/([0-9]+)\"]",
-                            Status = 0,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UrlPatternsJson = "[\"https?://(?:www\\\\.)?facebook\\\\.com/marketplace/profile/([0-9]+)\"]",
-                            VerificationMethodsJson = "[\"ShareIntent\"]"
-                        },
-                        new
-                        {
-                            Id = new Guid("55555555-5555-5555-5555-555555555555"),
-                            BackoffStrategy = 0,
-                            BioFieldSelector = "div.about-section p",
-                            BrandColor = "#7F0353",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DisplayName = "Poshmark",
-                            Domain = "poshmark.com",
-                            LogoUrl = "https://assets.poshmark.com/logo.png",
-                            PlatformId = "poshmark",
-                            RateLimitPerMinute = 10,
-                            RatingFormat = 0,
-                            RatingMax = 5.0m,
-                            RatingSelectorsJson = "[{\"priority\":1,\"selector\":\"span.love-count\",\"type\":\"css\"}]",
-                            RatingSourceMode = 1,
-                            SelectorVersion = 1,
-                            ShareIntentPatternsJson = "[\"poshmark://closet/([^/]+)\"]",
-                            Status = 0,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UrlPatternsJson = "[\"https?://(?:www\\\\.)?poshmark\\\\.com/closet/([^/?]+)\"]",
-                            UsernameSelectorsJson = "[{\"priority\":1,\"selector\":\"h1.closet-title\",\"type\":\"css\"}]",
-                            VerificationMethodsJson = "[\"ShareIntent\",\"TokenInBio\"]"
-                        },
-                        new
-                        {
-                            Id = new Guid("66666666-6666-6666-6666-666666666666"),
-                            BackoffStrategy = 0,
-                            BioFieldSelector = "div.shop-info p.announcement",
-                            BrandColor = "#F56400",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DisplayName = "Etsy",
-                            Domain = "etsy.com",
-                            LogoUrl = "https://www.etsy.com/logo.png",
-                            PlatformId = "etsy",
-                            RateLimitPerMinute = 10,
-                            RatingFormat = 0,
-                            RatingMax = 5.0m,
-                            RatingSelectorsJson = "[{\"priority\":1,\"selector\":\"span[data-reviews-rating]\",\"type\":\"css\"}]",
-                            RatingSourceMode = 1,
-                            ReviewCountSelectorsJson = "[{\"priority\":1,\"selector\":\"span.reviews-count\",\"type\":\"css\"}]",
-                            SelectorVersion = 1,
-                            ShareIntentPatternsJson = "[\"etsy://shop/([^/]+)\"]",
-                            Status = 0,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UrlPatternsJson = "[\"https?://(?:www\\\\.)?etsy\\\\.com/shop/([^/?]+)\"]",
-                            UsernameSelectorsJson = "[{\"priority\":1,\"selector\":\"h1.shop-name\",\"type\":\"css\"}]",
-                            VerificationMethodsJson = "[\"ShareIntent\",\"TokenInBio\"]"
-                        });
                 });
 
             modelBuilder.Entity("SilentID.Api.Models.ProfileLinkEvidence", b =>

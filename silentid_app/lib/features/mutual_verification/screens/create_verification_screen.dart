@@ -206,31 +206,41 @@ class _CreateVerificationScreenState extends State<CreateVerificationScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: RadioListTile<String>(
-                    title: const Text('Buyer'),
-                    value: 'Buyer',
-                    groupValue: _selectedRole,
-                    activeColor: AppTheme.primaryPurple,
-                    onChanged: (value) {
-                      setState(() => _selectedRole = value!);
-                    },
+            RadioGroup<String>(
+              groupValue: _selectedRole,
+              onChanged: (String? value) {
+                if (value != null) {
+                  setState(() => _selectedRole = value);
+                }
+              },
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ListTile(
+                      title: const Text('Buyer'),
+                      leading: Radio<String>(
+                        value: 'Buyer',
+                        activeColor: AppTheme.primaryPurple,
+                      ),
+                      onTap: () {
+                        setState(() => _selectedRole = 'Buyer');
+                      },
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: RadioListTile<String>(
-                    title: const Text('Seller'),
-                    value: 'Seller',
-                    groupValue: _selectedRole,
-                    activeColor: AppTheme.primaryPurple,
-                    onChanged: (value) {
-                      setState(() => _selectedRole = value!);
-                    },
+                  Expanded(
+                    child: ListTile(
+                      title: const Text('Seller'),
+                      leading: Radio<String>(
+                        value: 'Seller',
+                        activeColor: AppTheme.primaryPurple,
+                      ),
+                      onTap: () {
+                        setState(() => _selectedRole = 'Seller');
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 20),
 

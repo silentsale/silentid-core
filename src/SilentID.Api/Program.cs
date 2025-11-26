@@ -53,6 +53,13 @@ builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 builder.Services.AddScoped<IRiskEngineService, RiskEngineService>();
 builder.Services.AddScoped<IPasskeyService, PasskeyService>();
 
+// Add HttpClient factory for OAuth services
+builder.Services.AddHttpClient();
+
+// Add OAuth authentication services (Apple & Google Sign-In)
+builder.Services.AddScoped<IAppleAuthService, AppleAuthService>();
+builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+
 // Add JWT authentication
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured");

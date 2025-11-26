@@ -18,7 +18,6 @@ class _TrustScoreOverviewScreenState extends State<TrustScoreOverviewScreen> {
 
   bool _isLoading = true;
   Map<String, dynamic>? _trustScoreData;
-  String? _error;
 
   @override
   void initState() {
@@ -29,7 +28,6 @@ class _TrustScoreOverviewScreenState extends State<TrustScoreOverviewScreen> {
   Future<void> _loadTrustScore() async {
     setState(() {
       _isLoading = true;
-      _error = null;
     });
 
     try {
@@ -55,7 +53,6 @@ class _TrustScoreOverviewScreenState extends State<TrustScoreOverviewScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Failed to load TrustScore';
           _isLoading = false;
         });
 

@@ -41,6 +41,9 @@ public class SilentIdDbContext : DbContext
     // Passkey/WebAuthn tables
     public DbSet<PasskeyCredential> PasskeyCredentials { get; set; } = null!;
 
+    // Platform configuration tables (Section 48)
+    public DbSet<PlatformConfiguration> PlatformConfigurations { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -288,6 +291,166 @@ public class SilentIdDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // PlatformConfiguration configuration & seed data
+        modelBuilder.Entity<PlatformConfiguration>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.PlatformId).IsUnique();
+            entity.HasIndex(e => e.Domain);
+
+            // Seed initial platform configurations
+            // Verification methods: ShareIntent (PRIMARY), TokenInBio (SECONDARY)
+            entity.HasData(
+                new PlatformConfiguration
+                {
+                    Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                    PlatformId = "vinted-uk",
+                    DisplayName = "Vinted UK",
+                    Domain = "vinted.co.uk",
+                    LogoUrl = "https://assets.vinted.com/logo.png",
+                    BrandColor = "#09B1BA",
+                    Status = PlatformStatus.Active,
+                    RatingSourceMode = RatingSourceMode.ScreenshotPlusHtml,
+                    UrlPatternsJson = "[\"https?://(?:www\\\\.)?vinted\\\\.co\\\\.uk/member/([^/]+)\"]",
+                    ShareIntentPatternsJson = "[\"vinted://member/([^/]+)\"]",
+                    VerificationMethodsJson = "[\"ShareIntent\",\"TokenInBio\"]",
+                    BioFieldSelector = "div[data-testid='user-about'] p",
+                    RatingSelectorsJson = "[{\"priority\":1,\"selector\":\"div[data-testid='user-rating'] span\",\"type\":\"css\"}]",
+                    ReviewCountSelectorsJson = "[{\"priority\":1,\"selector\":\"span[data-testid='review-count']\",\"type\":\"css\"}]",
+                    UsernameSelectorsJson = "[{\"priority\":1,\"selector\":\"h1[data-testid='username']\",\"type\":\"css\"}]",
+                    RatingMax = 5.0m,
+                    RatingFormat = RatingFormat.Stars,
+                    RateLimitPerMinute = 10,
+                    BackoffStrategy = BackoffStrategy.Exponential,
+                    SelectorVersion = 1,
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new PlatformConfiguration
+                {
+                    Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                    PlatformId = "ebay-uk",
+                    DisplayName = "eBay UK",
+                    Domain = "ebay.co.uk",
+                    LogoUrl = "https://ir.ebaystatic.com/logo.png",
+                    BrandColor = "#E53238",
+                    Status = PlatformStatus.Active,
+                    RatingSourceMode = RatingSourceMode.ScreenshotPlusHtml,
+                    UrlPatternsJson = "[\"https?://(?:www\\\\.)?ebay\\\\.co\\\\.uk/usr/([^/?]+)\"]",
+                    ShareIntentPatternsJson = "[\"ebay://user/([^/]+)\"]",
+                    VerificationMethodsJson = "[\"ShareIntent\",\"TokenInBio\"]",
+                    BioFieldSelector = "div.bio span.desc",
+                    RatingSelectorsJson = "[{\"priority\":1,\"selector\":\"span.star-rating span.num\",\"type\":\"css\"}]",
+                    ReviewCountSelectorsJson = "[{\"priority\":1,\"selector\":\"span.reviews a\",\"type\":\"css\"}]",
+                    UsernameSelectorsJson = "[{\"priority\":1,\"selector\":\"h1.usr-id\",\"type\":\"css\"}]",
+                    RatingMax = 100.0m,
+                    RatingFormat = RatingFormat.Percentage,
+                    RateLimitPerMinute = 10,
+                    BackoffStrategy = BackoffStrategy.Exponential,
+                    SelectorVersion = 1,
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new PlatformConfiguration
+                {
+                    Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                    PlatformId = "depop",
+                    DisplayName = "Depop",
+                    Domain = "depop.com",
+                    LogoUrl = "https://assets.depop.com/logo.png",
+                    BrandColor = "#FF2300",
+                    Status = PlatformStatus.Active,
+                    RatingSourceMode = RatingSourceMode.ScreenshotPlusHtml,
+                    UrlPatternsJson = "[\"https?://(?:www\\\\.)?depop\\\\.com/([^/?]+)\"]",
+                    ShareIntentPatternsJson = "[\"depop://user/([^/]+)\"]",
+                    VerificationMethodsJson = "[\"ShareIntent\",\"TokenInBio\"]",
+                    BioFieldSelector = "p[data-testid='sellerBio']",
+                    RatingSelectorsJson = "[{\"priority\":1,\"selector\":\"div[data-testid='seller-reviews'] span\",\"type\":\"css\"}]",
+                    ReviewCountSelectorsJson = "[{\"priority\":1,\"selector\":\"span[data-testid='reviews-count']\",\"type\":\"css\"}]",
+                    UsernameSelectorsJson = "[{\"priority\":1,\"selector\":\"h1[data-testid='username']\",\"type\":\"css\"}]",
+                    RatingMax = 5.0m,
+                    RatingFormat = RatingFormat.Stars,
+                    RateLimitPerMinute = 10,
+                    BackoffStrategy = BackoffStrategy.Exponential,
+                    SelectorVersion = 1,
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new PlatformConfiguration
+                {
+                    Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
+                    PlatformId = "facebook-marketplace",
+                    DisplayName = "Facebook Marketplace",
+                    Domain = "facebook.com",
+                    LogoUrl = "https://static.xx.fbcdn.net/logo.png",
+                    BrandColor = "#1877F2",
+                    Status = PlatformStatus.Active,
+                    RatingSourceMode = RatingSourceMode.ScreenshotPlusHtml,
+                    UrlPatternsJson = "[\"https?://(?:www\\\\.)?facebook\\\\.com/marketplace/profile/([0-9]+)\"]",
+                    ShareIntentPatternsJson = "[\"fb://marketplace/profile/([0-9]+)\"]",
+                    VerificationMethodsJson = "[\"ShareIntent\"]",
+                    RatingSelectorsJson = "[{\"priority\":1,\"selector\":\"span[data-testid='rating-value']\",\"type\":\"css\"}]",
+                    ReviewCountSelectorsJson = "[{\"priority\":1,\"selector\":\"span[data-testid='rating-count']\",\"type\":\"css\"}]",
+                    RatingMax = 5.0m,
+                    RatingFormat = RatingFormat.Stars,
+                    RateLimitPerMinute = 5,
+                    BackoffStrategy = BackoffStrategy.Exponential,
+                    SelectorVersion = 1,
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new PlatformConfiguration
+                {
+                    Id = Guid.Parse("55555555-5555-5555-5555-555555555555"),
+                    PlatformId = "poshmark",
+                    DisplayName = "Poshmark",
+                    Domain = "poshmark.com",
+                    LogoUrl = "https://assets.poshmark.com/logo.png",
+                    BrandColor = "#7F0353",
+                    Status = PlatformStatus.Active,
+                    RatingSourceMode = RatingSourceMode.ScreenshotPlusHtml,
+                    UrlPatternsJson = "[\"https?://(?:www\\\\.)?poshmark\\\\.com/closet/([^/?]+)\"]",
+                    ShareIntentPatternsJson = "[\"poshmark://closet/([^/]+)\"]",
+                    VerificationMethodsJson = "[\"ShareIntent\",\"TokenInBio\"]",
+                    BioFieldSelector = "div.about-section p",
+                    RatingSelectorsJson = "[{\"priority\":1,\"selector\":\"span.love-count\",\"type\":\"css\"}]",
+                    UsernameSelectorsJson = "[{\"priority\":1,\"selector\":\"h1.closet-title\",\"type\":\"css\"}]",
+                    RatingMax = 5.0m,
+                    RatingFormat = RatingFormat.Stars,
+                    RateLimitPerMinute = 10,
+                    BackoffStrategy = BackoffStrategy.Exponential,
+                    SelectorVersion = 1,
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new PlatformConfiguration
+                {
+                    Id = Guid.Parse("66666666-6666-6666-6666-666666666666"),
+                    PlatformId = "etsy",
+                    DisplayName = "Etsy",
+                    Domain = "etsy.com",
+                    LogoUrl = "https://www.etsy.com/logo.png",
+                    BrandColor = "#F56400",
+                    Status = PlatformStatus.Active,
+                    RatingSourceMode = RatingSourceMode.ScreenshotPlusHtml,
+                    UrlPatternsJson = "[\"https?://(?:www\\\\.)?etsy\\\\.com/shop/([^/?]+)\"]",
+                    ShareIntentPatternsJson = "[\"etsy://shop/([^/]+)\"]",
+                    VerificationMethodsJson = "[\"ShareIntent\",\"TokenInBio\"]",
+                    BioFieldSelector = "div.shop-info p.announcement",
+                    RatingSelectorsJson = "[{\"priority\":1,\"selector\":\"span[data-reviews-rating]\",\"type\":\"css\"}]",
+                    ReviewCountSelectorsJson = "[{\"priority\":1,\"selector\":\"span.reviews-count\",\"type\":\"css\"}]",
+                    UsernameSelectorsJson = "[{\"priority\":1,\"selector\":\"h1.shop-name\",\"type\":\"css\"}]",
+                    RatingMax = 5.0m,
+                    RatingFormat = RatingFormat.Stars,
+                    RateLimitPerMinute = 10,
+                    BackoffStrategy = BackoffStrategy.Exponential,
+                    SelectorVersion = 1,
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
         });
     }
 }

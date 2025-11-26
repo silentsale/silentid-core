@@ -686,6 +686,240 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Apple Sign-In authentication
+    /// </summary>
+    [HttpPost("apple")]
+    public async Task<IActionResult> AppleSignIn([FromBody] AppleSignInRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.IdentityToken))
+        {
+            return BadRequest(new { error = "invalid_request", message = "Identity token is required." });
+        }
+
+        try
+        {
+            // TODO: Verify Apple identity token with Apple's public keys
+            // For now, we'll extract the email from the token payload (JWT)
+            // In production, you must validate the token signature
+
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var token = handler.ReadJwtToken(request.IdentityToken);
+
+            var email = token.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+            var appleUserId = token.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(appleUserId))
+            {
+                return BadRequest(new { error = "invalid_token", message = "Invalid Apple identity token." });
+            }
+
+            // Check if user exists
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+            {
+                // Create new user
+                user = new User
+                {
+                    Email = email,
+                    Username = GenerateUsername(email),
+                    DisplayName = request.FullName ?? email.Split('@')[0],
+                    AppleUserId = appleUserId,
+                    IsEmailVerified = true, // Apple verifies emails
+                    AccountStatus = AccountStatus.Active,
+                    AccountType = AccountType.Free,
+                    SignupIP = GetClientIpAddress(),
+                    SignupDeviceId = request.DeviceId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("New user created via Apple Sign-In: {Email}", email);
+            }
+            else
+            {
+                // Update Apple User ID if not already set
+                if (string.IsNullOrEmpty(user.AppleUserId))
+                {
+                    user.AppleUserId = appleUserId;
+                    user.UpdatedAt = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                }
+
+                _logger.LogInformation("Existing user signed in via Apple: {Email}", email);
+            }
+
+            // Track device
+            if (!string.IsNullOrEmpty(request.DeviceId))
+            {
+                await TrackDeviceAsync(user.Id, request.DeviceId, request.DeviceModel, request.OS, request.Browser);
+            }
+
+            // Generate tokens
+            var accessToken = _tokenService.GenerateAccessToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
+            var refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
+
+            // Store session
+            var session = new Session
+            {
+                UserId = user.Id,
+                RefreshTokenHash = refreshTokenHash,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                IP = GetClientIpAddress(),
+                DeviceId = request.DeviceId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Sessions.Add(session);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                access_token = accessToken,
+                refresh_token = refreshToken,
+                user = new
+                {
+                    id = user.Id,
+                    email = user.Email,
+                    username = user.Username,
+                    display_name = user.DisplayName,
+                    account_type = user.AccountType
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Apple Sign-In failed");
+            return StatusCode(500, new
+            {
+                error = "internal_error",
+                message = "Authentication failed."
+            });
+        }
+    }
+
+    /// <summary>
+    /// Google Sign-In authentication
+    /// </summary>
+    [HttpPost("google")]
+    public async Task<IActionResult> GoogleSignIn([FromBody] GoogleSignInRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.IdToken))
+        {
+            return BadRequest(new { error = "invalid_request", message = "ID token is required." });
+        }
+
+        try
+        {
+            // TODO: Verify Google ID token with Google's public keys
+            // For now, we'll extract the email from the token payload (JWT)
+            // In production, you must validate the token signature
+
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var token = handler.ReadJwtToken(request.IdToken);
+
+            var email = token.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+            var googleUserId = token.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleUserId))
+            {
+                return BadRequest(new { error = "invalid_token", message = "Invalid Google ID token." });
+            }
+
+            // Check if user exists
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+            {
+                // Create new user
+                user = new User
+                {
+                    Email = email,
+                    Username = GenerateUsername(email),
+                    DisplayName = request.FullName ?? email.Split('@')[0],
+                    GoogleUserId = googleUserId,
+                    IsEmailVerified = true, // Google verifies emails
+                    AccountStatus = AccountStatus.Active,
+                    AccountType = AccountType.Free,
+                    SignupIP = GetClientIpAddress(),
+                    SignupDeviceId = request.DeviceId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("New user created via Google Sign-In: {Email}", email);
+            }
+            else
+            {
+                // Update Google User ID if not already set
+                if (string.IsNullOrEmpty(user.GoogleUserId))
+                {
+                    user.GoogleUserId = googleUserId;
+                    user.UpdatedAt = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                }
+
+                _logger.LogInformation("Existing user signed in via Google: {Email}", email);
+            }
+
+            // Track device
+            if (!string.IsNullOrEmpty(request.DeviceId))
+            {
+                await TrackDeviceAsync(user.Id, request.DeviceId, request.DeviceModel, request.OS, request.Browser);
+            }
+
+            // Generate tokens
+            var accessToken = _tokenService.GenerateAccessToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
+            var refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
+
+            // Store session
+            var session = new Session
+            {
+                UserId = user.Id,
+                RefreshTokenHash = refreshTokenHash,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                IP = GetClientIpAddress(),
+                DeviceId = request.DeviceId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Sessions.Add(session);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                access_token = accessToken,
+                refresh_token = refreshToken,
+                user = new
+                {
+                    id = user.Id,
+                    email = user.Email,
+                    username = user.Username,
+                    display_name = user.DisplayName,
+                    account_type = user.AccountType
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Google Sign-In failed");
+            return StatusCode(500, new
+            {
+                error = "internal_error",
+                message = "Authentication failed."
+            });
+        }
+    }
+
     // Helper methods
 
     private string GetClientIpAddress()
@@ -780,3 +1014,51 @@ public record VerifyOtpRequest(
 public record RefreshTokenRequest(string RefreshToken);
 
 public record LogoutRequest(string? RefreshToken = null);
+
+public record AppleSignInRequest(
+    string IdentityToken,
+    string? FullName = null,
+    string? DeviceId = null,
+    string? DeviceModel = null,
+    string? OS = null,
+    string? Browser = null
+);
+
+public record GoogleSignInRequest(
+    string IdToken,
+    string? FullName = null,
+    string? DeviceId = null,
+    string? DeviceModel = null,
+    string? OS = null,
+    string? Browser = null
+);
+
+public record PasskeyRegisterCompleteRequest(
+    string CredentialId,
+    string PublicKey,
+    uint SignatureCounter,
+    string? AaGuid,
+    string? DeviceName,
+    string? AttestationFormat,
+    bool UserVerified
+);
+
+public record PasskeyAuthenticateOptionsRequest(
+    string? Email = null
+);
+
+public record PasskeyAuthenticateCompleteRequest(
+    string CredentialId,
+    string AuthenticatorData,
+    string ClientDataJson,
+    string Signature,
+    uint SignatureCounter,
+    string? DeviceId = null,
+    string? DeviceModel = null,
+    string? OS = null,
+    string? Browser = null
+);
+
+public record UpdatePasskeyNameRequest(
+    string DeviceName
+);

@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/widgets/trust_score_star_rating.dart';
 import '../../../models/public_profile.dart';
 import '../../../services/public_profile_service.dart';
 import '../../../services/api_service.dart';
@@ -58,7 +59,7 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen> {
     }
   }
 
-  void _shareProfile() {
+  Future<void> _shareProfile() async {
     if (_profile == null) return;
 
     final shareText = _publicProfileService.getShareText(
@@ -66,9 +67,11 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen> {
       _profile!.displayName,
     );
 
-    Share.share(
-      shareText,
-      subject: 'SilentID Trust Profile',
+    await SharePlus.instance.share(
+      ShareParams(
+        text: shareText,
+        subject: 'SilentID Trust Profile',
+      ),
     );
   }
 
@@ -299,6 +302,12 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen> {
                     color: AppTheme.pureWhite,
                   ),
                 ),
+                const SizedBox(height: AppSpacing.sm),
+                TrustScoreStarRating.large(
+                  trustScore: profile.trustScore,
+                  showNumericScore: false,
+                  colorOverride: AppTheme.pureWhite,
+                ),
               ],
             ),
           ),
@@ -516,61 +525,6 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen> {
     );
   }
 
-  Widget _buildInfoCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color iconColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppTheme.pureWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.neutralGray300),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: iconColor,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.deepBlack,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: AppTheme.neutralGray700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildMetricCard({
     required IconData icon,

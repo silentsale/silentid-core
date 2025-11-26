@@ -239,9 +239,7 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
                           ),
                         ),
                         Text(
-                          report.reportedUserName ??
-                              '@${report.reportedUserUsername}' ??
-                              'Unknown user',
+                          report.reportedUserName!,
                           style: const TextStyle(
                             fontSize: 14,
                             color: AppTheme.neutralGray700,

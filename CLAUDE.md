@@ -11311,6 +11311,2368 @@ The modular platform configuration system transforms platform scraping from frag
 **END OF SECTION 48**
 
 ---
+
+# SECTION 49: LEVEL 3 VERIFICATION - MARKETPLACE PROFILE VERIFICATION FLOWS
+
+## 49.1 Purpose & Overview
+
+**Level 3 Verification** is the highest trust tier for marketplace profile verification in SilentID. It proves **cryptographic ownership** of external marketplace accounts and extracts verified star ratings for the user's Digital Trust Passport.
+
+**Core Principle: Ownership-First, Then Extract**
+
+All data extraction MUST occur AFTER ownership verification, never before. Users must explicitly confirm "This is my profile" and consent to SilentID checking their public marketplace profile.
+
+**Key Changes from Previous Versions:**
+- **Share-Intent** is now the **PRIMARY** verification method (fastest, most user-friendly)
+- **Token-in-Bio** is **SECONDARY** fallback method (when share doesn't work)
+- **Screenshot + OCR** is **PRIMARY** extraction method (automated, privacy-respecting)
+- **HTML/DOM extraction** is **SECONDARY** (internal technical term, never shown to users)
+- **Manual screenshot upload (up to 3)** is **LAST RESORT** (user-driven, lower confidence)
+- Word **"scraping"** is **FORBIDDEN** in all user-facing, help, and marketing content
+- **"Scraping"** allowed ONLY in internal technical sections clearly marked as such
+
+**Three Modes of Operation:**
+
+1. **API Mode** (Highest confidence: 100%)
+   - Platform provides official API (e.g., eBay Commerce API)
+   - Rating extracted directly from API response
+   - Most reliable, no HTML parsing needed
+   - Stored in Azure Key Vault (API credentials)
+
+2. **Screenshot + HTML Mode** (High confidence: 95%)
+   - Automated headless browser (Playwright/Puppeteer) takes screenshot
+   - OCR extracts text from screenshot (ratings, reviews, username)
+   - HTML/DOM extraction as secondary validation
+   - 3 automated attempts before manual fallback
+
+3. **Manual Screenshot Mode** (Medium confidence: 75%)
+   - User uploads up to 3 screenshots manually
+   - OCR extracts data from user-provided screenshots
+   - Lower confidence due to potential tampering
+   - Used only when automated methods fail or unsupported platform
+
+---
+
+## 49.2 Ownership-First Rule (Absolute Requirement)
+
+**CRITICAL RULE: SilentID MUST NEVER extract data from a marketplace profile until ownership is verified.**
+
+**Why This Rule Exists:**
+- **Legal Protection:** Prevents impersonation, identity theft, profile hijacking
+- **User Trust:** Users control what data is checked and when
+- **Privacy Compliance:** Explicit consent before any data collection
+- **Fraud Prevention:** Stops users from linking to others' high-rated profiles
+
+**Enforcement:**
+
+1. **Ownership Verification FIRST:**
+   - User initiates Share-Intent flow OR Token-in-Bio flow
+   - System verifies ownership cryptographically
+   - Only after successful verification does extraction begin
+
+2. **No Speculative Extraction:**
+   - System does NOT pre-fetch profile data "just in case"
+   - System does NOT extract data to "test" if profile is valid
+   - Extraction begins ONLY after ownership verified
+
+3. **Consent Required:**
+   - User must explicitly confirm: "This is my profile"
+   - User must consent: "I allow SilentID to check my public marketplace profile"
+   - Consent captured with timestamp and stored in database
+
+4. **Ownership Locks Profile:**
+   - Once verified, profile URL is locked to that user's SilentID account
+   - No other user can verify the same profile URL
+   - Prevents multiple users claiming same marketplace account
+
+**Database Enforcement:**
+
+```sql
+-- ProfileLinkEvidence table
+OwnershipVerifiedAt TIMESTAMP NULL,  -- Must be non-null before extraction
+OwnershipMethod VARCHAR(50),  -- ShareIntent | TokenInBio | Manual
+OwnershipLockHash VARCHAR(64),  -- SHA-256 of profile URL to prevent duplicates
+ConsentConfirmedAt TIMESTAMP NULL,  -- User consent timestamp
+ConsentIPAddress VARCHAR(50)  -- IP where consent was given
+```
+
+**Code Pattern:**
+
+```csharp
+// CORRECT: Ownership verified first
+if (profileLink.OwnershipVerifiedAt == null)
+{
+    throw new InvalidOperationException("Ownership must be verified before extraction.");
+}
+
+// Only proceed if ownership confirmed
+var extractedData = await ExtractProfileDataAsync(profileLink.URL);
+```
+
+```csharp
+// WRONG: Extraction before ownership verification
+var extractedData = await ExtractProfileDataAsync(url);  // FORBIDDEN
+if (IsOwnershipVerified(url))
+{
+    SaveExtractedData(extractedData);
+}
+```
+
+---
+
+## 49.3 Method A: Token-in-Bio (SECONDARY Verification Method)
+
+**When to Use:**
+- Share-Intent not available on platform (desktop-only platforms)
+- Share-Intent failed or unsupported by user's device/browser
+- User prefers manual verification method
+- Platform has editable bio/description field
+
+**Flow:**
+
+**Step 1: User Initiates Verification**
+- User taps "Connect Marketplace Profile" in SilentID app
+- User selects platform (Vinted, eBay, Depop, etc.)
+- User selects verification method:
+  - **"Share from App" (RECOMMENDED)** ← Primary option, emphasized
+  - **"Add Code to Bio" (MANUAL)** ← Secondary option, smaller button
+
+**Step 2: Generate Unique Verification Token**
+- System generates unique token: `SILENTID-VERIFY-{random-8-chars}`
+- Example: `SILENTID-VERIFY-A7B3C9X2`
+- Token stored in database with:
+  - UserId
+  - Platform
+  - Expiry (24 hours from generation)
+  - Status (Pending, Verified, Expired)
+
+**Step 3: User Instructions (UI)**
+```
+Add This Code to Your Vinted Bio:
+──────────────────────────────────
+SILENTID-VERIFY-A7B3C9X2
+──────────────────────────────────
+[Copy Code]
+
+How to Add:
+1. Open Vinted app
+2. Go to Settings → Edit Profile
+3. Paste the code anywhere in your bio
+4. Save your profile
+5. Come back here and tap "I've Added the Code"
+
+You can remove the code after verification.
+```
+
+**Step 4: User Confirms Code Added**
+- User taps "I've Added the Code"
+- System prompts: "Please confirm this is your profile"
+  - Checkbox: ☐ "This is my marketplace profile"
+  - Button: "Verify Ownership"
+
+**Step 5: Automated Verification**
+- System uses headless browser (Playwright) to visit profile URL
+- Searches for exact token match in bio text using multiple methods:
+  - Primary: Direct text search in bio field
+  - Fallback 1: Case-insensitive regex: `/SILENTID-VERIFY-[A-Z0-9]{8}/i`
+  - Fallback 2: Full page text search (in case bio location changed)
+- If token found:
+  - Ownership verified ✓
+  - `OwnershipVerifiedAt` timestamp set
+  - `OwnershipMethod` set to "TokenInBio"
+  - `OwnershipLockHash` created (SHA-256 of profile URL)
+  - Token marked as "Used"
+- If token NOT found:
+  - Show error: "We couldn't find your verification code. Please check you added it correctly."
+  - Offer retry (max 3 attempts)
+
+**Step 6: Proceed to Extraction**
+- After ownership verified, system proceeds to **49.6 Screenshot + OCR Extraction**
+- User can now remove token from bio (optional, but recommended for privacy)
+
+**Security:**
+- Token expires after 24 hours if not used
+- Token can only be used once
+- Profile URL locked after successful verification (prevents re-use by others)
+
+**Database Schema:**
+
+```sql
+CREATE TABLE VerificationTokens (
+  Id UUID PRIMARY KEY,
+  UserId UUID REFERENCES Users(Id),
+  Platform VARCHAR(50),
+  Token VARCHAR(100) UNIQUE,  -- SILENTID-VERIFY-{random}
+  ProfileURL VARCHAR(500),
+  Status VARCHAR(50),  -- Pending, Verified, Expired, Failed
+  GeneratedAt TIMESTAMP,
+  ExpiresAt TIMESTAMP,  -- 24 hours from generation
+  VerifiedAt TIMESTAMP NULL,
+  AttemptCount INT DEFAULT 0
+);
+```
+
+---
+
+## 49.4 Method B: Share-Intent (PRIMARY Verification Method)
+
+**When to Use:**
+- Platform supports share functionality (Vinted, Facebook, Instagram, eBay app, etc.)
+- User has platform app installed on mobile device
+- Fastest and easiest method (recommended first)
+
+**Flow:**
+
+**Step 1: User Initiates Verification**
+- User taps "Connect Marketplace Profile" in SilentID app
+- User selects platform (Vinted, Facebook Marketplace, etc.)
+- **PRIMARY OPTION** displayed prominently:
+  ```
+  ┌─────────────────────────────────────┐
+  │ ✅ FASTEST METHOD (RECOMMENDED)    │
+  │                                     │
+  │ Share from App                      │
+  │ Takes 10 seconds                    │
+  │                                     │
+  │ [Share My Profile] ← Large button  │
+  └─────────────────────────────────────┘
+
+  ┌─────────────────────────────────────┐
+  │ OR                                  │
+  │                                     │
+  │ Add Code to Bio (Manual)            │
+  │ Takes 2-3 minutes                   │
+  │                                     │
+  │ [Use Manual Method] ← Small button  │
+  └─────────────────────────────────────┘
+  ```
+
+**Step 2: Generate Deep Link**
+- System generates unique verification deep link:
+  ```
+  https://silentid.co.uk/verify/{unique-token}
+  ```
+- Token contains encrypted payload:
+  - UserId (encrypted)
+  - Platform name
+  - Timestamp
+  - Signature (prevents tampering)
+- Token expires after 5 minutes
+
+**Step 3: Share Intent Instructions (UI)**
+```
+Share Your Vinted Profile
+
+1. Open Vinted app on this device
+2. Go to your profile
+3. Tap the "Share" button (usually 3 dots or share icon)
+4. Select "Copy Link" or "Share to SilentID"
+5. Come back here
+
+[Open Vinted App] ← Opens Vinted app via deep link
+
+Waiting for share...
+[Cancel]
+```
+
+**Step 4: User Shares Profile**
+- User opens marketplace app (Vinted, Facebook, etc.)
+- User navigates to their profile
+- User taps "Share" button in marketplace app
+- Options appear:
+  - "Copy Link" ← User taps this
+  - OR "Share to SilentID" ← If deep link integration configured
+
+**Step 5: User Returns to SilentID**
+- If "Copy Link" was used:
+  - User returns to SilentID app
+  - SilentID detects clipboard contains marketplace URL
+  - Prompt: "Paste your profile link here"
+  - User pastes or auto-fills
+- If "Share to SilentID" was used:
+  - SilentID app receives URL directly via deep link
+  - Auto-populates profile URL field
+
+**Step 6: Automated Verification**
+- System validates shared URL:
+  - URL matches expected platform domain (vinted.com, facebook.com/marketplace, etc.)
+  - URL format matches platform profile pattern
+  - URL is publicly accessible (not private/404)
+- System prompts user:
+  ```
+  Confirm This Is Your Profile
+
+  Profile URL: https://vinted.com/member/sarahtrusted
+
+  ☐ This is my marketplace profile
+  ☐ I allow SilentID to check my public profile for ratings
+
+  [Verify Ownership]
+  ```
+
+**Step 7: Ownership Confirmation**
+- User checks both boxes and taps "Verify Ownership"
+- System records:
+  - `OwnershipVerifiedAt` = current timestamp
+  - `OwnershipMethod` = "ShareIntent"
+  - `OwnershipLockHash` = SHA-256(profile URL)
+  - `ConsentConfirmedAt` = current timestamp
+  - `ConsentIPAddress` = user's IP
+- System locks profile URL (prevents other users from verifying same URL)
+
+**Step 8: Device Fingerprint Validation (Security Layer)**
+- System compares device fingerprint from:
+  - Device that initiated verification
+  - Device that shared the link
+- If fingerprints match → High confidence, ownership verified
+- If fingerprints don't match → Flag for review (possible device change, but still proceed)
+
+**Step 9: Proceed to Extraction**
+- After ownership verified, system proceeds to **49.6 Screenshot + OCR Extraction**
+- User notified: "Ownership verified! Checking your profile..."
+
+**Security:**
+- Deep link token expires after 5 minutes
+- Device fingerprint validation prevents link sharing fraud
+- Profile URL locked to prevent multiple accounts claiming same profile
+- Consent timestamp and IP logged for audit trail
+
+**Database Schema:**
+
+```sql
+CREATE TABLE ShareIntentVerifications (
+  Id UUID PRIMARY KEY,
+  UserId UUID REFERENCES Users(Id),
+  Platform VARCHAR(50),
+  SharedURL VARCHAR(500),
+  DeepLinkToken VARCHAR(255) UNIQUE,
+  DeviceFingerprintInitiation VARCHAR(500),
+  DeviceFingerprintShare VARCHAR(500),
+  FingerprintMatch BOOLEAN,
+  Status VARCHAR(50),  -- Pending, Verified, Expired, Failed
+  GeneratedAt TIMESTAMP,
+  ExpiresAt TIMESTAMP,  -- 5 minutes from generation
+  VerifiedAt TIMESTAMP NULL
+);
+```
+
+---
+
+## 49.5 Offering Both Methods (Share First, Token Second)
+
+**UI Design Pattern:**
+
+When user selects "Connect Marketplace Profile", show platform selection first, then method selection with Share-Intent PROMINENTLY featured:
+
+```
+Connect Your Vinted Profile
+─────────────────────────────
+
+┌────────────────────────────────────────┐
+│ ⭐ RECOMMENDED (10 SECONDS)           │
+│                                        │
+│ Share from Vinted App                  │
+│ • Fastest method                       │
+│ • No typing required                   │
+│ • Works on mobile                      │
+│                                        │
+│ [Share My Profile] ← Royal purple btn │
+└────────────────────────────────────────┘
+
+┌────────────────────────────────────────┐
+│ OR                                     │
+│                                        │
+│ Add Code to Bio (Manual)               │
+│ • Takes 2-3 minutes                    │
+│ • Works on desktop                     │
+│ • Requires editing your bio            │
+│                                        │
+│ [Use Manual Method] ← Gray outline btn│
+└────────────────────────────────────────┘
+
+[Cancel]
+```
+
+**Fallback Logic:**
+
+If Share-Intent fails (e.g., platform doesn't support share, clipboard blocked, etc.):
+- Show error: "Share didn't work on this device. Try the manual method instead."
+- Auto-switch to Token-in-Bio flow
+- Button: "Switch to Manual Verification"
+
+**Platform Support Matrix:**
+
+| Platform | Share-Intent Support | Token-in-Bio Support | Notes |
+|----------|---------------------|---------------------|-------|
+| Vinted | ✅ Yes (mobile app) | ✅ Yes (bio field) | Share primary |
+| eBay | ✅ Yes (mobile app) | ✅ Yes (bio field) | Share primary |
+| Depop | ✅ Yes (mobile app) | ✅ Yes (bio field) | Share primary |
+| Facebook Marketplace | ✅ Yes (mobile app) | ❌ No (no bio field) | Share only |
+| Etsy | ⚠️ Partial (shop URL) | ✅ Yes (shop description) | Token primary |
+| Instagram (future) | ✅ Yes (profile share) | ❌ No (bio changes frequently) | Share only |
+
+**Configuration in Section 48:**
+
+Add new field to PlatformConfigurations:
+
+```sql
+verification_methods_supported JSONB DEFAULT '["token_in_bio"]'
+-- Examples:
+-- ["share_intent", "token_in_bio"]  -- Both supported
+-- ["share_intent"]  -- Share only
+-- ["token_in_bio"]  -- Token only
+-- ["manual_screenshot_only"]  -- Neither share nor token (unsupported platform)
+```
+
+---
+
+## 49.6 Screenshot + OCR as Primary Extraction Method
+
+**AFTER ownership verified** (via Share-Intent OR Token-in-Bio), SilentID extracts star ratings using **automated screenshot + OCR** as the PRIMARY method.
+
+**Why Screenshot + OCR is Primary:**
+
+1. **Privacy-Respecting:** Only captures what user sees publicly
+2. **Tamper-Resistant:** Harder to fake than HTML manipulation
+3. **Platform-Agnostic:** Works even if HTML structure changes
+4. **Visual Verification:** Can detect UI inconsistencies (fake profiles often have misaligned elements)
+5. **User-Friendly Explanation:** Easy to explain to users ("We take a photo of your profile")
+
+**How It Works:**
+
+**Step 1: Automated Screenshot (Headless Browser)**
+
+After ownership verified:
+- System launches headless browser (Playwright or Puppeteer)
+- Navigates to verified profile URL
+- Waits for page to fully load (max 10 seconds)
+- Takes screenshot of profile area containing:
+  - Username
+  - Star rating (e.g., "4.9 ★")
+  - Review count (e.g., "327 reviews")
+  - Join date (e.g., "Member since Jan 2023")
+- Screenshot saved to Azure Blob Storage (temporary, deleted after extraction)
+
+**Step 2: OCR Extraction (Azure Computer Vision or Tesseract)**
+
+- Screenshot sent to Azure Computer Vision OCR API
+- Extracted text parsed using platform-specific regex patterns:
+  - **Rating:** `(\d\.\d)\s*★` or `(\d+)%\s*positive`
+  - **Review Count:** `(\d+)\s*(reviews?|ratings?|sales?)`
+  - **Username:** Platform-specific selector from config
+  - **Join Date:** `(Member since|Joined)\s+(.+?)` or ISO date format
+- Multiple extraction attempts:
+  - Attempt 1: Azure Computer Vision (primary)
+  - Attempt 2: Tesseract OCR (fallback if Azure fails)
+  - Attempt 3: Google Cloud Vision API (optional, if enabled)
+
+**Step 3: HTML/DOM Extraction (SECONDARY Validation)**
+
+- Simultaneously (not instead of screenshot), system extracts same data from HTML:
+  - Use CSS selectors from Section 48 platform configuration
+  - Extract rating, reviews, username, join date from DOM
+  - Compare HTML extraction with OCR extraction
+- If OCR and HTML match → High confidence (95%)
+- If OCR and HTML differ slightly (< 10% variance) → Medium confidence (85%)
+- If OCR and HTML differ significantly (> 10% variance) → Flag for manual review
+
+**Step 4: Cross-Validation**
+
+- Compare extracted username with user's claimed username
+- Compare extracted rating with expected range (0-5 or 0-100%)
+- Validate review count is non-negative integer
+- Check join date is in past (not future)
+
+**Step 5: Confidence Scoring**
+
+```
+Confidence Score = Base (95%) + Bonuses - Penalties
+
+Bonuses:
++ OCR and HTML match exactly: +5%
++ Screenshot integrity high (no tampering detected): +0%
++ Multiple OCR engines agree: +0%
+
+Penalties:
+- OCR and HTML differ: -10%
+- Screenshot quality low (blurry, dark): -5%
+- Platform recently changed HTML (within 7 days): -5%
+
+Final Confidence: 75% - 100%
+```
+
+**Step 6: Store Extracted Data**
+
+```sql
+UPDATE ProfileLinkEvidence
+SET
+  PlatformRating = 4.9,  -- Extracted from OCR
+  ReviewCount = 327,
+  JoinDate = '2023-01-15',
+  ExtractionMethod = 'ScreenshotOCR',
+  ExtractionConfidence = 95,
+  ScreenshotURL = 'https://blob.azure.com/...',
+  HTMLExtractionMatch = TRUE,
+  ExtractedAt = NOW(),
+  NextReverifyAt = NOW() + INTERVAL '90 days'
+WHERE Id = {profileLinkId};
+```
+
+**Step 7: Delete Screenshot (Privacy)**
+
+- After successful extraction, delete screenshot from Azure Blob Storage
+- Retain only:
+  - Extracted metadata (rating, reviews, join date)
+  - Screenshot hash (for integrity checking, not image itself)
+  - Extraction confidence score
+
+**Retry Logic:**
+
+If extraction fails (OCR returns no rating, HTML selectors broken):
+- **Attempt 1:** Wait 5 seconds, retry screenshot + OCR
+- **Attempt 2:** Wait 10 seconds, retry with different OCR engine
+- **Attempt 3:** Wait 30 seconds, retry with platform-specific fallback selectors
+- **After 3 failures:** Fall back to Manual Screenshot Upload (49.10)
+
+**User-Facing Language (NO "SCRAPING"):**
+
+✅ **CORRECT USER-FACING COPY:**
+- "We're checking your public profile..."
+- "Taking a snapshot of your ratings..."
+- "Extracting your star rating from your profile..."
+- "Verifying your marketplace performance..."
+
+❌ **FORBIDDEN USER-FACING COPY:**
+- "Scraping your profile..."
+- "Crawling your data..."
+- "Harvesting your ratings..."
+
+**Technical Documentation (INTERNAL ONLY):**
+
+In internal technical docs and code comments, you MAY use "scraping" or "HTML extraction":
+```csharp
+// Internal comment: Scrape profile using Playwright headless browser
+// User will never see this term
+var scrapedData = await ScrapeProfileAsync(url);
+```
+
+But in logs visible to users or support staff, use neutral language:
+```csharp
+Logger.LogInformation("Extracting profile data from {Platform} for user {UserId}", platform, userId);
+```
+
+---
+
+## 49.7 HTML/DOM Extraction as Secondary (Internal Only)
+
+**HTML/DOM extraction** is performed ALONGSIDE screenshot+OCR, never instead of it. It serves as:
+1. **Validation:** Cross-check OCR results
+2. **Fallback:** If screenshot quality is poor
+3. **Speed:** Faster than OCR (no image processing)
+
+**When HTML/DOM is Used:**
+
+- **Primary:** Screenshot + OCR extracts rating
+- **Simultaneously:** HTML/DOM extraction runs in parallel
+- **Comparison:** If OCR = 4.9★ and HTML = 4.9★ → High confidence
+- **Fallback:** If OCR fails (blurry image, OCR timeout), use HTML/DOM result
+
+**How It Works:**
+
+**Step 1: Platform Configuration (Section 48)**
+
+Each platform has selector configuration defining how to extract rating from HTML:
+
+```json
+{
+  "platform": "vinted-uk",
+  "rating_selectors": [
+    {
+      "priority": 1,
+      "selector": "div.rating-stars > span.score",
+      "extraction_type": "text",
+      "regex": "(\\d\\.\\d)"
+    },
+    {
+      "priority": 2,
+      "selector": "[data-testid='user-rating']",
+      "extraction_type": "attribute",
+      "attribute_name": "data-rating"
+    },
+    {
+      "priority": 3,
+      "selector": "//div[contains(@class, 'rating')]//span[1]",
+      "extraction_type": "xpath",
+      "regex": "(\\d\\.\\d)"
+    }
+  ]
+}
+```
+
+**Step 2: Selector Rotation**
+
+System tries selectors in priority order:
+1. Try primary selector (`div.rating-stars > span.score`)
+2. If fails, try fallback 1 (`[data-testid='user-rating']`)
+3. If fails, try fallback 2 (XPath)
+4. If all fail, log warning and rely on OCR result
+
+**Step 3: Data Normalization**
+
+Different platforms use different scales:
+- **Vinted:** 0-5 stars
+- **eBay:** 0-100% positive
+- **Depop:** 0-5 stars
+- **Etsy:** 0-5 stars
+
+Normalize all to 0-100 scale for internal URS calculation:
+```csharp
+decimal normalizedRating = (platformRating / platformMax) * 100;
+// Example: Vinted 4.9/5.0 → (4.9/5.0) * 100 = 98%
+```
+
+**Step 4: Store HTML Extraction Result**
+
+```sql
+UPDATE ProfileLinkEvidence
+SET
+  HTMLExtractionRating = 4.9,
+  HTMLExtractionMethod = 'CSS Selector (Priority 1)',
+  HTMLExtractionTimestamp = NOW(),
+  HTMLExtractionMatch = (PlatformRating = HTMLExtractionRating)  -- Compare with OCR result
+WHERE Id = {profileLinkId};
+```
+
+**CRITICAL USER-FACING RULE:**
+
+**NEVER mention "HTML extraction" or "scraping" to users.**
+
+When explaining how verification works:
+- ✅ "We check your public profile"
+- ✅ "We extract your star rating"
+- ✅ "We verify your marketplace performance"
+- ❌ "We scrape your profile's HTML"
+- ❌ "We extract DOM elements"
+
+**Why This Matters:**
+- "Scraping" has negative connotations (invasive, unauthorized)
+- "HTML extraction" sounds technical and scary
+- Users don't care HOW data is extracted, only THAT it's accurate and private
+- Neutral language builds trust
+
+---
+
+## 49.8 Platform Detection & URL Matching
+
+**When user submits profile URL** (via Share-Intent or manual entry), system must detect which platform it belongs to.
+
+**URL Pattern Matching:**
+
+Each platform configuration (Section 48) includes URL patterns:
+
+```json
+{
+  "platform": "vinted-uk",
+  "url_patterns": [
+    "https?://(?:www\\.)?vinted\\.co\\.uk/member/([^/]+)",
+    "https?://(?:www\\.)?vinted\\.co\\.uk/membres/([^/]+)"
+  ],
+  "share_intent_patterns": [
+    "vinted://profile/([^/]+)",
+    "https://vinted\\.app\\.link/profile/([^/]+)"
+  ]
+}
+```
+
+**Detection Flow:**
+
+**Step 1: User Submits URL**
+```
+Input: https://www.vinted.co.uk/member/sarahtrusted
+```
+
+**Step 2: Normalize URL**
+- Remove tracking parameters (`?utm_source=...`)
+- Convert to lowercase
+- Trim whitespace
+
+**Step 3: Match Against Platform Patterns**
+
+System loops through all platform configurations:
+```csharp
+foreach (var platform in platformConfigs)
+{
+    foreach (var pattern in platform.UrlPatterns)
+    {
+        var match = Regex.Match(normalizedUrl, pattern);
+        if (match.Success)
+        {
+            return new PlatformMatch
+            {
+                Platform = platform.Name,
+                Username = match.Groups[1].Value,  // Extracted from regex group
+                Confidence = 100
+            };
+        }
+    }
+}
+```
+
+**Step 4: Fuzzy Matching (Fallback)**
+
+If no exact pattern match, try fuzzy matching:
+- Check if domain contains known platform name (e.g., "vinted" in URL)
+- Check if URL structure resembles known patterns
+- Flag for manual review if confidence < 80%
+
+**Step 5: Platform-Specific Validation**
+
+After detecting platform, validate URL is accessible:
+- HTTP HEAD request to check if URL exists (200 OK)
+- Check if page requires login (some Facebook profiles are private)
+- Verify URL points to user profile, not shop/listing/other
+
+**Example Matches:**
+
+| Input URL | Detected Platform | Username | Confidence |
+|-----------|------------------|----------|------------|
+| `https://vinted.co.uk/member/sarahtrusted` | vinted-uk | sarahtrusted | 100% |
+| `https://www.ebay.com/usr/john_seller` | ebay-us | john_seller | 100% |
+| `https://depop.com/@alice123` | depop | alice123 | 100% |
+| `https://facebook.com/marketplace/profile/12345` | facebook-marketplace | 12345 | 100% |
+| `https://vintedapp.link/profile/xyz` | vinted-uk | xyz | 95% (deep link) |
+| `https://unknown-marketplace.com/user/bob` | Unknown | bob | 0% (unsupported) |
+
+**Unsupported Platform Handling:**
+
+If platform not recognized:
+- Show error: "This marketplace isn't supported yet. We're adding new platforms regularly!"
+- Button: "Request Platform Support"
+- Log platform domain for future support consideration
+
+---
+
+## 49.9 Consent & "This Is My Profile" Confirmation Flow
+
+**EXPLICIT CONSENT REQUIRED** before any data extraction.
+
+**Two-Step Confirmation:**
+
+**Step 1: Profile Ownership Confirmation**
+
+After user completes Share-Intent or Token-in-Bio:
+```
+Confirm This Is Your Profile
+─────────────────────────────
+
+Profile URL: https://vinted.co.uk/member/sarahtrusted
+Platform: Vinted UK
+
+☐ This is my marketplace profile
+
+[Continue]  ← Disabled until checkbox checked
+[Cancel]
+```
+
+**Step 2: Data Access Consent**
+
+After checkbox checked:
+```
+Allow SilentID to Check Your Profile?
+─────────────────────────────────────
+
+We'll securely check your public Vinted profile to extract:
+• Your star rating
+• Your review count
+• Your account join date
+
+We will NOT access:
+• Your private messages
+• Your purchase history
+• Your personal details
+• Your payment information
+
+☐ I allow SilentID to check my public marketplace profile
+
+[Verify & Extract Data]  ← Disabled until checkbox checked
+[Cancel]
+```
+
+**Step 3: Record Consent**
+
+When user taps "Verify & Extract Data":
+```sql
+UPDATE ProfileLinkEvidence
+SET
+  OwnershipConfirmedAt = NOW(),
+  ConsentConfirmedAt = NOW(),
+  ConsentIPAddress = '{user IP}',
+  ConsentUserAgent = '{browser/app info}',
+  ConsentVersion = 'v1.0',  -- Track consent form version for legal compliance
+  Status = 'OwnershipVerified'
+WHERE Id = {profileLinkId};
+```
+
+**Step 4: Proceed to Extraction**
+
+Only after BOTH checkboxes checked and consent recorded:
+- Launch screenshot + OCR extraction (49.6)
+- Show progress: "Checking your profile... (this may take 10-20 seconds)"
+
+**Legal Protection:**
+
+This two-step consent:
+1. Proves user intentionally verified ownership
+2. Proves user consented to data extraction
+3. Creates audit trail for GDPR compliance
+4. Protects against "I didn't know SilentID would check my profile" claims
+
+**Consent Withdrawal:**
+
+User can revoke consent later:
+- Settings → Connected Platforms → Vinted → "Remove Verification"
+- Deletes extracted data
+- Removes ownership lock
+- Logs revocation timestamp
+
+---
+
+## 49.10 Manual Screenshot Upload (Last Resort - Up to 3 Screenshots)
+
+**When Used:**
+
+- Automated screenshot + OCR failed 3 times
+- Platform not supported for automated extraction
+- User prefers manual upload for privacy reasons
+- Ownership verified but extraction impossible
+
+**Flow:**
+
+**Step 1: Automated Extraction Failed**
+
+After 3 failed automated attempts:
+```
+We Couldn't Extract Your Rating Automatically
+──────────────────────────────────────────────
+
+This can happen if:
+• The platform's page layout changed recently
+• Your profile has privacy settings enabled
+• Network connection issues
+
+You can upload screenshots manually instead.
+
+[Upload Screenshots Manually]
+[Try Automatic Extraction Again]
+[Cancel]
+```
+
+**Step 2: Manual Upload Instructions**
+
+User taps "Upload Screenshots Manually":
+```
+Upload Screenshots of Your Profile
+───────────────────────────────────
+
+To verify your ratings, upload up to 3 clear screenshots showing:
+
+✅ Screenshot 1: Your profile page with star rating visible
+✅ Screenshot 2: Your reviews/feedback page (if separate)
+✅ Screenshot 3: Your account details showing username and join date
+
+Requirements:
+• Screenshots must be clear and readable
+• Must show your username matching your claim
+• Must show star rating and review count
+• No editing or cropping important details
+
+[Choose Screenshot 1]
+[Choose Screenshot 2 (Optional)]
+[Choose Screenshot 3 (Optional)]
+
+[Submit Screenshots]  ← Disabled until at least 1 uploaded
+```
+
+**Step 3: User Uploads Screenshots**
+
+- User selects image from photo library or takes new photo
+- Each screenshot uploaded to Azure Blob Storage (temporary)
+- System runs OCR on each screenshot
+- System runs image integrity checks (tamper detection)
+
+**Step 4: OCR Extraction from Manual Screenshots**
+
+For each screenshot:
+```csharp
+var ocrResult = await AzureComputerVision.AnalyzeImageAsync(screenshot);
+var extractedText = string.Join(" ", ocrResult.Lines.Select(l => l.Text));
+
+// Extract rating using regex
+var ratingMatch = Regex.Match(extractedText, @"(\d\.\d)\s*★");
+if (ratingMatch.Success)
+{
+    var rating = decimal.Parse(ratingMatch.Groups[1].Value);
+    // Store rating with confidence = 75% (manual screenshot)
+}
+
+// Extract review count
+var reviewMatch = Regex.Match(extractedText, @"(\d+)\s*reviews?");
+if (reviewMatch.Success)
+{
+    var reviewCount = int.Parse(reviewMatch.Groups[1].Value);
+}
+```
+
+**Step 5: Image Integrity Check**
+
+Run tampering detection on each screenshot:
+- Check EXIF metadata (timestamp, device model)
+- Detect Photoshop artifacts (clone stamping, copy-paste)
+- Check for pixel-level manipulation
+- Validate screenshot resolution matches claimed device
+
+If tampering detected:
+```
+⚠️ Screenshot Quality Issue
+
+We detected potential editing on Screenshot 1.
+
+This could be:
+• Cropping or resizing
+• Filters applied
+• Editing software artifacts
+
+Please upload an unedited screenshot directly from your device.
+
+[Upload New Screenshot]
+```
+
+**Step 6: Cross-Validate Screenshots**
+
+If user uploaded multiple screenshots, cross-validate data:
+- Username must match across all screenshots
+- Rating should be consistent (allow ±0.1 difference for timing)
+- Review count should be consistent (allow ±5% difference)
+
+If inconsistency detected:
+```
+⚠️ Inconsistent Data Detected
+
+Screenshot 1 shows: 4.9 ★ (327 reviews)
+Screenshot 2 shows: 4.7 ★ (312 reviews)
+
+These screenshots may be from different profiles or taken at different times.
+
+Please upload screenshots from the same profile taken within a few minutes of each other.
+
+[Upload New Screenshots]
+```
+
+**Step 7: Store Manual Evidence**
+
+```sql
+UPDATE ProfileLinkEvidence
+SET
+  PlatformRating = 4.9,
+  ReviewCount = 327,
+  ExtractionMethod = 'ManualScreenshot',
+  ExtractionConfidence = 75,  -- Lower confidence for manual
+  ManualScreenshotCount = 3,
+  ManualScreenshotURLs = ARRAY['https://blob.azure.com/1', 'https://blob.azure.com/2', 'https://blob.azure.com/3'],
+  IntegrityScore = 85,  -- From tamper detection
+  ExtractedAt = NOW(),
+  NextReverifyAt = NOW() + INTERVAL '60 days'  -- Shorter re-verify period for manual
+WHERE Id = {profileLinkId};
+```
+
+**Step 8: Delete Screenshots (Privacy)**
+
+After 30 days or when user deletes verification:
+- Delete all manual screenshots from Azure Blob Storage
+- Retain only extracted metadata (rating, reviews, join date)
+- Retain screenshot hashes for audit trail
+
+**Confidence Scoring:**
+
+```
+Manual Screenshot Confidence = Base (75%) + Bonuses - Penalties
+
+Base: 75% (lower than automated 95%)
+
+Bonuses:
++ 3 screenshots uploaded (all consistent): +5%
++ High integrity score (no tampering): +5%
++ Screenshots taken within 5 minutes of each other: +5%
+
+Penalties:
+- Only 1 screenshot uploaded: -10%
+- Low integrity score (possible editing): -15%
+- Username mismatch across screenshots: -20%
+- Inconsistent rating/review count: -10%
+
+Final Confidence: 50% - 90%
+```
+
+**User-Facing Language:**
+
+✅ **CORRECT:**
+- "Upload screenshots of your profile"
+- "Manually verify your ratings"
+- "Provide screenshots showing your star rating"
+
+❌ **FORBIDDEN:**
+- "Upload scraped profile screenshots"
+- "Manually scrape your profile"
+
+---
+
+## 49.11 Confidence Levels for Each Extraction Method
+
+**Three Confidence Tiers:**
+
+| Extraction Method | Base Confidence | Max Confidence | Notes |
+|------------------|----------------|----------------|-------|
+| **API Mode** | 100% | 100% | Official platform API, highest trust |
+| **Screenshot + OCR (Automated)** | 95% | 100% | Headless browser, cross-validated with HTML |
+| **Screenshot + OCR (Manual)** | 75% | 90% | User-uploaded, tamper detection applied |
+
+**Detailed Confidence Calculation:**
+
+### **API Mode (100%)**
+
+```
+Confidence = 100% (fixed)
+
+Why:
+- Data comes directly from platform's official API
+- No parsing, no OCR, no HTML extraction needed
+- Platform guarantees data accuracy
+- Rate-limited and authenticated (stored in Azure Key Vault)
+
+Example: eBay Commerce API returns:
+{
+  "feedbackScore": 542,
+  "positiveFeedbackPercent": 99.2,
+  "feedbackRatingStar": "TurquoiseStar"
+}
+
+Confidence: 100% (no bonuses or penalties apply)
+```
+
+### **Screenshot + OCR Automated (95-100%)**
+
+```
+Base Confidence: 95%
+
+Bonuses:
++ OCR and HTML extraction match exactly: +5%
++ Screenshot integrity score > 95: +0% (already high base)
++ Multiple OCR engines agree: +0% (redundant)
+
+Penalties:
+- OCR and HTML differ by >10%: -10%
+- Screenshot quality low (blurry, poor contrast): -5%
+- Platform HTML changed within 7 days: -5%
+- Username extracted doesn't match claimed: -20%
+
+Final Confidence Range: 75% - 100%
+
+Example 1 (Perfect Match):
+- OCR: 4.9 ★ (327 reviews)
+- HTML: 4.9 ★ (327 reviews)
+- Screenshot integrity: 98%
+- Final: 95% + 5% = 100%
+
+Example 2 (Slight Mismatch):
+- OCR: 4.9 ★ (327 reviews)
+- HTML: 4.8 ★ (325 reviews)  ← Slight difference (timing issue?)
+- Screenshot integrity: 92%
+- Final: 95% - 10% = 85%
+```
+
+### **Screenshot + OCR Manual (75-90%)**
+
+```
+Base Confidence: 75%
+
+Bonuses:
++ 3 screenshots uploaded (all consistent): +5%
++ High integrity score (>90): +5%
++ Screenshots taken within 5 minutes: +5%
++ Username matches across all screenshots: +0% (expected)
+
+Penalties:
+- Only 1 screenshot uploaded: -10%
+- Low integrity score (<70, possible editing): -15%
+- Username mismatch: -20%
+- Inconsistent rating across screenshots: -10%
+- Screenshot EXIF metadata missing (possible fake): -10%
+
+Final Confidence Range: 50% - 90%
+
+Example 1 (High Quality Manual):
+- 3 screenshots uploaded
+- All show 4.9 ★ (327 reviews)
+- Integrity scores: 92%, 94%, 91%
+- All taken within 3 minutes
+- Final: 75% + 5% + 5% + 5% = 90%
+
+Example 2 (Low Quality Manual):
+- 1 screenshot uploaded
+- Integrity score: 68% (possible editing detected)
+- EXIF metadata missing
+- Final: 75% - 10% - 15% - 10% = 40%  ← Below minimum threshold (50%)
+→ Rejected, user must re-upload
+```
+
+**Minimum Confidence Threshold:**
+
+- **50%** = Minimum to accept verification
+- Below 50% = Rejected, user must re-verify or upload better screenshots
+
+**Public Display:**
+
+Confidence is **INTERNAL ONLY**. Users and public never see confidence percentage.
+
+Instead, show trust badges:
+- API Mode (100%): "✅ Verified via Official API"
+- Automated Screenshot (95-100%): "✅ Automatically Verified"
+- Automated Screenshot (85-94%): "✅ Verified"
+- Manual Screenshot (75-90%): "✅ Manually Verified"
+- Manual Screenshot (50-74%): "⚠️ Verification Pending Review"
+
+---
+
+## 49.12 Platform Matching Rules
+
+**How SilentID determines which platform configuration to use for a given profile URL.**
+
+**Matching Hierarchy:**
+
+1. **Exact Domain Match** (Priority 1)
+   - URL: `https://vinted.co.uk/member/alice`
+   - Config: `vinted-uk` with domain `vinted.co.uk`
+   - Match: 100%
+
+2. **Regex Pattern Match** (Priority 2)
+   - URL: `https://www.vinted.com/member/alice`
+   - Config: `vinted-us` with pattern `https?://(?:www\.)?vinted\.com/member/(.+)`
+   - Match: 100%
+
+3. **Fuzzy Domain Match** (Priority 3)
+   - URL: `https://vinted.fr/membres/alice`
+   - Config: `vinted-fr` with domain `vinted.fr`
+   - Match: 95%
+
+4. **Share-Intent Deep Link Match** (Priority 4)
+   - URL: `vinted://profile/alice`
+   - Config: `vinted-uk` with share pattern `vinted://profile/(.+)`
+   - Match: 90%
+
+5. **No Match** (Unsupported Platform)
+   - URL: `https://newmarketplace.com/user/alice`
+   - No config found
+   - Match: 0% → Show "Platform not supported" error
+
+**Example Configurations (from Section 48):**
+
+```json
+{
+  "platforms": [
+    {
+      "id": "vinted-uk",
+      "name": "Vinted UK",
+      "domain": "vinted.co.uk",
+      "url_patterns": [
+        "https?://(?:www\\.)?vinted\\.co\\.uk/member/([^/]+)",
+        "https?://(?:www\\.)?vinted\\.co\\.uk/membres/([^/]+)"
+      ],
+      "share_intent_patterns": [
+        "vinted://profile/([^/]+)",
+        "https://vinted\\.app\\.link/profile/([^/]+)"
+      ],
+      "verification_methods_supported": ["share_intent", "token_in_bio"],
+      "rating_source_mode": "screenshot_plus_html"
+    },
+    {
+      "id": "ebay-us",
+      "name": "eBay US",
+      "domain": "ebay.com",
+      "url_patterns": [
+        "https?://(?:www\\.)?ebay\\.com/usr/([^/]+)",
+        "https?://(?:www\\.)?ebay\\.com/fdbk/feedback_profile/([^/?]+)"
+      ],
+      "share_intent_patterns": [
+        "ebay://user/([^/]+)"
+      ],
+      "verification_methods_supported": ["share_intent", "token_in_bio", "api"],
+      "rating_source_mode": "api",
+      "api_config": {
+        "base_url": "https://api.ebay.com/commerce/reputation/v1",
+        "auth_type": "oauth",
+        "credentials_location": "azure_key_vault",
+        "rate_limit_per_day": 5000
+      }
+    },
+    {
+      "id": "facebook-marketplace",
+      "name": "Facebook Marketplace",
+      "domain": "facebook.com",
+      "url_patterns": [
+        "https?://(?:www\\.)?facebook\\.com/marketplace/profile/(\\d+)",
+        "https?://m\\.facebook\\.com/marketplace/profile/(\\d+)"
+      ],
+      "share_intent_patterns": [
+        "fb://profile/(\\d+)",
+        "https://fb\\.me/marketplace/([^/]+)"
+      ],
+      "verification_methods_supported": ["share_intent"],
+      "rating_source_mode": "screenshot_plus_html"
+    }
+  ]
+}
+```
+
+**Matching Algorithm:**
+
+```csharp
+public PlatformMatch DetectPlatform(string profileUrl)
+{
+    var normalizedUrl = NormalizeUrl(profileUrl);
+
+    // Priority 1: Exact domain match
+    foreach (var platform in _platforms)
+    {
+        if (normalizedUrl.Contains(platform.Domain))
+        {
+            return new PlatformMatch
+            {
+                PlatformId = platform.Id,
+                Confidence = 100,
+                Method = "ExactDomain"
+            };
+        }
+    }
+
+    // Priority 2: Regex pattern match
+    foreach (var platform in _platforms)
+    {
+        foreach (var pattern in platform.UrlPatterns)
+        {
+            var match = Regex.Match(normalizedUrl, pattern);
+            if (match.Success)
+            {
+                return new PlatformMatch
+                {
+                    PlatformId = platform.Id,
+                    Username = match.Groups[1].Value,
+                    Confidence = 100,
+                    Method = "RegexPattern"
+                };
+            }
+        }
+    }
+
+    // Priority 3: Share-intent deep link match
+    foreach (var platform in _platforms)
+    {
+        foreach (var pattern in platform.ShareIntentPatterns)
+        {
+            var match = Regex.Match(normalizedUrl, pattern);
+            if (match.Success)
+            {
+                return new PlatformMatch
+                {
+                    PlatformId = platform.Id,
+                    Username = match.Groups[1].Value,
+                    Confidence = 90,
+                    Method = "ShareIntent"
+                };
+            }
+        }
+    }
+
+    // No match found
+    return new PlatformMatch
+    {
+        PlatformId = null,
+        Confidence = 0,
+        Method = "None",
+        Error = "Platform not supported"
+    };
+}
+```
+
+**Ambiguous URL Handling:**
+
+If URL could match multiple platforms (e.g., `vinted.com` could be US or international):
+
+1. **Check User Location** (IP geolocation)
+   - User in UK → Suggest `vinted-uk`
+   - User in US → Suggest `vinted-us`
+
+2. **Prompt User to Clarify**
+   ```
+   Which Vinted Region?
+
+   Your profile URL could be:
+   • Vinted UK (vinted.co.uk)
+   • Vinted US (vinted.com)
+   • Vinted France (vinted.fr)
+
+   Select your region:
+   [UK] [US] [France] [Other]
+   ```
+
+3. **Store Region with Profile**
+   ```sql
+   UPDATE ProfileLinkEvidence
+   SET Platform = 'vinted-uk'
+   WHERE URL LIKE '%vinted.co.uk%';
+   ```
+
+---
+
+## 49.13 Consent & "This Is My Profile" Confirmation (Detailed Flow)
+
+**Already covered in 49.9**, but expanding with specific UI mockups and legal language.
+
+**UI Mockup 1: Ownership Confirmation**
+
+```
+┌──────────────────────────────────────────┐
+│ Confirm Profile Ownership                │
+├──────────────────────────────────────────┤
+│                                          │
+│ [Vinted Logo]                            │
+│                                          │
+│ Profile URL:                             │
+│ https://vinted.co.uk/member/sarahtrusted │
+│                                          │
+│ ┌──────────────────────────────────────┐ │
+│ │ ☐ This is my marketplace profile    │ │
+│ └──────────────────────────────────────┘ │
+│                                          │
+│ By confirming, you declare under        │
+│ penalty of fraud that you own this       │
+│ profile and have the right to verify it. │
+│                                          │
+│ [Continue] ← Disabled until checked     │
+│ [Cancel]                                 │
+└──────────────────────────────────────────┘
+```
+
+**UI Mockup 2: Data Access Consent**
+
+```
+┌──────────────────────────────────────────┐
+│ Allow SilentID to Check Your Profile?   │
+├──────────────────────────────────────────┤
+│                                          │
+│ We'll securely check your public         │
+│ Vinted profile to verify:                │
+│                                          │
+│ ✅ Star rating                           │
+│ ✅ Review count                          │
+│ ✅ Account join date                     │
+│ ✅ Username                              │
+│                                          │
+│ We will NOT access:                      │
+│ ❌ Private messages                      │
+│ ❌ Purchase/sale history                 │
+│ ❌ Personal contact details              │
+│ ❌ Payment information                   │
+│                                          │
+│ ┌──────────────────────────────────────┐ │
+│ │ ☐ I consent to SilentID checking my │ │
+│ │   public marketplace profile         │ │
+│ └──────────────────────────────────────┘ │
+│                                          │
+│ You can revoke this consent anytime in   │
+│ Settings → Connected Platforms.          │
+│                                          │
+│ [Verify & Extract Data] ← Disabled      │
+│ [Cancel]                                 │
+└──────────────────────────────────────────┘
+```
+
+**Legal Text (Terms & Conditions Reference):**
+
+Add to Section 43 (Consumer Terms of Use):
+
+```markdown
+### 8. MARKETPLACE PROFILE VERIFICATION
+
+**8.1 Ownership Declaration:**
+When you verify a marketplace profile (Vinted, eBay, etc.), you declare that:
+- You are the rightful owner of the marketplace account
+- You have the legal right to verify this profile
+- All information provided is accurate and truthful
+
+**8.2 Data Access Consent:**
+By verifying a profile, you consent to SilentID:
+- Checking your public marketplace profile
+- Extracting star rating, review count, join date, and username
+- Storing this data in your SilentID Trust Passport
+
+**8.3 What We Do NOT Access:**
+SilentID does NOT access:
+- Private messages or communications
+- Purchase or sale history
+- Personal contact details
+- Payment information
+- Private account settings
+
+**8.4 Consent Withdrawal:**
+You may withdraw consent and remove verification at any time via:
+Settings → Connected Platforms → [Platform] → Remove Verification
+
+**8.5 False Verification:**
+Verifying a profile you do not own is:
+- Prohibited under these Terms
+- Potentially illegal (identity fraud)
+- Grounds for immediate account suspension
+```
+
+**Database Consent Tracking:**
+
+```sql
+CREATE TABLE ConsentLogs (
+  Id UUID PRIMARY KEY,
+  UserId UUID REFERENCES Users(Id),
+  ProfileLinkId UUID REFERENCES ProfileLinkEvidence(Id),
+  ConsentType VARCHAR(50),  -- OwnershipConfirmation, DataAccessConsent
+  ConsentVersion VARCHAR(20),  -- v1.0, v1.1, etc. (for legal compliance)
+  ConsentText TEXT,  -- Full consent language shown to user
+  ConsentGivenAt TIMESTAMP,
+  ConsentIPAddress VARCHAR(50),
+  ConsentUserAgent VARCHAR(500),
+  ConsentRevoked BOOLEAN DEFAULT FALSE,
+  RevokedAt TIMESTAMP NULL,
+  CreatedAt TIMESTAMP
+);
+```
+
+**GDPR Compliance:**
+
+This two-step consent satisfies GDPR Article 7 requirements:
+1. **Freely given** - User can choose not to verify
+2. **Specific** - Clearly states what data is accessed
+3. **Informed** - Explains purpose and limitations
+4. **Unambiguous** - Requires explicit checkbox action
+5. **Revocable** - Can withdraw consent anytime
+
+---
+
+## 49.14 Help Centre Article: "Connecting Your Marketplace Profile"
+
+**Location:** Help Center (Section 19) → Using SilentID → Connecting Marketplace Profiles
+
+**Article Title:** How to Connect Your Marketplace Profile to SilentID
+
+**Summary:** Learn how to verify your Vinted, eBay, or other marketplace profiles to add your star ratings to your SilentID Trust Passport.
+
+---
+
+### What You'll Learn
+- How to connect marketplace profiles (Vinted, eBay, Depop, etc.)
+- Two ways to verify ownership: Share or Manual Code
+- What SilentID checks on your profile
+- How to keep your star ratings up to date
+
+---
+
+### Why Connect Your Marketplace Profile?
+
+Your marketplace star ratings (like your 4.9★ on Vinted) are powerful trust signals. By connecting your profiles to SilentID, you:
+- **Show your verified ratings** on your Trust Passport
+- **Prove your trustworthiness** across all platforms
+- **Keep your reputation** even if marketplace accounts change
+- **Stand out** when trading with new people
+
+---
+
+### Two Ways to Verify Ownership
+
+#### Method 1: Share from App (⭐ RECOMMENDED - Takes 10 seconds)
+
+**How It Works:**
+1. Tap "Connect Marketplace Profile" in SilentID
+2. Select your platform (e.g., Vinted)
+3. Tap "Share from App"
+4. Open your marketplace app (e.g., Vinted)
+5. Go to your profile
+6. Tap "Share" → "Copy Link"
+7. Return to SilentID
+8. Confirm "This is my profile"
+9. Done! We'll check your ratings automatically.
+
+**Best For:**
+- Mobile users
+- Fastest method
+- No typing required
+
+#### Method 2: Add Code to Bio (Takes 2-3 minutes)
+
+**How It Works:**
+1. Tap "Connect Marketplace Profile" in SilentID
+2. Select your platform (e.g., Vinted)
+3. Tap "Add Code to Bio"
+4. Copy the unique code shown (e.g., `SILENTID-VERIFY-A7B3C9X2`)
+5. Open your marketplace app
+6. Go to Settings → Edit Profile
+7. Paste the code anywhere in your bio
+8. Save your profile
+9. Return to SilentID
+10. Tap "I've Added the Code"
+11. Done! You can remove the code after verification.
+
+**Best For:**
+- Desktop users
+- When share doesn't work
+- Platforms without share button
+
+---
+
+### What SilentID Checks
+
+When you connect a profile, SilentID securely checks your **public** marketplace profile to verify:
+
+✅ **What We Check:**
+- Your star rating (e.g., 4.9 ★)
+- Your review count (e.g., 327 reviews)
+- Your account join date (e.g., Member since Jan 2023)
+- Your username (to ensure it matches)
+
+❌ **What We DON'T Check:**
+- Private messages
+- Purchase or sale history
+- Personal contact details
+- Payment information
+- Account passwords
+
+**Your Privacy is Protected:**
+We only check what's already public on your marketplace profile. We never access private data or account settings.
+
+---
+
+### Keeping Your Ratings Up to Date
+
+**Automatic Updates:**
+- SilentID re-checks your profile every **90 days**
+- If your star rating improves, your Trust Passport updates automatically
+- You'll get notified: "Your Vinted rating increased to 5.0 ★!"
+
+**Manual Re-Verification:**
+You can manually update anytime:
+1. Settings → Connected Platforms
+2. Tap your platform (e.g., Vinted)
+3. Tap "Update Ratings"
+
+**If Your Rating Drops:**
+If your marketplace rating drops (e.g., from 4.9★ to 4.7★), your Trust Passport will reflect the change. This ensures honesty and accuracy.
+
+---
+
+### Supported Marketplaces
+
+**Currently Supported:**
+- ✅ Vinted (UK, US, France, Germany, etc.)
+- ✅ eBay (All regions)
+- ✅ Depop
+- ✅ Facebook Marketplace
+- ✅ Etsy
+- ✅ More coming soon!
+
+**Request a Platform:**
+If your marketplace isn't listed, tap "Request Platform Support" and we'll consider adding it.
+
+---
+
+### Troubleshooting
+
+**Problem:** Share didn't work on my device
+**Solution:**
+- Try the "Add Code to Bio" method instead
+- Ensure you have the marketplace app installed
+- Check you're using the latest app version
+
+**Problem:** "We couldn't find your verification code"
+**Solution:**
+- Double-check you pasted the code correctly in your bio
+- Make sure you saved your profile after adding the code
+- Wait 1-2 minutes and try again (profile updates take time)
+
+**Problem:** "This profile is already verified by another user"
+**Solution:**
+- Each marketplace profile can only be verified once
+- If you believe this is your profile, contact support
+- Provide proof of ownership (screenshot of your account settings)
+
+**Problem:** "Platform not supported"
+**Solution:**
+- We're adding new platforms regularly
+- Tap "Request Platform Support" to let us know
+- You can still manually upload screenshots (up to 3) in the meantime
+
+---
+
+### Removing a Connected Profile
+
+**To Remove:**
+1. Settings → Connected Platforms
+2. Tap the platform you want to remove (e.g., Vinted)
+3. Tap "Remove Verification"
+4. Confirm removal
+
+**What Happens:**
+- Your star rating from that platform is removed from your Trust Passport
+- Other platform ratings remain unchanged
+- You can re-verify the profile later if you change your mind
+
+---
+
+### When to Contact Support
+
+Contact SilentID support if:
+- Your profile won't verify after multiple attempts
+- You see someone else's rating on your Trust Passport
+- You need to verify a profile already claimed by another account
+- You have questions about what data we check
+
+**Support:** support@silentid.co.uk
+
+---
+
+### Related Articles
+- "Understanding Your Trust Passport"
+- "What is TrustScore?"
+- "Privacy & Data: What SilentID Stores"
+
+---
+
+**Last Updated:** 2025-11-24
+**Source:** Section 49.14 of SilentID Master Specification
+
+---
+
+**END OF HELP CENTRE ARTICLE**
+
+---
+
+## 49.15 Marketing Copy: Landing Page & In-App Messaging
+
+**CRITICAL RULE: NO "SCRAPING" LANGUAGE**
+
+All marketing and user-facing content must use neutral, user-friendly language that emphasizes **control, consent, and protection**.
+
+### Landing Page Section: "Bring Your Stars With You"
+
+```markdown
+## Your Stars. Your Proof. Your Passport.
+
+You've earned those 5-star reviews on Vinted, eBay, and Depop.
+**Now carry them with you** — everywhere you trade online.
+
+[Connect My Marketplace Profiles]
+
+### How It Works
+
+**1. Connect Your Profiles**
+Share your Vinted, eBay, or Depop profile in 10 seconds.
+We'll verify you own it, then check your public ratings.
+
+**2. Build Your Trust Passport**
+Your star ratings from all platforms appear in one place.
+Show your 4.9★ reputation to anyone, anytime.
+
+**3. Share Everywhere**
+Use your Trust Passport on Facebook Marketplace, rental viewings, or local meetups.
+Your verified ratings go with you.
+
+[Get Started Free]
+
+---
+
+### Why Trust Passport?
+
+✅ **Portable Trust** - Your marketplace success isn't locked in one platform
+✅ **Verified Ratings** - Cryptographically proven ownership, not fake screenshots
+✅ **Privacy Protected** - We only check what's already public
+✅ **Always Up to Date** - Ratings refresh every 90 days automatically
+
+---
+
+### Protect Your Reputation
+
+**What if your Vinted account gets suspended?**
+With SilentID, your verified star ratings are safely stored in your Trust Passport.
+Even if a marketplace closes your account, your reputation history remains.
+
+**What if you switch platforms?**
+Bring your 5-star eBay rating to Facebook Marketplace trades.
+Your trust travels with you.
+
+[Start Building Your Trust Passport]
+
+---
+
+### Trusted by Honest Traders
+
+> "I had 500+ 5-star reviews on Vinted. When my account got wrongly suspended, I lost everything. With SilentID, that won't happen again."
+> — **Sarah M., London**
+
+> "Buyers on Facebook Marketplace used to doubt me. Now I show my SilentID Trust Passport with my verified eBay 99% rating. Sales doubled."
+> — **James T., Manchester**
+
+[Join 50,000+ Verified Traders]
+```
+
+---
+
+### In-App Onboarding: First-Time Users
+
+**Screen 1: Welcome**
+```
+Welcome to SilentID
+
+Build your portable Trust Passport
+by connecting your marketplace profiles.
+
+[Continue]
+```
+
+**Screen 2: What is Trust Passport?**
+```
+Your Digital Trust Passport
+
+Your verified star ratings from:
+🛍️ Vinted
+📦 eBay
+👗 Depop
+📱 Facebook Marketplace
+...and more!
+
+All in one portable profile.
+
+[Next]
+```
+
+**Screen 3: How Verification Works**
+```
+We Verify Your Ownership
+
+1. You share your marketplace profile
+2. You confirm "This is my profile"
+3. We check your public ratings
+4. Your stars appear on your Passport
+
+Your privacy is protected.
+We only check what's already public.
+
+[Got It]
+```
+
+**Screen 4: Connect Your First Profile**
+```
+Connect Your First Profile
+
+Choose a marketplace to start:
+
+[Vinted]  [eBay]  [Depop]  [Facebook]
+
+You can add more later.
+
+[Skip for Now]
+```
+
+---
+
+### In-App Prompts: Encouraging Connections
+
+**After User Creates Account:**
+```
+🌟 Add Your Star Ratings!
+
+You've earned those 5-star reviews.
+Show them off in your Trust Passport.
+
+[Connect Vinted]  [Connect eBay]
+[Maybe Later]
+```
+
+**After User Views Another Profile:**
+```
+This user has 4.9 ★ on Vinted (327 reviews)
+
+Want to show your ratings too?
+
+[Connect My Profiles]  [Not Now]
+```
+
+**After User Completes Transaction:**
+```
+Great transaction!
+
+Did you know you can bring your marketplace ratings to SilentID?
+
+If you're a 5-star seller on Vinted or eBay, connect your profile to prove it.
+
+[Connect Profiles]  [Dismiss]
+```
+
+---
+
+### Feature Highlight: Protection Against Account Loss
+
+```markdown
+### Your Ratings. Protected.
+
+Marketplace accounts can be:
+- Suspended by mistake
+- Hacked and deleted
+- Closed when platforms shut down
+
+**SilentID protects your reputation history.**
+
+Once verified, your star ratings are safely stored in your Trust Passport—even if your marketplace account disappears.
+
+[Connect Your Profiles Now]
+```
+
+---
+
+### Email Campaign: "Bring Your Stars With You"
+
+**Subject:** Your 5-star reviews deserve a permanent home
+
+**Body:**
+```
+Hi [Name],
+
+You've worked hard to earn those 5-star reviews on Vinted, eBay, and Depop.
+
+But what if:
+- Your account gets suspended?
+- The platform shuts down?
+- You want to trade on a different marketplace?
+
+**Your trust shouldn't be locked in one platform.**
+
+With SilentID, you can:
+✅ Verify your marketplace profiles in 10 seconds
+✅ Store your verified star ratings in your Trust Passport
+✅ Share your reputation anywhere you trade
+
+[Connect Your Profiles]
+
+Your stars. Your proof. Your passport.
+
+— The SilentID Team
+
+P.S. We only check what's already public on your profile. No passwords, no private data.
+```
+
+---
+
+### Social Media Copy
+
+**Twitter/X:**
+```
+Your 5-star @Vinted rating shouldn't disappear if your account gets suspended.
+
+With @SilentID, your verified marketplace ratings are stored in your portable Trust Passport.
+
+Bring your stars with you. Everywhere.
+
+[Link to signup]
+```
+
+**Instagram:**
+```
+[Image: Trust Passport mockup showing multiple platform ratings]
+
+Caption:
+You've earned those stars. ⭐
+Now carry them everywhere. 📱
+
+Connect your Vinted, eBay, and Depop profiles to SilentID.
+Your verified ratings in one portable Trust Passport.
+
+Link in bio 👆
+
+#TrustPassport #VerifiedSeller #VintedSeller #EbaySeller
+```
+
+**LinkedIn:**
+```
+Marketplace sellers, listen up:
+
+Your 5-star eBay rating with 500+ reviews?
+It's locked in eBay.
+
+Your 4.9★ Vinted rating with 300+ reviews?
+It's locked in Vinted.
+
+**What if you could bring all your verified marketplace ratings into one portable profile?**
+
+That's what SilentID does.
+
+Verify ownership of your marketplace profiles (Vinted, eBay, Depop, etc.) and we extract your public star ratings into your Trust Passport.
+
+Then share your Trust Passport anywhere:
+→ Facebook Marketplace trades
+→ Local meetups
+→ Rental viewings
+→ Community groups
+
+Your trust travels with you.
+
+Learn more: [link]
+```
+
+---
+
+### Key Messaging Principles
+
+1. **Emphasize Control:**
+   - "You choose what to connect"
+   - "You confirm ownership"
+   - "You can remove anytime"
+
+2. **Emphasize Protection:**
+   - "Your ratings are safe even if accounts get suspended"
+   - "We only check what's already public"
+   - "Your privacy is protected"
+
+3. **Emphasize Portability:**
+   - "Your stars go with you"
+   - "Trust travels across platforms"
+   - "One portable reputation"
+
+4. **Avoid Technical Jargon:**
+   - ❌ "We scrape your profile"
+   - ❌ "HTML extraction"
+   - ❌ "DOM parsing"
+   - ✅ "We check your public profile"
+   - ✅ "We verify your star rating"
+   - ✅ "We extract your ratings"
+
+5. **Honest About Limitations:**
+   - "We only check public data"
+   - "Ownership must be verified first"
+   - "Ratings update every 90 days"
+
+---
+
+**END OF MARKETING COPY**
+
+---
+
+## 49.16 Admin UI: Platform Management (Additions to Section 48)
+
+**This subsection defines admin UI enhancements for managing platforms in the Modular Configuration System.**
+
+**Location:** `admin.silentid.co.uk/platforms`
+
+### New UI Components:
+
+#### **1. Platform List View (Enhanced)**
+
+Add new columns to existing Section 48 list view:
+
+| Column | Description |
+|--------|-------------|
+| **Rating Source Mode** | `API` | `Screenshot+HTML` | `Unsupported` |
+| **Verification Methods** | Icons: 📱 Share-Intent, 🔤 Token-in-Bio, 📸 Manual Only |
+| **API Status** | If API mode: ✅ Connected | ⚠️ Rate Limited | ❌ Failing |
+| **Last Extraction** | Timestamp of last successful rating extraction |
+| **Avg Confidence** | Average confidence score across all extractions (95%, 87%, etc.) |
+
+**Quick Actions:**
+- **Test API** (if API mode enabled)
+- **Test Share-Intent** (if supported)
+- **Test Token Verification** (if supported)
+- **View Extraction Logs**
+
+---
+
+#### **2. Add/Edit Platform Form (Enhanced)**
+
+**Tab 1: Basic Configuration** (existing from Section 48)
+- Platform name, logo, domain, URL patterns
+
+**Tab 2: Rating Source Mode** (NEW)
+
+```
+Rating Extraction Method
+────────────────────────
+
+How should SilentID extract star ratings from this platform?
+
+○ API Mode
+  Platform provides official API
+  [Configure API]
+
+○ Screenshot + HTML Mode
+  Automated screenshot with OCR + HTML extraction
+  [Configure Selectors]
+
+○ Unsupported
+  Platform not yet ready for automated extraction
+  (Users can upload manual screenshots only)
+
+[Save Configuration]
+```
+
+**If "API Mode" selected:**
+
+```
+API Configuration
+─────────────────
+
+Base URL:
+[https://api.ebay.com/commerce/reputation/v1]
+
+Authentication:
+○ API Key   ○ OAuth 2.0   ○ Basic Auth
+
+API Credentials (stored in Azure Key Vault):
+Key Vault Secret Name: [ebay-api-key]
+[Test Connection]
+
+Rate Limit:
+[5000] requests per [day ▼]
+
+Response Format:
+○ JSON   ○ XML
+
+Rating Field Path:
+[feedbackScore.positiveFeedbackPercent]
+
+Review Count Field Path:
+[feedbackScore.count]
+
+[Save API Config]
+```
+
+**If "Screenshot + HTML Mode" selected:**
+
+Uses existing Section 48 selector configuration UI.
+
+---
+
+**Tab 3: Verification Methods** (NEW)
+
+```
+Supported Verification Methods
+───────────────────────────────
+
+How can users prove ownership of profiles on this platform?
+
+☑ Share-Intent (Recommended)
+  User shares profile URL from platform app
+
+  Share-Intent Deep Link Pattern:
+  [vinted://profile/{username}]
+
+  Alternative Deep Link:
+  [https://vinted.app.link/profile/{username}]
+
+☑ Token-in-Bio
+  User adds verification code to profile bio
+
+  Bio Field Selector (CSS):
+  [div.user-bio > p.bio-text]
+
+  Bio Field XPath:
+  [//div[@class='user-bio']//p[1]]
+
+☐ Manual Screenshot Only
+  No automated verification available
+  (User uploads screenshots manually)
+
+[Save Verification Config]
+```
+
+---
+
+**Tab 4: Extraction Testing** (NEW)
+
+```
+Test Extraction
+───────────────
+
+Test live extraction against real profiles to verify configuration works.
+
+Test Profile URLs (enter 3-5 known working profiles):
+
+1. [https://vinted.co.uk/member/testuser1]
+2. [https://vinted.co.uk/member/testuser2]
+3. [https://vinted.co.uk/member/testuser3]
+
+[Run Test Extraction]
+
+Results:
+───────
+Profile 1: ✅ Success
+  Rating: 4.9 ★
+  Reviews: 327
+  Extraction Time: 3.2s
+  Confidence: 95%
+  Method: Screenshot+OCR
+
+Profile 2: ⚠️ Partial Success
+  Rating: 4.7 ★
+  Reviews: NOT EXTRACTED (selector failed)
+  Extraction Time: 5.1s
+  Confidence: 75%
+  Method: Screenshot+OCR (HTML fallback failed)
+
+Profile 3: ❌ Failed
+  Error: Timeout after 10s
+  Recommendation: Check if platform is rate-limiting
+
+[View Detailed Logs]
+```
+
+---
+
+**Tab 5: Monitoring & Health** (existing from Section 48, no changes)
+
+---
+
+#### **3. API Connection Testing**
+
+**For API-enabled platforms:**
+
+```
+Test eBay API Connection
+────────────────────────
+
+API Base URL:
+https://api.ebay.com/commerce/reputation/v1
+
+Credentials:
+🔐 ebay-api-key (Azure Key Vault)
+
+Test User:
+[testuser_ebay_verified]
+
+[Run API Test]
+
+Results:
+────────
+✅ Connection Successful
+
+Response:
+{
+  "feedbackScore": 542,
+  "positiveFeedbackPercent": 99.2,
+  "feedbackRatingStar": "TurquoiseStar",
+  "sellerInfo": {
+    "feedbackCount": 542
+  }
+}
+
+Extraction:
+  Rating: 99.2% ★
+  Reviews: 542
+  Confidence: 100% (API mode)
+
+[Save & Enable API Mode]
+```
+
+**If API test fails:**
+
+```
+❌ API Connection Failed
+
+Error: 401 Unauthorized
+
+Possible causes:
+• API key expired or invalid
+• Rate limit exceeded
+• eBay API endpoint changed
+
+Recommendations:
+1. Check API key in Azure Key Vault
+2. Verify API base URL is correct
+3. Check rate limit status
+4. Fall back to Screenshot+HTML mode
+
+[Retry]  [Switch to Screenshot Mode]
+```
+
+---
+
+#### **4. Platform Marketplace Admin View**
+
+**New Admin Screen:** `admin.silentid.co.uk/platforms/marketplace`
+
+Shows all platforms grouped by support status:
+
+```
+Platform Marketplace
+────────────────────
+
+📊 Fully Supported (API Mode) — 3 platforms
+  • eBay (All Regions)
+  • Etsy
+  • Amazon (Beta)
+
+🤖 Automated Extraction (Screenshot+HTML) — 8 platforms
+  • Vinted (UK, US, FR, DE)
+  • Depop
+  • Facebook Marketplace
+  • Poshmark
+  • Mercari
+
+⏳ In Development — 2 platforms
+  • Instagram (Awaiting API approval)
+  • TikTok Shop (Testing selectors)
+
+❌ Manual Only — 1 platform
+  • Local Marketplace XYZ (No public profiles)
+
+🔧 Requested by Users — 12 platforms
+  • Wallapop (34 requests)
+  • Shpock (28 requests)
+  • Gumtree (19 requests)
+  • ...
+
+[Add New Platform]
+```
+
+---
+
+#### **5. Enable/Disable Platform Toggle**
+
+**Quick Toggle for Admins:**
+
+In platform list view, add toggle switch:
+
+```
+Platform: Vinted UK
+Status: ✅ Enabled  ⚪ Disabled
+
+If disabled:
+• New verifications blocked
+• Existing verifications show "Last updated: X days ago (verification paused)"
+• Users notified: "Vinted verification temporarily unavailable"
+```
+
+**Use Cases:**
+- Platform API is down → Disable temporarily
+- Platform changed HTML drastically → Disable until selectors updated
+- Legal issue with platform → Disable until resolved
+
+---
+
+### Database Schema Updates (Section 48)
+
+Add new fields to `PlatformConfigurations` table:
+
+```sql
+ALTER TABLE PlatformConfigurations ADD COLUMN rating_source_mode VARCHAR(50) DEFAULT 'screenshot_plus_html';
+-- Values: 'api' | 'screenshot_plus_html' | 'unsupported'
+
+ALTER TABLE PlatformConfigurations ADD COLUMN verification_methods_supported JSONB DEFAULT '["token_in_bio"]';
+-- Example: ["share_intent", "token_in_bio"]
+
+ALTER TABLE PlatformConfigurations ADD COLUMN api_config JSONB NULL;
+-- Example: {"base_url": "...", "auth_type": "oauth", "credentials_location": "azure_key_vault", ...}
+
+ALTER TABLE PlatformConfigurations ADD COLUMN share_intent_patterns JSONB NULL;
+-- Example: ["vinted://profile/{username}", "https://vinted.app.link/profile/{username}"]
+
+ALTER TABLE PlatformConfigurations ADD COLUMN token_bio_selector JSONB NULL;
+-- Example: {"css": "div.user-bio > p", "xpath": "//div[@class='user-bio']//p[1]"}
+
+ALTER TABLE PlatformConfigurations ADD COLUMN is_enabled BOOLEAN DEFAULT TRUE;
+-- Admin can disable platform temporarily
+
+ALTER TABLE PlatformConfigurations ADD COLUMN avg_confidence_score DECIMAL(5,2) NULL;
+-- Average confidence across all extractions (calculated weekly)
+
+ALTER TABLE PlatformConfigurations ADD COLUMN last_extraction_at TIMESTAMP NULL;
+-- Last successful rating extraction timestamp
+```
+
+---
+
+**END OF ADMIN UI ADDITIONS**
+
+---
+
+## 49.17 Integration with Existing Sections
+
+**Section 49 integrates with:**
+
+### **Section 5 (Core Features):**
+- Level 3 Verification defined here (49.1-49.17)
+- Replaces/extends existing Level 3 spec with Share-Intent primary + Token-in-Bio secondary
+- Ownership-first rule (49.2) enforces legal and privacy compliance
+
+### **Section 47 (Digital Trust Passport):**
+- Star ratings extracted via Section 49 methods
+- Ratings displayed on public Trust Passport
+- Confidence levels (49.11) determine display badges
+
+### **Section 48 (Modular Platform Configuration):**
+- Section 49.16 adds new fields to PlatformConfigurations table:
+  - `rating_source_mode` (api | screenshot_plus_html | unsupported)
+  - `verification_methods_supported` (share_intent, token_in_bio)
+  - `api_config` (for API-enabled platforms)
+  - `share_intent_patterns` (deep link patterns)
+  - `token_bio_selector` (CSS/XPath for bio field)
+- Admin UI enhanced with API testing, verification method config
+
+### **Section 19 (Help Center):**
+- New help article (49.14) added: "Connecting Your Marketplace Profile"
+- Uses user-friendly language (no "scraping")
+- Explains Share-Intent + Token-in-Bio methods
+
+### **Section 21 (Landing Page):**
+- Marketing copy (49.15) added to landing page
+- "Bring Your Stars With You" messaging
+- Trust Passport value proposition
+
+### **Section 26 (Evidence Integrity Engine):**
+- Screenshot integrity checks (49.6) use existing Section 26 tampering detection
+- OCR extraction confidence (49.11) feeds into Section 26 integrity scores
+
+### **Section 41 (AI Architecture):**
+- OCR extraction (49.6) uses Azure Computer Vision (Layer C - Vision & OCR)
+- Screenshot analysis for tampering detection
+- Text extraction from manual screenshots (49.10)
+
+### **Section 43 (Consumer Terms):**
+- New clause (49.13) added: "Marketplace Profile Verification"
+- Ownership declaration requirements
+- Data access consent terms
+
+### **Section 44 (Privacy Policy):**
+- Update Section 2.3 (Evidence Data) to include:
+  - "Public Profile URLs: Marketplace username, ratings, reviews, join date (extracted from public pages after ownership verification)"
+  - "Verification Method: Share-Intent or Token-in-Bio ownership proof"
+
+---
+
+**Conflict Resolution:**
+
+**No conflicts** with existing sections. Section 49 is an expansion and modernization of Level 3 Verification, not a replacement.
+
+**Previous Level 3 Specification (if any):**
+- If earlier sections mentioned Level 3 Verification, Section 49 supersedes them
+- Previous "Token-in-Bio only" approach updated to "Share-Intent primary, Token-in-Bio secondary"
+- Previous "scraping-first" approach updated to "ownership-first"
+
+---
+
+**END OF SECTION 49**
+
+---
 ## END OF MASTER SPECIFICATION
 
 This document contains the complete, authoritative specification for SilentID.

@@ -294,9 +294,7 @@ class _MutualVerificationHomeScreenState
                           ),
                         ),
                         Text(
-                          verification.otherUserName ??
-                              '@${verification.otherUserUsername}' ??
-                              'Unknown user',
+                          verification.otherUserName!,
                           style: const TextStyle(
                             fontSize: 14,
                             color: AppTheme.neutralGray700,

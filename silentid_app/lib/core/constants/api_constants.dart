@@ -32,6 +32,7 @@ class ApiConstants {
   static const String refreshTokenKey = 'refresh_token';
   static const String userIdKey = 'user_id';
   static const String userEmailKey = 'user_email';
+  static const String usernameKey = 'username';
 
   // Request timeouts
   static const Duration connectTimeout = Duration(seconds: 30);

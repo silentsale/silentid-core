@@ -33,6 +33,7 @@ import '../../features/subscriptions/screens/upgrade_premium_screen.dart';
 import '../../features/subscriptions/screens/upgrade_pro_screen.dart';
 import '../../features/profile/screens/public_profile_viewer_screen.dart';
 import '../../services/auth_service.dart';
+import '../widgets/main_shell.dart';
 
 class AppRouter {
   static final _authService = AuthService();
@@ -59,6 +60,7 @@ class AppRouter {
       return null;
     },
     routes: [
+      // Auth routes - outside shell (no bottom navigation)
       GoRoute(
         path: '/',
         name: 'welcome',
@@ -81,177 +83,193 @@ class AppRouter {
           return OtpScreen(email: email);
         },
       ),
-      GoRoute(
-        path: '/home',
-        name: 'home',
-        builder: (context, state) => const EnhancedHomeScreen(),
-      ),
-      GoRoute(
-        path: '/identity/intro',
-        name: 'identity-intro',
-        builder: (context, state) => const IdentityIntroScreen(),
-      ),
-      GoRoute(
-        path: '/identity/verify',
-        name: 'identity-verify',
-        builder: (context, state) => const IdentityWebViewScreen(),
-      ),
-      GoRoute(
-        path: '/identity/status',
-        name: 'identity-status',
-        builder: (context, state) => const IdentityStatusScreen(),
-      ),
-      GoRoute(
-        path: '/evidence',
-        name: 'evidence',
-        builder: (context, state) => const EvidenceOverviewScreen(),
-      ),
-      GoRoute(
-        path: '/evidence/receipts',
-        name: 'receipt-list',
-        builder: (context, state) => const ReceiptListScreen(),
-      ),
-      GoRoute(
-        path: '/evidence/receipts/upload',
-        name: 'receipt-upload',
-        builder: (context, state) => const ReceiptUploadScreen(),
-      ),
-      GoRoute(
-        path: '/evidence/screenshots',
-        name: 'screenshot-upload',
-        builder: (context, state) => const ScreenshotUploadScreen(),
-      ),
-      GoRoute(
-        path: '/evidence/profile-links',
-        name: 'profile-link',
-        builder: (context, state) => const ProfileLinkScreen(),
-      ),
-      GoRoute(
-        path: '/trust/overview',
-        name: 'trust-overview',
-        builder: (context, state) => const TrustScoreOverviewScreen(),
-      ),
-      GoRoute(
-        path: '/trust/breakdown',
-        name: 'trust-breakdown',
-        builder: (context, state) => const TrustScoreBreakdownScreen(),
-      ),
-      GoRoute(
-        path: '/trust/history',
-        name: 'trust-history',
-        builder: (context, state) => const TrustScoreHistoryScreen(),
-      ),
-      GoRoute(
-        path: '/profile/public',
-        name: 'public-profile',
-        builder: (context, state) => const MyPublicProfileScreen(),
-      ),
-      GoRoute(
-        path: '/settings/account',
-        name: 'account-details',
-        builder: (context, state) => const AccountDetailsScreen(),
-      ),
-      GoRoute(
-        path: '/settings/privacy',
-        name: 'privacy-settings',
-        builder: (context, state) => const PrivacySettingsScreen(),
-      ),
-      GoRoute(
-        path: '/settings/devices',
-        name: 'connected-devices',
-        builder: (context, state) => const ConnectedDevicesScreen(),
-      ),
-      GoRoute(
-        path: '/settings/export',
-        name: 'data-export',
-        builder: (context, state) => const DataExportScreen(),
-      ),
-      GoRoute(
-        path: '/settings/delete',
-        name: 'delete-account',
-        builder: (context, state) => const DeleteAccountScreen(),
-      ),
-      GoRoute(
-        path: '/mutual-verification',
-        name: 'mutual-verification',
-        builder: (context, state) => const MutualVerificationHomeScreen(),
-      ),
-      GoRoute(
-        path: '/mutual-verification/create',
-        name: 'create-verification',
-        builder: (context, state) => const CreateVerificationScreen(),
-      ),
-      GoRoute(
-        path: '/mutual-verification/incoming',
-        name: 'incoming-requests',
-        builder: (context, state) => const IncomingRequestsScreen(),
-      ),
-      GoRoute(
-        path: '/mutual-verification/details/:id',
-        name: 'verification-details',
-        builder: (context, state) {
-          final id = state.pathParameters['id'];
-          if (id == null) {
-            return const Scaffold(
-              body: Center(child: Text('Verification ID required')),
-            );
+      // Authenticated routes - wrapped in ShellRoute with bottom navigation
+      ShellRoute(
+        builder: (context, state, child) {
+          // Conditionally show bottom navigation based on route
+          if (!ShellRouteHelper.shouldShowBottomNav(state.matchedLocation)) {
+            return child;
           }
-          return VerificationDetailsScreen(verificationId: id);
+          final currentIndex = ShellRouteHelper.getIndexFromRoute(state.matchedLocation);
+          return MainShellScreen(
+            currentIndex: currentIndex,
+            child: child,
+          );
         },
-      ),
-      GoRoute(
-        path: '/safety/report',
-        name: 'report-user',
-        builder: (context, state) {
-          final username = state.extra as String?;
-          return ReportUserScreen(username: username);
-        },
-      ),
-      GoRoute(
-        path: '/safety/my-reports',
-        name: 'my-reports',
-        builder: (context, state) => const MyReportsScreen(),
-      ),
-      GoRoute(
-        path: '/safety/report-details/:id',
-        name: 'report-details',
-        builder: (context, state) {
-          final id = state.pathParameters['id'];
-          if (id == null) {
-            return const Scaffold(
-              body: Center(child: Text('Report ID required')),
-            );
-          }
-          return ReportDetailsScreen(reportId: id);
-        },
-      ),
-      GoRoute(
-        path: '/subscriptions/overview',
-        name: 'subscription-overview',
-        builder: (context, state) => const SubscriptionOverviewScreen(),
-      ),
-      GoRoute(
-        path: '/subscriptions/premium',
-        name: 'upgrade-premium',
-        builder: (context, state) => const UpgradePremiumScreen(),
-      ),
-      GoRoute(
-        path: '/subscriptions/pro',
-        name: 'upgrade-pro',
-        builder: (context, state) => const UpgradeProScreen(),
-      ),
-      GoRoute(
-        path: '/profile/view/:username',
-        name: 'view-public-profile',
-        builder: (context, state) {
-          final username = state.pathParameters['username'];
-          if (username == null) {
-            return const Scaffold(
-              body: Center(child: Text('Username required')),
-            );
-          }
-          return PublicProfileViewerScreen(username: username);
-        },
+        routes: [
+          GoRoute(
+            path: '/home',
+            name: 'home',
+            builder: (context, state) => const EnhancedHomeScreen(),
+          ),
+          GoRoute(
+            path: '/identity/intro',
+            name: 'identity-intro',
+            builder: (context, state) => const IdentityIntroScreen(),
+          ),
+          GoRoute(
+            path: '/identity/verify',
+            name: 'identity-verify',
+            builder: (context, state) => const IdentityWebViewScreen(),
+          ),
+          GoRoute(
+            path: '/identity/status',
+            name: 'identity-status',
+            builder: (context, state) => const IdentityStatusScreen(),
+          ),
+          GoRoute(
+            path: '/evidence',
+            name: 'evidence',
+            builder: (context, state) => const EvidenceOverviewScreen(),
+          ),
+          GoRoute(
+            path: '/evidence/receipts',
+            name: 'receipt-list',
+            builder: (context, state) => const ReceiptListScreen(),
+          ),
+          GoRoute(
+            path: '/evidence/receipts/upload',
+            name: 'receipt-upload',
+            builder: (context, state) => const ReceiptUploadScreen(),
+          ),
+          GoRoute(
+            path: '/evidence/screenshots',
+            name: 'screenshot-upload',
+            builder: (context, state) => const ScreenshotUploadScreen(),
+          ),
+          GoRoute(
+            path: '/evidence/profile-links',
+            name: 'profile-link',
+            builder: (context, state) => const ProfileLinkScreen(),
+          ),
+          GoRoute(
+            path: '/trust/overview',
+            name: 'trust-overview',
+            builder: (context, state) => const TrustScoreOverviewScreen(),
+          ),
+          GoRoute(
+            path: '/trust/breakdown',
+            name: 'trust-breakdown',
+            builder: (context, state) => const TrustScoreBreakdownScreen(),
+          ),
+          GoRoute(
+            path: '/trust/history',
+            name: 'trust-history',
+            builder: (context, state) => const TrustScoreHistoryScreen(),
+          ),
+          GoRoute(
+            path: '/profile/public',
+            name: 'public-profile',
+            builder: (context, state) => const MyPublicProfileScreen(),
+          ),
+          GoRoute(
+            path: '/settings/account',
+            name: 'account-details',
+            builder: (context, state) => const AccountDetailsScreen(),
+          ),
+          GoRoute(
+            path: '/settings/privacy',
+            name: 'privacy-settings',
+            builder: (context, state) => const PrivacySettingsScreen(),
+          ),
+          GoRoute(
+            path: '/settings/devices',
+            name: 'connected-devices',
+            builder: (context, state) => const ConnectedDevicesScreen(),
+          ),
+          GoRoute(
+            path: '/settings/export',
+            name: 'data-export',
+            builder: (context, state) => const DataExportScreen(),
+          ),
+          GoRoute(
+            path: '/settings/delete',
+            name: 'delete-account',
+            builder: (context, state) => const DeleteAccountScreen(),
+          ),
+          GoRoute(
+            path: '/mutual-verification',
+            name: 'mutual-verification',
+            builder: (context, state) => const MutualVerificationHomeScreen(),
+          ),
+          GoRoute(
+            path: '/mutual-verification/create',
+            name: 'create-verification',
+            builder: (context, state) => const CreateVerificationScreen(),
+          ),
+          GoRoute(
+            path: '/mutual-verification/incoming',
+            name: 'incoming-requests',
+            builder: (context, state) => const IncomingRequestsScreen(),
+          ),
+          GoRoute(
+            path: '/mutual-verification/details/:id',
+            name: 'verification-details',
+            builder: (context, state) {
+              final id = state.pathParameters['id'];
+              if (id == null) {
+                return const Scaffold(
+                  body: Center(child: Text('Verification ID required')),
+                );
+              }
+              return VerificationDetailsScreen(verificationId: id);
+            },
+          ),
+          GoRoute(
+            path: '/safety/report',
+            name: 'report-user',
+            builder: (context, state) {
+              final username = state.extra as String?;
+              return ReportUserScreen(username: username);
+            },
+          ),
+          GoRoute(
+            path: '/safety/my-reports',
+            name: 'my-reports',
+            builder: (context, state) => const MyReportsScreen(),
+          ),
+          GoRoute(
+            path: '/safety/report-details/:id',
+            name: 'report-details',
+            builder: (context, state) {
+              final id = state.pathParameters['id'];
+              if (id == null) {
+                return const Scaffold(
+                  body: Center(child: Text('Report ID required')),
+                );
+              }
+              return ReportDetailsScreen(reportId: id);
+            },
+          ),
+          GoRoute(
+            path: '/subscriptions/overview',
+            name: 'subscription-overview',
+            builder: (context, state) => const SubscriptionOverviewScreen(),
+          ),
+          GoRoute(
+            path: '/subscriptions/premium',
+            name: 'upgrade-premium',
+            builder: (context, state) => const UpgradePremiumScreen(),
+          ),
+          GoRoute(
+            path: '/subscriptions/pro',
+            name: 'upgrade-pro',
+            builder: (context, state) => const UpgradeProScreen(),
+          ),
+          GoRoute(
+            path: '/profile/view/:username',
+            name: 'view-public-profile',
+            builder: (context, state) {
+              final username = state.pathParameters['username'];
+              if (username == null) {
+                return const Scaffold(
+                  body: Center(child: Text('Username required')),
+                );
+              }
+              return PublicProfileViewerScreen(username: username);
+            },
+          ),
+        ],
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
