@@ -597,6 +597,238 @@ public class EvidenceController : ControllerBase
         }
     }
 
+    // ========== EXTRACTION ENDPOINTS (Section 49) ==========
+
+    /// <summary>
+    /// POST /v1/evidence/profile-links/{id}/consent - Record user consent before extraction
+    /// Required before any extraction can occur.
+    /// </summary>
+    [HttpPost("profile-links/{id}/consent")]
+    public async Task<IActionResult> RecordConsent(Guid id)
+    {
+        try
+        {
+            var userId = GetUserId();
+
+            // Get client IP address
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+            // Check for forwarded headers (behind proxy/load balancer)
+            if (HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor))
+            {
+                ipAddress = forwardedFor.ToString().Split(',')[0].Trim();
+            }
+
+            await _extractionService.RecordConsentAsync(id, userId, ipAddress);
+
+            _logger.LogInformation(
+                "Consent recorded for profile link {ProfileLinkId}, user {UserId}, IP {IP}",
+                id, userId, ipAddress);
+
+            return Ok(new
+            {
+                profileLinkId = id,
+                consentRecorded = true,
+                timestamp = DateTime.UtcNow,
+                message = "Consent recorded. You can now upload screenshots or trigger extraction."
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Failed to record consent for profile link {ProfileLinkId}", id);
+            return NotFound(new { error = "not_found", message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error recording consent for profile link {ProfileLinkId}", id);
+            return StatusCode(500, new { error = "internal_error", message = "Failed to record consent." });
+        }
+    }
+
+    /// <summary>
+    /// POST /v1/evidence/profile-links/{id}/screenshots - Upload manual screenshot for extraction
+    /// Maximum 3 screenshots allowed per profile link.
+    /// </summary>
+    [HttpPost("profile-links/{id}/screenshots")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadManualScreenshot(Guid id, [FromForm] IFormFile file)
+    {
+        // Validate file
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { error = "invalid_file", message = "Please provide a valid file." });
+        }
+
+        // Validate file type (images only)
+        var allowedContentTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/webp" };
+        if (!allowedContentTypes.Contains(file.ContentType.ToLowerInvariant()))
+        {
+            return BadRequest(new { error = "invalid_file_type", message = "Only image files (JPEG, PNG, WebP) are allowed." });
+        }
+
+        // Validate file size (max 10MB)
+        const int maxFileSizeBytes = 10 * 1024 * 1024;
+        if (file.Length > maxFileSizeBytes)
+        {
+            return BadRequest(new { error = "file_too_large", message = "File size must not exceed 10MB." });
+        }
+
+        try
+        {
+            var userId = GetUserId();
+
+            using var fileStream = file.OpenReadStream();
+            var result = await _extractionService.ProcessManualScreenshotAsync(id, userId, fileStream, file.FileName);
+
+            if (!result.Success)
+            {
+                return BadRequest(new { error = "upload_failed", message = result.ErrorMessage });
+            }
+
+            _logger.LogInformation(
+                "Manual screenshot uploaded for profile link {ProfileLinkId}, user {UserId}",
+                id, userId);
+
+            return Ok(new
+            {
+                profileLinkId = id,
+                screenshotUploaded = true,
+                method = result.Method.ToString(),
+                confidenceScore = result.ConfidenceScore,
+                message = "Screenshot uploaded successfully. Upload more screenshots to increase confidence score (max 3)."
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading manual screenshot for profile link {ProfileLinkId}", id);
+            return StatusCode(500, new { error = "internal_error", message = "Failed to upload screenshot." });
+        }
+    }
+
+    /// <summary>
+    /// POST /v1/evidence/profile-links/{id}/extract - Trigger profile data extraction
+    /// Requires ownership verified (Level 3) and consent recorded.
+    /// </summary>
+    [HttpPost("profile-links/{id}/extract")]
+    public async Task<IActionResult> ExtractProfileData(Guid id)
+    {
+        try
+        {
+            var userId = GetUserId();
+
+            var result = await _extractionService.ExtractProfileDataAsync(id, userId);
+
+            if (!result.Success)
+            {
+                // If extraction failed due to ownership/consent, return specific error
+                if (result.ErrorMessage?.Contains("Ownership") == true)
+                {
+                    return BadRequest(new
+                    {
+                        error = "ownership_required",
+                        message = result.ErrorMessage,
+                        action = "Complete Level 3 verification (Share-Intent or Token-in-Bio) before extracting data."
+                    });
+                }
+
+                if (result.ErrorMessage?.Contains("consent") == true)
+                {
+                    return BadRequest(new
+                    {
+                        error = "consent_required",
+                        message = result.ErrorMessage,
+                        action = "Call POST /v1/evidence/profile-links/{id}/consent to confirm this is your profile."
+                    });
+                }
+
+                // Extraction not supported - suggest manual screenshot
+                return Ok(new
+                {
+                    profileLinkId = id,
+                    extractionSuccess = false,
+                    suggestedMethod = "ManualScreenshot",
+                    message = result.ErrorMessage,
+                    action = "Upload up to 3 screenshots via POST /v1/evidence/profile-links/{id}/screenshots"
+                });
+            }
+
+            _logger.LogInformation(
+                "Profile data extracted for {ProfileLinkId}: Rating={Rating}, Reviews={Reviews}, Confidence={Confidence}%",
+                id, result.Rating, result.ReviewCount, result.ConfidenceScore);
+
+            return Ok(new
+            {
+                profileLinkId = id,
+                extractionSuccess = true,
+                method = result.Method.ToString(),
+                data = new
+                {
+                    rating = result.Rating,
+                    reviewCount = result.ReviewCount,
+                    username = result.Username,
+                    joinDate = result.JoinDate
+                },
+                confidenceScore = result.ConfidenceScore,
+                htmlMatch = result.HtmlExtractionMatch,
+                message = "Profile data extracted successfully!"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error extracting profile data for profile link {ProfileLinkId}", id);
+            return StatusCode(500, new { error = "internal_error", message = "Failed to extract profile data." });
+        }
+    }
+
+    /// <summary>
+    /// GET /v1/evidence/profile-links/{id}/extraction-status - Get extraction status and data
+    /// </summary>
+    [HttpGet("profile-links/{id}/extraction-status")]
+    public async Task<IActionResult> GetExtractionStatus(Guid id)
+    {
+        try
+        {
+            var userId = GetUserId();
+
+            var profileLink = await _evidenceService.GetProfileLinkAsync(id, userId);
+            if (profileLink == null)
+            {
+                return NotFound(new { error = "not_found", message = "Profile link not found." });
+            }
+
+            return Ok(new
+            {
+                profileLinkId = id,
+                verificationLevel = profileLink.VerificationLevel,
+                ownershipVerified = profileLink.OwnershipLockedAt != null,
+                consentRecorded = profileLink.ConsentConfirmedAt != null,
+                extraction = new
+                {
+                    method = profileLink.ExtractionMethod,
+                    confidence = profileLink.ExtractionConfidence,
+                    extractedAt = profileLink.ExtractedAt,
+                    htmlMatch = profileLink.HtmlExtractionMatch
+                },
+                data = new
+                {
+                    rating = profileLink.PlatformRating,
+                    reviewCount = profileLink.ReviewCount,
+                    joinDate = profileLink.ProfileJoinDate
+                },
+                manualScreenshots = new
+                {
+                    count = profileLink.ManualScreenshotCount,
+                    maxAllowed = 3
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting extraction status for profile link {ProfileLinkId}", id);
+            return StatusCode(500, new { error = "internal_error", message = "Failed to get extraction status." });
+        }
+    }
+
     // Helper method to compute SHA-256 hash
     private static string ComputeSha256Hash(string input)
     {
