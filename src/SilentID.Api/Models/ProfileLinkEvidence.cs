@@ -81,6 +81,70 @@ public class ProfileLinkEvidence
     /// </summary>
     public DateTime? NextReverifyAt { get; set; }
 
+    // ========== EXTRACTION FIELDS (Section 49.6) ==========
+
+    /// <summary>
+    /// Extracted star rating from marketplace profile (e.g., 4.9 for Vinted).
+    /// </summary>
+    public decimal? PlatformRating { get; set; }
+
+    /// <summary>
+    /// Number of reviews/ratings on the marketplace profile.
+    /// </summary>
+    public int? ReviewCount { get; set; }
+
+    /// <summary>
+    /// Join/member since date extracted from profile.
+    /// </summary>
+    public DateTime? ProfileJoinDate { get; set; }
+
+    /// <summary>
+    /// Extraction method used: API, ScreenshotOCR, ManualScreenshot.
+    /// </summary>
+    [MaxLength(50)]
+    public string? ExtractionMethod { get; set; }
+
+    /// <summary>
+    /// Confidence score for extraction (0-100).
+    /// API=100%, ScreenshotOCR=95%, ManualScreenshot=75% base.
+    /// </summary>
+    public int? ExtractionConfidence { get; set; }
+
+    /// <summary>
+    /// When extraction was last performed.
+    /// </summary>
+    public DateTime? ExtractedAt { get; set; }
+
+    /// <summary>
+    /// True if HTML extraction matches OCR extraction.
+    /// </summary>
+    public bool? HtmlExtractionMatch { get; set; }
+
+    // ========== CONSENT FIELDS (Section 49.2) ==========
+
+    /// <summary>
+    /// Timestamp when user confirmed "This is my profile".
+    /// </summary>
+    public DateTime? ConsentConfirmedAt { get; set; }
+
+    /// <summary>
+    /// IP address where consent was given.
+    /// </summary>
+    [MaxLength(50)]
+    public string? ConsentIpAddress { get; set; }
+
+    // ========== MANUAL SCREENSHOT FIELDS (Section 49.10) ==========
+
+    /// <summary>
+    /// Number of manual screenshots uploaded (max 3).
+    /// </summary>
+    public int ManualScreenshotCount { get; set; } = 0;
+
+    /// <summary>
+    /// URLs of manual screenshots in Azure Blob Storage (JSON array).
+    /// </summary>
+    public string? ManualScreenshotUrlsJson { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

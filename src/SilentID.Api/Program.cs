@@ -53,6 +53,7 @@ builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 builder.Services.AddScoped<IRiskEngineService, RiskEngineService>();
 builder.Services.AddScoped<IPasskeyService, PasskeyService>();
 builder.Services.AddScoped<IPlatformConfigurationService, PlatformConfigurationService>();
+builder.Services.AddScoped<IExtractionService, ExtractionService>();
 
 // Add HttpClient factory for OAuth services
 builder.Services.AddHttpClient();
