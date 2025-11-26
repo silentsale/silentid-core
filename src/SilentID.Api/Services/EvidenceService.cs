@@ -26,11 +26,16 @@ public interface IEvidenceService
 public class EvidenceService : IEvidenceService
 {
     private readonly SilentIdDbContext _context;
+    private readonly IPlatformConfigurationService _platformService;
     private readonly ILogger<EvidenceService> _logger;
 
-    public EvidenceService(SilentIdDbContext context, ILogger<EvidenceService> logger)
+    public EvidenceService(
+        SilentIdDbContext context,
+        IPlatformConfigurationService platformService,
+        ILogger<EvidenceService> logger)
     {
         _context = context;
+        _platformService = platformService;
         _logger = logger;
     }
 
@@ -82,6 +87,36 @@ public class EvidenceService : IEvidenceService
         profileLink.UserId = userId;
         profileLink.CreatedAt = DateTime.UtcNow;
         profileLink.UpdatedAt = DateTime.UtcNow;
+
+        // Match URL to platform configuration and extract username
+        var platformMatch = await _platformService.MatchUrlAsync(profileLink.URL);
+        if (platformMatch != null)
+        {
+            // Map platform config to Platform enum based on platformId
+            profileLink.Platform = MapPlatformIdToEnum(platformMatch.Platform.PlatformId);
+            profileLink.URL = platformMatch.NormalizedUrl; // Store normalized URL
+
+            // Store extracted username in ScrapeDataJson if not already set
+            if (string.IsNullOrEmpty(profileLink.ScrapeDataJson))
+            {
+                profileLink.ScrapeDataJson = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    extractedUsername = platformMatch.ExtractedUsername,
+                    platformDisplayName = platformMatch.Platform.DisplayName,
+                    matchedAt = DateTime.UtcNow
+                });
+            }
+
+            _logger.LogInformation(
+                "Matched profile URL to platform {Platform}, username: {Username}",
+                platformMatch.Platform.PlatformId, platformMatch.ExtractedUsername);
+        }
+        else
+        {
+            _logger.LogWarning(
+                "Profile URL {Url} did not match any known platform",
+                profileLink.URL);
+        }
 
         // Basic fraud checks (placeholder - enhance later with real scraping)
         if (profileLink.UsernameMatchScore < 50)
@@ -342,5 +377,22 @@ public class EvidenceService : IEvidenceService
         }
 
         return normalized;
+    }
+
+    /// <summary>
+    /// Maps platform configuration ID to Platform enum.
+    /// </summary>
+    private static Platform MapPlatformIdToEnum(string platformId)
+    {
+        return platformId.ToLowerInvariant() switch
+        {
+            "vinted-uk" or "vinted" => Platform.Vinted,
+            "ebay-uk" or "ebay-us" or "ebay" => Platform.eBay,
+            "depop" => Platform.Depop,
+            "etsy" => Platform.Etsy,
+            "facebook-marketplace" => Platform.FacebookMarketplace,
+            "poshmark" => Platform.Other, // Add to enum if needed
+            _ => Platform.Other
+        };
     }
 }
