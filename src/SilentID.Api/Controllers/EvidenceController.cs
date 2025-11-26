@@ -14,17 +14,20 @@ namespace SilentID.Api.Controllers;
 public class EvidenceController : ControllerBase
 {
     private readonly IEvidenceService _evidenceService;
+    private readonly IExtractionService _extractionService;
     private readonly IBlobStorageService _blobStorageService;
     private readonly IRiskEngineService _riskEngineService;
     private readonly ILogger<EvidenceController> _logger;
 
     public EvidenceController(
         IEvidenceService evidenceService,
+        IExtractionService extractionService,
         IBlobStorageService blobStorageService,
         ILogger<EvidenceController> logger,
         IRiskEngineService riskEngineService)
     {
         _evidenceService = evidenceService;
+        _extractionService = extractionService;
         _blobStorageService = blobStorageService;
         _logger = logger;
         _riskEngineService = riskEngineService;
