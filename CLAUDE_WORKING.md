@@ -65,6 +65,15 @@ Three streams:
 - 90-day re-verification required
 - See: `CLAUDE.md Section 49 - Level 3 Verification`
 
+### User Growth Strategy (5 Phases)
+
+- **Phase 1 - Activation (5 min)**: Interactive onboarding, quick wins checklist, demo mode
+- **Phase 2 - Engagement (2 weeks)**: Push notifications, gamification, social proof
+- **Phase 3 - Monetization (2+ weeks)**: Smart paywall at 500+ score, 10th evidence
+- **Phase 4 - Retention (1+ month)**: Weekly digest, badges, sharing features
+- **Phase 5 - Network Growth**: Referrals (+50 TrustScore bonus), viral loop
+- See: `CLAUDE.md Section 50 - User Growth Strategy`
+
 ### Anti-Fraud Engine
 9 layers including: evidence integrity, device fingerprinting, collusion detection, RiskScore (0-100)
 - See: `CLAUDE.md Section 7 & 25 - Anti-Fraud`
@@ -173,6 +182,7 @@ See: `CLAUDE.md Section 12 & 16 - Monetisation`
 | Digital Trust Passport | Section 47 |
 | Platform Configuration | Section 48 |
 | Level 3 Verification | Section 49 |
+| User Growth Strategy | Section 50 |
 
 ---
 
@@ -198,5 +208,5 @@ See: `CLAUDE.md Section 17 - Safe Development Rules`
 
 ---
 
-*Last Updated: 2025-11-26*
+*Last Updated: 2025-11-26 (Added Section 50 - User Growth Strategy)*
 *Full Spec: CLAUDE.md v1.8.0*
