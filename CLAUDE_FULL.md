@@ -13835,6 +13835,183 @@ This creates a natural viral loop.
 **END OF SECTION 50**
 
 ---
+
+## SECTION 51 — Public Trust Passport Sharing, Verified Badge System & TrustScore Visibility Control
+
+### 51.1 Purpose
+Provide a universal, platform-safe way for SilentID users to share their digital trust identity.
+Support both **link-based sharing** and **visual badge sharing**, and give users **full control** over whether their TrustScore is public or private.
+
+This feature must be easy to understand, simple to use, compliant with all platform restrictions, and integrate into marketing, onboarding, and growth loops.
+
+---
+
+### 51.2 Public Trust Passport (Link Sharing)
+
+SilentID generates a **public identity URL** that contains:
+- TrustScore (only if user has chosen public visibility)
+- Verification tiers
+- Connected profile proofs (privacy-safe)
+- Mutual verifications
+- Achievement badges
+- Limited information when TrustScore is private
+
+The link is classified as a **digital identity profile**, not a commercial link, making it allowed on platforms like:
+- Depop (bio)
+- eBay (profile)
+- Instagram (bio, stories)
+- TikTok (bio, posts)
+- X/Twitter (bio, tweets)
+- LinkedIn (bio, feature section)
+
+If a platform blocks external links (e.g., certain marketplaces), SilentID automatically falls back to image-based sharing.
+
+---
+
+### 51.3 Verified Badge Image (QR-Enabled)
+
+SilentID creates a **premium, shareable badge image** containing:
+- "SilentID Verified" header
+- User initials / username
+- TrustScore (if public)
+- Verification tier
+- Mutual verification count
+- QR code leading to public passport
+- Optional dark/light mode variants
+
+Because it is **an image**, it is allowed everywhere, including platforms that block links.
+
+Use Cases:
+- Profile photo
+- Listing gallery
+- WhatsApp/SMS
+- Instagram story
+- TikTok post
+- Facebook groups
+- Community forums
+
+Benefits:
+- Bypasses link restrictions
+- Works across all ecosystems
+- Easy to understand visually
+- Highly viral
+
+---
+
+### 51.4 Auto Smart Sharing Logic
+
+SilentID detects the user's context and chooses the safest sharing format.
+
+#### **When the platform supports links:**
+→ Share public passport URL
+
+#### **When the platform restricts links:**
+→ Share the Verified Badge image automatically
+
+#### **When user tries to paste the link into a restricted platform:**
+→ App displays friendly fallback:
+  "This platform may block links. Use your Verified Badge instead — works everywhere."
+
+#### **When user has TrustScore private:**
+→ App automatically shares the "Private Identity Badge".
+
+---
+
+### 51.5 TrustScore Visibility Control (Public or Private)
+
+SilentID provides a visibility toggle:
+
+#### **Public Mode (Default)**
+- TrustScore is visible on the Public Passport.
+- Badge displays numerical TrustScore.
+- QR leads to full identity overview.
+- Recommended for users wanting strong trust reputation.
+
+#### **Private Mode**
+- TrustScore is hidden from the public passport.
+- Badge switches to "SilentID Verified" without numeric score.
+- QR leads to a limited identity card:
+  - Verified identity status
+  - Connected proofs
+  - Mutual verifications
+- Internally, the TrustScore system still functions for safety and matching.
+- User can switch visibility at any time.
+
+#### **Required UI Messages**
+- "Your TrustScore belongs to you."
+- "Choose what others can see."
+- "You can toggle visibility anytime."
+
+---
+
+### 51.6 Marketing & Landing Page Integration
+
+Add a dedicated section to the landing page titled:
+
+#### **"Show Your Trust Anywhere"**
+
+Explain:
+- Share your SilentID Public Passport
+- Use your Verified Badge where links are blocked
+- Prove identity with a scannable QR code
+- Works across all platforms and communities
+- TrustScore visibility is optional and user-controlled
+
+Showcase:
+- Example badge cards (public & private versions)
+- Example Trust Passport previews
+- QR scan demonstration
+- IG/TikTok bio examples
+- User testimonials
+
+Marketing Messages:
+- "One identity. Everywhere."
+- "Prove who you are instantly."
+- "Your trust, in your control."
+
+---
+
+### 51.7 In-App UX & Education
+
+Add:
+- "How sharing works" walkthrough
+- Tooltip explaining private vs public TrustScore
+- Preview showing both badge modes
+- Mini-demo showing QR scan in action
+- Help-centre article:
+  "How to Share Your SilentID Public Trust Passport"
+
+---
+
+### 51.8 Growth Loop
+
+Each shared badge or passport includes:
+- QR linking back to SilentID
+- User's identity/verification summary
+- Small footer:
+  "Public Trust Identity — Verified via SilentID"
+  (non-commercial, allowed everywhere)
+
+This produces organic viral growth without violating the rules of major platforms.
+
+---
+
+### 51.9 Integration with Existing Sections
+
+**Section 51 integrates with:**
+
+- **Section 21 (Landing Page):** "Show Your Trust Anywhere" section added to marketing copy (51.6)
+- **Section 19 (Help Center):** New help article for sharing Trust Passport (51.7)
+- **Section 47 (Digital Trust Passport):** Public/private visibility modes extend existing passport functionality
+- **Section 50 (User Growth Strategy):** Badge sharing creates viral loop for Phase 5 (Network Growth)
+- **Section 39 (App UI):** Share controls and visibility toggle in Profile/Settings screens
+- **Section 40 (UI Info Points):** Education tooltips for public vs private modes (51.7)
+
+---
+
+**END OF SECTION 51**
+
+---
 ## END OF MASTER SPECIFICATION
 
 This document contains the complete, authoritative specification for SilentID.

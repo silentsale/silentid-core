@@ -83,6 +83,10 @@ Final TrustScore = (Raw Score / 1200) × 1000
 - **Phase 4 - Retention (1+ month):** Weekly digest, achievement badges, sharing features
 - **Phase 5 - Network Growth:** Referral bonuses (+50 TrustScore), viral loop mechanics
 
+### 5. PUBLIC TRUST PASSPORT SHARING & VISIBILITY
+
+Users can share their identity via a public link or a QR-enabled Verified Badge image. Smart fallback chooses the correct format depending on platform restrictions. TrustScore can be public or private; badges and passport adapt automatically. Includes landing-page marketing, QR demos, and in-app education.
+
 ---
 
 ## GLOBAL RULES (MANDATORY)
