@@ -13673,6 +13673,168 @@ ALTER TABLE PlatformConfigurations ADD COLUMN last_extraction_at TIMESTAMP NULL;
 **END OF SECTION 49**
 
 ---
+
+## SECTION 50 — Strategy to Get Users Into the App
+
+### 50.1 Purpose
+A phased, psychological and behavioural strategy to guide new users from first login → value discovery → habit formation → long-term TrustScore growth.
+
+---
+
+### 50.2 Phase 1 – Activation (First 5 Minutes)
+
+**Problem:** New users don't understand what SilentID does or why they should care about their TrustScore.
+
+#### 50.2.1 Interactive Onboarding Tour
+- Replace static intro screens with a short, interactive journey.
+- Use micro-lessons (20–30 seconds each) with light animations.
+- Core messages:
+  - "Your TrustScore is your digital reputation passport."
+  - "It helps you prove you're a trustworthy person online."
+- Trigger: only on first login.
+
+#### 50.2.2 Quick Wins on Home Screen
+- Add a progress bar on-boarding checklist:
+  1. Verify identity
+  2. Connect one external profile
+  3. Get first mutual verification
+- Each completed step triggers:
+  - Haptics
+  - Small celebration
+  - Visible TrustScore jump
+
+#### 50.2.3 Demo Mode with Realistic Data
+- First-time users see a "sample premium profile":
+  - TrustScore example (e.g., 650)
+  - Sample connected accounts
+  - Sample mutual verifications
+- CTA: "This could be you in 7 days. Here's how you start."
+
+---
+
+### 50.3 Phase 2 – Engagement (First 2 Weeks)
+
+**Problem:** Users verify identity and then disappear.
+
+#### 50.3.1 Notification Triggers
+Implement meaningful push notifications:
+- New mutual verification request
+- TrustScore milestones
+- Weekly TrustScore summary
+- Successful external profile verification
+
+#### 50.3.2 Gamifying the TrustScore
+Add:
+- Progress rings showing category scoring (Evidence, Peer Verification, Identity)
+- Nudges:
+  - "You have 1 pending verification request"
+  - "Complete your remaining connections to boost your score"
+
+#### 50.3.3 Social Proof
+Add in-app trust-building:
+- "1,200+ users have verified their profiles"
+- Recently verified list
+- Mini success stories:
+  - "Anna improved her TrustScore from 380 → 720 in 3 weeks"
+
+---
+
+### 50.4 Phase 3 – Monetisation (After 2 Weeks)
+
+**Problem:** Users feel the free tier is 'enough'.
+
+#### 50.4.1 Smart Paywall Triggers
+Show upgrade modal only when user hits real value points:
+- 500+ TrustScore
+- 10th piece of evidence
+- 5th mutual verification
+
+#### 50.4.2 Clear Value Proposition
+Before showing prices, display:
+- Free tier benefits
+- Premium tier:
+  - Unlimited external connections
+  - Larger evidence vault
+  - Priority support
+- Pro tier:
+  - API access
+  - Advanced analytics
+  - Custom trust profiles
+
+#### 50.4.3 Soft Limits (Freemium Lock-In)
+Free tier keeps:
+- Up to 5 profile connections
+- Up to 20 mutual verifications per month
+- Up to 250MB evidence storage
+Visual counters encourage upgrades without blocking usage.
+
+---
+
+### 50.5 Phase 4 – Retention (After 1 Month)
+
+#### 50.5.1 Weekly Digest
+Send automated summaries:
+- TrustScore change
+- Pending verifications
+- Suggested next steps
+
+#### 50.5.2 Retention Badges
+Achievements displayed on profile:
+- Verified Identity
+- Connected External Profile
+- First Mutual Verification
+- Trust Milestone (750+)
+- Multi-platform Verified
+
+#### 50.5.3 Sharing Features
+Let users share:
+- TrustScore milestone cards
+- Profile badge achievements
+- Deep links to their public trust profile
+
+#### 50.5.4 Smart Review Request
+Ask for an App Store review only when:
+- First mutual verification is confirmed
+- TrustScore milestone achieved
+
+---
+
+### 50.6 Phase 5 – Network Growth (Referrals)
+
+#### 50.6.1 Referral Program
+Reward system:
+- "Invite a friend → both get +50 TrustScore bonus once identity is verified."
+
+#### 50.6.2 Mutual Verification Loop
+Allow users to easily invite:
+- People they've transacted with
+- Friends and community members
+
+#### 50.6.3 Community Achievement Badges
+Examples:
+- "Trusted Community Member"
+- "Top Verifier"
+- "Most Verified in Your Network"
+
+This creates a natural viral loop.
+
+---
+
+### 50.7 Integration with Existing Sections
+
+**Section 50 integrates with:**
+
+- **Section 5 (Core Features):** Onboarding flow (50.2) aligns with core authentication and verification features
+- **Section 19 (Help Center):** Interactive tour content (50.2.1) feeds into Help Center articles
+- **Section 39 (App UI):** Home screen checklist (50.2.2), progress rings (50.3.2), and notification system (50.3.1)
+- **Section 40 (UI Info Points):** Demo mode (50.2.3) uses Info Point system for education
+- **Section 16 (Monetization):** Paywall triggers (50.4) integrate with existing subscription tiers
+
+---
+
+**END OF SECTION 50**
+
+---
 ## END OF MASTER SPECIFICATION
 
 This document contains the complete, authoritative specification for SilentID.

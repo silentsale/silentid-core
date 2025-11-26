@@ -45,46 +45,19 @@
 
 ### 1. AUTHENTICATION (100% PASSWORDLESS)
 
-**Supported Methods (ONLY these 4):**
-1. Apple Sign-In - Standard Apple OAuth
-2. Google Sign-In - Standard Google OAuth
-3. Passkeys (WebAuthn/FIDO2) - Face ID, Touch ID, biometrics
-4. Email OTP - 6-digit one-time code
+**Supported Methods:** Apple Sign-In, Google Sign-In, Passkeys (WebAuthn/FIDO2), Email OTP
 
-**FORBIDDEN:**
-- ❌ Password creation
-- ❌ Password login
-- ❌ "Set password" or "change password" flows
-- ❌ Password reset / forgot password
+**FORBIDDEN:** Password creation, password login, password reset
 
-**Single-Account Rule:**
-- One email = one SilentID account
-- Duplicate detection via device fingerprinting, IP patterns
-- Account merging available for legitimate users only
+**Single-Account Rule:** One email = one account. Duplicate detection enforced.
 
 ### 2. LEVEL 3 PROFILE VERIFICATION
 
-**Purpose:** Cryptographically prove ownership of external marketplace profiles (Vinted, eBay, Depop, etc.)
+**Purpose:** Prove ownership of external marketplace profiles (Vinted, eBay, Depop)
 
-**Two Verification Methods:**
+**Methods:** Token-in-Bio (add code to profile) or Share-Intent (mobile deep link)
 
-**Method A: Token-in-Bio**
-1. User generates unique token: `SILENTID-VERIFY-{random-8-chars}`
-2. User adds token to marketplace profile bio
-3. User confirms "I've added the code"
-4. SilentID verifies token presence via automated check
-5. Ownership verified ✓
-
-**Method B: Share-Intent** (Mobile)
-1. User shares marketplace profile URL from app
-2. User confirms "This is my profile"
-3. Device fingerprint validated
-4. Ownership verified ✓
-
-**After Verification:**
-- Profile locked (cannot be claimed by another user)
-- Star ratings extracted and displayed on Digital Trust Passport
-- Profile snapshot hash stored for integrity
+**After Verification:** Profile locked, star ratings extracted for Trust Passport
 
 ### 3. TRUSTSCORE ENGINE (0-1000)
 
@@ -94,39 +67,25 @@ Raw Score = Identity + Evidence + Behaviour + Peer + URS (max 1200)
 Final TrustScore = (Raw Score / 1200) × 1000
 ```
 
-**5-Component Breakdown:**
-- **Identity (200 pts):** Stripe verification, email verified, phone verified
-- **Evidence (300 pts):** Receipts, screenshots, public profile data (capped at 15% per vault)
-- **Behaviour (300 pts):** No reports, on-time patterns, account longevity
-- **Peer Verification (200 pts):** Mutual endorsements, returning partners
-- **URS - Universal Reputation Score (200 pts):** Cross-platform ratings from Level 3 verified profiles
+**Components:** Identity (200), Evidence (300), Behaviour (300), Peer (200), URS (200)
 
-**Score Labels:**
-- 850–1000: Exceptional Trust
-- 700–849: Very High Trust
-- 550–699: High Trust
-- 400–549: Moderate Trust
-- 250–399: Low Trust
-- 0–249: High Risk
+**Labels:** 850-1000 Exceptional | 700-849 Very High | 550-699 High | 400-549 Moderate | 250-399 Low | 0-249 High Risk
 
 **Regenerates weekly.**
+
+### 4. USER GROWTH STRATEGY
+
+**5 Phases (Section 50):**
+
+- **Phase 1 - Activation (5 min):** Interactive onboarding tour, quick wins checklist, demo mode
+- **Phase 2 - Engagement (2 weeks):** Push notifications, TrustScore gamification, social proof
+- **Phase 3 - Monetization (2+ weeks):** Smart paywall triggers at value points (500+ score, 10th evidence)
+- **Phase 4 - Retention (1+ month):** Weekly digest, achievement badges, sharing features
+- **Phase 5 - Network Growth:** Referral bonuses (+50 TrustScore), viral loop mechanics
 
 ---
 
 ## GLOBAL RULES (MANDATORY)
-
-### Section 0: Claude Behavior - Vibe Coding Mode
-
-**Core Rules:**
-1. **Tiny steps only** - small, digestible chunks
-2. **Always explain in simple language** - no jargon without translation
-3. **No assumptions about user knowledge** - explain everything
-4. **Explicit step boundaries** - clear labeling and expectations
-5. **Interactive loop** - explain → action → expected result → wait for confirmation
-6. **Error handling** - never ignore, always explain and fix
-7. **No big leaps** - many small verify-as-you-go steps
-
-**Tone:** Calm, professional, reassuring, respectful, non-patronizing
 
 ### Critical System Rules
 
