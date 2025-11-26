@@ -18,6 +18,8 @@ public class AuthController : ControllerBase
     private readonly IDuplicateDetectionService _duplicateDetection;
     private readonly IEmailService _emailService;
     private readonly IPasskeyService _passkeyService;
+    private readonly IAppleAuthService _appleAuthService;
+    private readonly IGoogleAuthService _googleAuthService;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
@@ -27,6 +29,8 @@ public class AuthController : ControllerBase
         IDuplicateDetectionService duplicateDetection,
         IEmailService emailService,
         IPasskeyService passkeyService,
+        IAppleAuthService appleAuthService,
+        IGoogleAuthService googleAuthService,
         ILogger<AuthController> logger)
     {
         _context = context;
@@ -35,6 +39,8 @@ public class AuthController : ControllerBase
         _duplicateDetection = duplicateDetection;
         _emailService = emailService;
         _passkeyService = passkeyService;
+        _appleAuthService = appleAuthService;
+        _googleAuthService = googleAuthService;
         _logger = logger;
     }
 
@@ -688,236 +694,114 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Apple Sign-In authentication
+    /// Uses Apple's public keys to validate identity tokens.
     /// </summary>
     [HttpPost("apple")]
-    public async Task<IActionResult> AppleSignIn([FromBody] AppleSignInRequest request)
+    public async Task<IActionResult> AppleSignIn([FromBody] AppleSignInControllerRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.IdentityToken))
         {
             return BadRequest(new { error = "invalid_request", message = "Identity token is required." });
         }
 
-        try
+        // Parse full name if provided (Apple only sends this on first sign-in)
+        string? firstName = null;
+        string? lastName = null;
+        if (!string.IsNullOrEmpty(request.FullName))
         {
-            // TODO: Verify Apple identity token with Apple's public keys
-            // For now, we'll extract the email from the token payload (JWT)
-            // In production, you must validate the token signature
-
-            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-            var token = handler.ReadJwtToken(request.IdentityToken);
-
-            var email = token.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
-            var appleUserId = token.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(appleUserId))
-            {
-                return BadRequest(new { error = "invalid_token", message = "Invalid Apple identity token." });
-            }
-
-            // Check if user exists
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-
-            if (user == null)
-            {
-                // Create new user
-                user = new User
-                {
-                    Email = email,
-                    Username = GenerateUsername(email),
-                    DisplayName = request.FullName ?? email.Split('@')[0],
-                    AppleUserId = appleUserId,
-                    IsEmailVerified = true, // Apple verifies emails
-                    AccountStatus = AccountStatus.Active,
-                    AccountType = AccountType.Free,
-                    SignupIP = GetClientIpAddress(),
-                    SignupDeviceId = request.DeviceId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("New user created via Apple Sign-In: {Email}", email);
-            }
-            else
-            {
-                // Update Apple User ID if not already set
-                if (string.IsNullOrEmpty(user.AppleUserId))
-                {
-                    user.AppleUserId = appleUserId;
-                    user.UpdatedAt = DateTime.UtcNow;
-                    await _context.SaveChangesAsync();
-                }
-
-                _logger.LogInformation("Existing user signed in via Apple: {Email}", email);
-            }
-
-            // Track device
-            if (!string.IsNullOrEmpty(request.DeviceId))
-            {
-                await TrackDeviceAsync(user.Id, request.DeviceId, request.DeviceModel, request.OS, request.Browser);
-            }
-
-            // Generate tokens
-            var accessToken = _tokenService.GenerateAccessToken(user);
-            var refreshToken = _tokenService.GenerateRefreshToken();
-            var refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
-
-            // Store session
-            var session = new Session
-            {
-                UserId = user.Id,
-                RefreshTokenHash = refreshTokenHash,
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
-                IP = GetClientIpAddress(),
-                DeviceId = request.DeviceId,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.Sessions.Add(session);
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                access_token = accessToken,
-                refresh_token = refreshToken,
-                user = new
-                {
-                    id = user.Id,
-                    email = user.Email,
-                    username = user.Username,
-                    display_name = user.DisplayName,
-                    account_type = user.AccountType
-                }
-            });
+            var nameParts = request.FullName.Split(' ', 2);
+            firstName = nameParts[0];
+            lastName = nameParts.Length > 1 ? nameParts[1] : null;
         }
-        catch (Exception ex)
+
+        // Build service request
+        var serviceRequest = new Services.AppleSignInRequest
         {
-            _logger.LogError(ex, "Apple Sign-In failed");
-            return StatusCode(500, new
-            {
-                error = "internal_error",
-                message = "Authentication failed."
-            });
+            IdentityToken = request.IdentityToken,
+            FirstName = firstName,
+            LastName = lastName,
+            DeviceId = request.DeviceId,
+            IpAddress = GetClientIpAddress()
+        };
+
+        var result = await _appleAuthService.AuthenticateAsync(serviceRequest);
+
+        if (!result.Success)
+        {
+            _logger.LogWarning("Apple Sign-In failed: {Error}", result.ErrorMessage);
+            return BadRequest(new { error = "auth_failed", message = result.ErrorMessage });
         }
+
+        // Track device if provided
+        if (!string.IsNullOrEmpty(request.DeviceId) && result.User != null)
+        {
+            await TrackDeviceAsync(result.User.Id, request.DeviceId, request.DeviceModel, request.OS, request.Browser);
+        }
+
+        return Ok(new
+        {
+            access_token = result.AccessToken,
+            refresh_token = result.RefreshToken,
+            is_new_user = result.IsNewUser,
+            user = new
+            {
+                id = result.User!.Id,
+                email = result.User.Email,
+                username = result.User.Username,
+                display_name = result.User.DisplayName,
+                account_type = result.User.AccountType.ToString()
+            }
+        });
     }
 
     /// <summary>
     /// Google Sign-In authentication
+    /// Validates tokens via Google's tokeninfo endpoint.
     /// </summary>
     [HttpPost("google")]
-    public async Task<IActionResult> GoogleSignIn([FromBody] GoogleSignInRequest request)
+    public async Task<IActionResult> GoogleSignIn([FromBody] GoogleSignInControllerRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.IdToken))
         {
             return BadRequest(new { error = "invalid_request", message = "ID token is required." });
         }
 
-        try
+        // Build service request
+        var serviceRequest = new Services.GoogleSignInRequest
         {
-            // TODO: Verify Google ID token with Google's public keys
-            // For now, we'll extract the email from the token payload (JWT)
-            // In production, you must validate the token signature
+            IdToken = request.IdToken,
+            DeviceId = request.DeviceId,
+            IpAddress = GetClientIpAddress()
+        };
 
-            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-            var token = handler.ReadJwtToken(request.IdToken);
+        var result = await _googleAuthService.AuthenticateAsync(serviceRequest);
 
-            var email = token.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
-            var googleUserId = token.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleUserId))
-            {
-                return BadRequest(new { error = "invalid_token", message = "Invalid Google ID token." });
-            }
-
-            // Check if user exists
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-
-            if (user == null)
-            {
-                // Create new user
-                user = new User
-                {
-                    Email = email,
-                    Username = GenerateUsername(email),
-                    DisplayName = request.FullName ?? email.Split('@')[0],
-                    GoogleUserId = googleUserId,
-                    IsEmailVerified = true, // Google verifies emails
-                    AccountStatus = AccountStatus.Active,
-                    AccountType = AccountType.Free,
-                    SignupIP = GetClientIpAddress(),
-                    SignupDeviceId = request.DeviceId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("New user created via Google Sign-In: {Email}", email);
-            }
-            else
-            {
-                // Update Google User ID if not already set
-                if (string.IsNullOrEmpty(user.GoogleUserId))
-                {
-                    user.GoogleUserId = googleUserId;
-                    user.UpdatedAt = DateTime.UtcNow;
-                    await _context.SaveChangesAsync();
-                }
-
-                _logger.LogInformation("Existing user signed in via Google: {Email}", email);
-            }
-
-            // Track device
-            if (!string.IsNullOrEmpty(request.DeviceId))
-            {
-                await TrackDeviceAsync(user.Id, request.DeviceId, request.DeviceModel, request.OS, request.Browser);
-            }
-
-            // Generate tokens
-            var accessToken = _tokenService.GenerateAccessToken(user);
-            var refreshToken = _tokenService.GenerateRefreshToken();
-            var refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
-
-            // Store session
-            var session = new Session
-            {
-                UserId = user.Id,
-                RefreshTokenHash = refreshTokenHash,
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
-                IP = GetClientIpAddress(),
-                DeviceId = request.DeviceId,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.Sessions.Add(session);
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                access_token = accessToken,
-                refresh_token = refreshToken,
-                user = new
-                {
-                    id = user.Id,
-                    email = user.Email,
-                    username = user.Username,
-                    display_name = user.DisplayName,
-                    account_type = user.AccountType
-                }
-            });
-        }
-        catch (Exception ex)
+        if (!result.Success)
         {
-            _logger.LogError(ex, "Google Sign-In failed");
-            return StatusCode(500, new
-            {
-                error = "internal_error",
-                message = "Authentication failed."
-            });
+            _logger.LogWarning("Google Sign-In failed: {Error}", result.ErrorMessage);
+            return BadRequest(new { error = "auth_failed", message = result.ErrorMessage });
         }
+
+        // Track device if provided
+        if (!string.IsNullOrEmpty(request.DeviceId) && result.User != null)
+        {
+            await TrackDeviceAsync(result.User.Id, request.DeviceId, request.DeviceModel, request.OS, request.Browser);
+        }
+
+        return Ok(new
+        {
+            access_token = result.AccessToken,
+            refresh_token = result.RefreshToken,
+            is_new_user = result.IsNewUser,
+            user = new
+            {
+                id = result.User!.Id,
+                email = result.User.Email,
+                username = result.User.Username,
+                display_name = result.User.DisplayName,
+                account_type = result.User.AccountType.ToString()
+            }
+        });
     }
 
     // Helper methods
@@ -1015,7 +899,7 @@ public record RefreshTokenRequest(string RefreshToken);
 
 public record LogoutRequest(string? RefreshToken = null);
 
-public record AppleSignInRequest(
+public record AppleSignInControllerRequest(
     string IdentityToken,
     string? FullName = null,
     string? DeviceId = null,
@@ -1024,7 +908,7 @@ public record AppleSignInRequest(
     string? Browser = null
 );
 
-public record GoogleSignInRequest(
+public record GoogleSignInControllerRequest(
     string IdToken,
     string? FullName = null,
     string? DeviceId = null,
