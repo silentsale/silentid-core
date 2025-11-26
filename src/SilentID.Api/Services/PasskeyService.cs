@@ -1,3 +1,4 @@
+using System.Formats.Cbor;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -298,9 +299,34 @@ public class PasskeyService : IPasskeyService
             };
         }
 
-        // In a full implementation, we would verify the signature using the stored public key
-        // For now, we trust the client-side verification and update the counter
-        // TODO: Implement full signature verification using the COSE public key
+        // Verify the signature using the stored COSE public key
+        try
+        {
+            var isValidSignature = VerifyWebAuthnSignature(
+                credential.PublicKey,
+                authenticatorData,
+                clientDataJson,
+                signature);
+
+            if (!isValidSignature)
+            {
+                _logger.LogWarning("Passkey authentication failed: invalid signature for credential {CredentialId}", credentialId);
+                return new PasskeyAuthenticationResult
+                {
+                    Success = false,
+                    ErrorMessage = "Signature verification failed."
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error verifying passkey signature for credential {CredentialId}", credentialId);
+            return new PasskeyAuthenticationResult
+            {
+                Success = false,
+                ErrorMessage = "Signature verification error."
+            };
+        }
 
         // Update credential
         credential.SignatureCounter = signatureCounter;
@@ -425,6 +451,191 @@ public class PasskeyService : IPasskeyService
         _challenges.Remove(challenge);
         return true;
     }
+
+    /// <summary>
+    /// Verify WebAuthn assertion signature using the stored COSE public key
+    /// </summary>
+    private bool VerifyWebAuthnSignature(
+        string publicKeyBase64,
+        string authenticatorDataBase64,
+        string clientDataJsonBase64,
+        string signatureBase64)
+    {
+        // Decode inputs from base64
+        var authenticatorData = Convert.FromBase64String(authenticatorDataBase64);
+        var clientDataJson = Convert.FromBase64String(clientDataJsonBase64);
+        var signature = Convert.FromBase64String(signatureBase64);
+        var publicKeyBytes = Convert.FromBase64String(publicKeyBase64);
+
+        // Compute hash of clientDataJSON
+        var clientDataHash = SHA256.HashData(clientDataJson);
+
+        // Concatenate authenticatorData + clientDataHash to form signed data
+        var signedData = new byte[authenticatorData.Length + clientDataHash.Length];
+        authenticatorData.CopyTo(signedData, 0);
+        clientDataHash.CopyTo(signedData, authenticatorData.Length);
+
+        // Parse COSE public key and verify signature
+        var coseKey = ParseCoseKey(publicKeyBytes);
+
+        return coseKey.KeyType switch
+        {
+            CoseKeyType.EC2 => VerifyEC2Signature(coseKey, signedData, signature),
+            CoseKeyType.RSA => VerifyRSASignature(coseKey, signedData, signature),
+            _ => throw new NotSupportedException($"Unsupported COSE key type: {coseKey.KeyType}")
+        };
+    }
+
+    /// <summary>
+    /// Parse a COSE-encoded public key
+    /// </summary>
+    private static CosePublicKey ParseCoseKey(byte[] coseKeyBytes)
+    {
+        var reader = new CborReader(coseKeyBytes);
+        var result = new CosePublicKey();
+
+        reader.ReadStartMap();
+
+        while (reader.PeekState() != CborReaderState.EndMap)
+        {
+            var label = reader.ReadInt32();
+
+            switch (label)
+            {
+                case 1: // kty (key type)
+                    result.KeyType = (CoseKeyType)reader.ReadInt32();
+                    break;
+                case 3: // alg (algorithm)
+                    result.Algorithm = reader.ReadInt32();
+                    break;
+                case -1: // crv (curve) for EC2, n (modulus) for RSA
+                    if (reader.PeekState() == CborReaderState.NegativeInteger ||
+                        reader.PeekState() == CborReaderState.UnsignedInteger)
+                    {
+                        result.Curve = reader.ReadInt32();
+                    }
+                    else
+                    {
+                        result.N = reader.ReadByteString();
+                    }
+                    break;
+                case -2: // x (x-coordinate) for EC2, e (exponent) for RSA
+                    result.X = reader.ReadByteString();
+                    break;
+                case -3: // y (y-coordinate) for EC2
+                    result.Y = reader.ReadByteString();
+                    break;
+                default:
+                    reader.SkipValue();
+                    break;
+            }
+        }
+
+        reader.ReadEndMap();
+        return result;
+    }
+
+    /// <summary>
+    /// Verify ECDSA signature (ES256, ES384, ES512)
+    /// </summary>
+    private static bool VerifyEC2Signature(CosePublicKey coseKey, byte[] data, byte[] signature)
+    {
+        if (coseKey.X == null || coseKey.Y == null)
+        {
+            throw new InvalidOperationException("EC2 key missing X or Y coordinate");
+        }
+
+        // Determine curve based on algorithm or curve parameter
+        var curve = coseKey.Algorithm switch
+        {
+            -7 => ECCurve.NamedCurves.nistP256,   // ES256
+            -35 => ECCurve.NamedCurves.nistP384,  // ES384
+            -36 => ECCurve.NamedCurves.nistP521,  // ES512
+            _ => coseKey.Curve switch
+            {
+                1 => ECCurve.NamedCurves.nistP256,
+                2 => ECCurve.NamedCurves.nistP384,
+                3 => ECCurve.NamedCurves.nistP521,
+                _ => ECCurve.NamedCurves.nistP256 // Default to P-256
+            }
+        };
+
+        var hashAlgorithm = coseKey.Algorithm switch
+        {
+            -7 => HashAlgorithmName.SHA256,
+            -35 => HashAlgorithmName.SHA384,
+            -36 => HashAlgorithmName.SHA512,
+            _ => HashAlgorithmName.SHA256
+        };
+
+        // Create EC parameters
+        var ecParameters = new ECParameters
+        {
+            Curve = curve,
+            Q = new ECPoint
+            {
+                X = coseKey.X,
+                Y = coseKey.Y
+            }
+        };
+
+        using var ecdsa = ECDsa.Create(ecParameters);
+
+        // WebAuthn signatures are in IEEE P1363 format (r || s concatenated)
+        // .NET's VerifyData expects the same format
+        return ecdsa.VerifyData(data, signature, hashAlgorithm);
+    }
+
+    /// <summary>
+    /// Verify RSA signature (RS256, RS384, RS512)
+    /// </summary>
+    private static bool VerifyRSASignature(CosePublicKey coseKey, byte[] data, byte[] signature)
+    {
+        if (coseKey.N == null || coseKey.X == null)
+        {
+            throw new InvalidOperationException("RSA key missing N (modulus) or E (exponent)");
+        }
+
+        var hashAlgorithm = coseKey.Algorithm switch
+        {
+            -257 => HashAlgorithmName.SHA256, // RS256
+            -258 => HashAlgorithmName.SHA384, // RS384
+            -259 => HashAlgorithmName.SHA512, // RS512
+            _ => HashAlgorithmName.SHA256
+        };
+
+        var rsaParameters = new RSAParameters
+        {
+            Modulus = coseKey.N,
+            Exponent = coseKey.X // In COSE RSA, -2 is the exponent (stored in X for simplicity)
+        };
+
+        using var rsa = RSA.Create(rsaParameters);
+        return rsa.VerifyData(data, signature, hashAlgorithm, RSASignaturePadding.Pkcs1);
+    }
+}
+
+/// <summary>
+/// COSE key types
+/// </summary>
+public enum CoseKeyType
+{
+    OKP = 1,   // Octet Key Pair (EdDSA)
+    EC2 = 2,   // Elliptic Curve (ECDSA)
+    RSA = 3    // RSA
+}
+
+/// <summary>
+/// Parsed COSE public key
+/// </summary>
+public class CosePublicKey
+{
+    public CoseKeyType KeyType { get; set; }
+    public int Algorithm { get; set; }
+    public int Curve { get; set; }
+    public byte[]? X { get; set; }  // EC x-coordinate or RSA exponent
+    public byte[]? Y { get; set; }  // EC y-coordinate
+    public byte[]? N { get; set; }  // RSA modulus
 }
 
 // DTOs for Passkey operations
