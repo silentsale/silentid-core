@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/widgets/info_point_helper.dart';
+import '../../../core/data/info_point_data.dart';
 
 /// Subscription Overview Screen
 ///
@@ -139,7 +141,7 @@ class SubscriptionOverviewScreen extends StatelessWidget {
 
             const SizedBox(height: AppSpacing.xl),
 
-            // Important Notice
+            // Important Notice with Info Point (Section 40.4)
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
@@ -165,6 +167,8 @@ class SubscriptionOverviewScreen extends StatelessWidget {
                           color: AppTheme.primaryPurple,
                         ),
                       ),
+                      const SizedBox(width: 6),
+                      InfoPointHelper(data: InfoPoints.subscriptionAndSafety),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.xs),

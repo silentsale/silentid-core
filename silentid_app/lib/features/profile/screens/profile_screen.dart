@@ -256,6 +256,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () {
                   Navigator.pushNamed(context, '/identity/status');
                 },
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InfoPointHelper(data: InfoPoints.stripeIdentity),
+                    const SizedBox(width: AppSpacing.xs),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 24,
+                      color: AppTheme.neutralGray700,
+                    ),
+                  ],
+                ),
+                showChevron: false,
               ),
 
               Divider(height: 1, color: AppTheme.neutralGray300),
@@ -358,6 +371,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () {
                   Navigator.pushNamed(context, '/mutual-verification');
                 },
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InfoPointHelper(data: InfoPoints.peerVerificationComponent),
+                    const SizedBox(width: AppSpacing.xs),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 24,
+                      color: AppTheme.neutralGray700,
+                    ),
+                  ],
+                ),
+                showChevron: false,
               ),
             ],
           ),
@@ -390,6 +416,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () {
                   // TODO: Navigate to Security Center
                 },
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InfoPointHelper(data: InfoPoints.riskScore),
+                    const SizedBox(width: AppSpacing.xs),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 24,
+                      color: AppTheme.neutralGray700,
+                    ),
+                  ],
+                ),
+                showChevron: false,
               ),
 
               Divider(height: 1, color: AppTheme.neutralGray300),
@@ -401,6 +440,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () {
                   Navigator.pushNamed(context, '/settings/devices');
                 },
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InfoPointHelper(data: InfoPoints.deviceSecurity),
+                    const SizedBox(width: AppSpacing.xs),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 24,
+                      color: AppTheme.neutralGray700,
+                    ),
+                  ],
+                ),
+                showChevron: false,
               ),
 
               Divider(height: 1, color: AppTheme.neutralGray300),
@@ -412,6 +464,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () {
                   // TODO: Navigate to Login methods
                 },
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InfoPointHelper(data: InfoPoints.whyNoPasswords),
+                    const SizedBox(width: AppSpacing.xs),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 24,
+                      color: AppTheme.neutralGray700,
+                    ),
+                  ],
+                ),
+                showChevron: false,
               ),
             ],
           ),
@@ -444,6 +509,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () {
                   Navigator.pushNamed(context, '/subscriptions/overview');
                 },
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InfoPointHelper(data: InfoPoints.subscriptionTiers),
+                    const SizedBox(width: AppSpacing.xs),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 24,
+                      color: AppTheme.neutralGray700,
+                    ),
+                  ],
+                ),
+                showChevron: false,
               ),
 
               if (accountType == "Free") ...[
@@ -523,6 +601,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () {
                   Navigator.pushNamed(context, '/settings/export');
                 },
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InfoPointHelper(data: InfoPoints.evidenceStorage),
+                    const SizedBox(width: AppSpacing.xs),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 24,
+                      color: AppTheme.neutralGray700,
+                    ),
+                  ],
+                ),
+                showChevron: false,
               ),
 
               Divider(height: 1, color: AppTheme.neutralGray300),
@@ -533,6 +624,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () {
                   Navigator.pushNamed(context, '/settings/privacy');
                 },
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InfoPointHelper(data: InfoPoints.publicProfileVisibility),
+                    const SizedBox(width: AppSpacing.xs),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 24,
+                      color: AppTheme.neutralGray700,
+                    ),
+                  ],
+                ),
+                showChevron: false,
               ),
 
               Divider(height: 1, color: AppTheme.neutralGray300),

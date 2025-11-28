@@ -44,6 +44,9 @@ public class SilentIdDbContext : DbContext
     // Platform configuration tables (Section 48)
     public DbSet<PlatformConfiguration> PlatformConfigurations { get; set; } = null!;
 
+    // Referral tables (Section 50.6.1)
+    public DbSet<Referral> Referrals { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -54,6 +57,7 @@ public class SilentIdDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Email).IsUnique();
             entity.HasIndex(e => e.Username).IsUnique();
+            entity.HasIndex(e => e.ReferralCode).IsUnique();
 
             entity.Property(e => e.Email)
                 .IsRequired()
@@ -451,6 +455,30 @@ public class SilentIdDbContext : DbContext
                     UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
                 }
             );
+        });
+
+        // Referral configuration (Section 50.6.1)
+        modelBuilder.Entity<Referral>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ReferrerId);
+            entity.HasIndex(e => e.RefereeId);
+            entity.HasIndex(e => e.ReferralCode);
+            entity.HasIndex(e => e.Status);
+
+            entity.Property(e => e.ReferralCode)
+                .IsRequired()
+                .HasMaxLength(20);
+
+            entity.HasOne(e => e.Referrer)
+                .WithMany()
+                .HasForeignKey(e => e.ReferrerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Referee)
+                .WithMany()
+                .HasForeignKey(e => e.RefereeId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

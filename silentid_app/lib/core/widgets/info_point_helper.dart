@@ -18,10 +18,12 @@ import 'info_modal.dart';
 /// ```
 class InfoPointHelper extends StatelessWidget {
   final InfoPointData data;
+  final Color? iconColor; // Custom color for dark backgrounds
 
   const InfoPointHelper({
     super.key,
     required this.data,
+    this.iconColor,
   });
 
   @override
@@ -29,6 +31,7 @@ class InfoPointHelper extends StatelessWidget {
     return InfoPoint(
       semanticLabel: 'Info: ${data.title}',
       onTap: () => _showInfoModal(context),
+      iconColor: iconColor,
     );
   }
 

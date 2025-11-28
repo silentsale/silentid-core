@@ -83,6 +83,16 @@ Three streams:
 - **Growth loop**: Each shared badge/passport includes QR link back to SilentID
 - See: `CLAUDE.md Section 51 - Public Trust Passport Sharing`
 
+### Unified Profile Linking & Platform Verification (Level 2)
+
+- **Any platform**: Instagram, TikTok, LinkedIn, Depop, eBay, Discord, communities, gaming
+- **Two states**: Linked (user added) or Verified (ownership confirmed)
+- **Three methods**: Share/paste link (Linked), Token verification (Verified), Screenshot (Verified)
+- **User-friendly**: Info-points explain all features, simple flows
+- **TrustScore boost**: Linked profiles add small boost, Verified profiles add strong boost
+- **Privacy control**: Users choose what appears on public passport
+- See: `CLAUDE.md Section 52 - Unified Profile Linking`
+
 ### Anti-Fraud Engine
 9 layers including: evidence integrity, device fingerprinting, collusion detection, RiskScore (0-100)
 - See: `CLAUDE.md Section 7 & 25 - Anti-Fraud`
@@ -193,6 +203,7 @@ See: `CLAUDE.md Section 12 & 16 - Monetisation`
 | Level 3 Verification | Section 49 |
 | User Growth Strategy | Section 50 |
 | Public Trust Passport Sharing | Section 51 |
+| Unified Profile Linking | Section 52 |
 
 ---
 
@@ -218,5 +229,5 @@ See: `CLAUDE.md Section 17 - Safe Development Rules`
 
 ---
 
-*Last Updated: 2025-11-26 (Added Sections 50-51: User Growth Strategy, Public Trust Passport Sharing)*
+*Last Updated: 2025-11-27 (Added Sections 50-52: User Growth, Trust Passport Sharing, Profile Linking)*
 *Full Spec: CLAUDE.md v1.8.0*

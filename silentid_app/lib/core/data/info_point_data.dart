@@ -353,4 +353,207 @@ You can cancel anytime. Your plan remains active until the end of your billing p
         learnMoreText: 'Learn More',
         learnMoreUrl: 'https://help.silentid.co.uk/refunds',
       );
+
+  // ============================================================================
+  // 8. REFERRAL PROGRAM (Section 50.6.1)
+  // ============================================================================
+
+  static InfoPointData get referralProgram => const InfoPointData(
+        title: 'Referral Program',
+        icon: Icons.card_giftcard,
+        body: '''Invite friends and both of you earn +50 TrustScore points!
+
+How it works:
+1. Share your unique referral code
+2. Your friend signs up using your code
+3. When they verify their identity, you both earn +50 points
+
+There's no limit - invite as many friends as you like!''',
+        learnMoreText: 'Learn More',
+        learnMoreUrl: 'https://help.silentid.co.uk/referrals',
+      );
+
+  static InfoPointData get referralCode => const InfoPointData(
+        title: 'Your Referral Code',
+        icon: Icons.tag,
+        body: '''Your referral code is unique to you.
+
+Share it via:
+• Direct link
+• Copy & paste
+• Social media
+
+Friends must enter your code when signing up to link the referral.''',
+      );
+
+  // ============================================================================
+  // 9. ACHIEVEMENT BADGES (Section 50.5.2)
+  // ============================================================================
+
+  static InfoPointData get achievementBadges => const InfoPointData(
+        title: 'Achievement Badges',
+        icon: Icons.military_tech,
+        body: '''Earn badges by completing milestones:
+
+🛡️ Verified Identity - Complete ID verification
+🔗 Profile Connected - Link a marketplace account
+✅ First Verification - Get your first mutual verification
+⭐ TrustScore 500+ - Reach milestone scores
+👥 Community Member - Active for 6+ months
+🏆 Top Verifier - Complete 25+ verifications
+
+Badges appear on your public profile!''',
+        learnMoreText: 'Learn More',
+        learnMoreUrl: 'https://help.silentid.co.uk/badges',
+      );
+
+  // ============================================================================
+  // 10. PUBLIC PASSPORT SHARING (Section 51.2-51.4)
+  // ============================================================================
+
+  static InfoPointData get publicPassport => const InfoPointData(
+        title: 'Public Trust Passport',
+        icon: Icons.badge_outlined,
+        body: '''Your Public Passport is a shareable link to your verified identity.
+
+It shows:
+✅ TrustScore (if public)
+✅ Verification status
+✅ Connected platforms
+✅ Achievement badges
+
+Share it anywhere - it's allowed on all platforms!''',
+        learnMoreText: 'Learn More',
+        learnMoreUrl: 'https://help.silentid.co.uk/public-passport',
+      );
+
+  static InfoPointData get verifiedBadgeImage => const InfoPointData(
+        title: 'Verified Badge Image',
+        icon: Icons.image_outlined,
+        body: '''Your Verified Badge is a shareable image with a QR code.
+
+Use it on platforms that restrict links:
+• Instagram bio
+• TikTok
+• Dating apps
+
+Others can scan the QR code to view your passport.''',
+        learnMoreText: 'Learn More',
+        learnMoreUrl: 'https://help.silentid.co.uk/verified-badge',
+      );
+
+  static InfoPointData get smartSharing => const InfoPointData(
+        title: 'Smart Sharing',
+        icon: Icons.share_rounded,
+        body: '''SilentID automatically picks the best sharing format:
+
+📎 Link - for WhatsApp, Telegram, Email, SMS
+🖼️ Badge Image - for Instagram, TikTok, dating apps
+📷 QR Code - when links are blocked
+
+Just tap share and we'll handle the rest!''',
+      );
+
+  // ============================================================================
+  // 11. TRUSTSCORE VISIBILITY (Section 51.5)
+  // ============================================================================
+
+  static InfoPointData get trustScoreVisibility => const InfoPointData(
+        title: 'TrustScore Visibility',
+        icon: Icons.visibility_rounded,
+        body: '''Control how your TrustScore appears:
+
+👁️ Public Mode - Show exact score (e.g., 754/1000)
+🛡️ Badge Only - Show tier (e.g., "Very High Trust") but hide exact score
+🔒 Private Mode - Only show that you're verified
+
+Change this anytime in Settings → Privacy.''',
+        learnMoreText: 'Learn More',
+        learnMoreUrl: 'https://help.silentid.co.uk/trustscore-visibility',
+      );
+
+  static InfoPointData get trustScoreTiers => const InfoPointData(
+        title: 'TrustScore Tiers',
+        icon: Icons.star_rounded,
+        body: '''TrustScore tiers:
+
+🌟 Exceptional (850-1000)
+⭐ Very High (700-849)
+✅ High (550-699)
+📊 Moderate (400-549)
+⚠️ Low (250-399)
+🚨 High Risk (0-249)
+
+Higher tiers = more trust from others.''',
+      );
+
+  // ============================================================================
+  // 12. CONNECTED PROFILES (Section 52)
+  // ============================================================================
+
+  static InfoPointData get connectedProfiles => const InfoPointData(
+        title: 'Connected Profiles',
+        icon: Icons.link_rounded,
+        body: '''Connect your profiles from other platforms to SilentID.
+
+This helps prove your online presence and increases trust.
+
+• Builds stronger reputation
+• Shows identity consistency
+• Helps people trust you faster
+• You choose what's public''',
+        learnMoreText: 'Learn More',
+        learnMoreUrl: 'https://help.silentid.co.uk/connected-profiles',
+      );
+
+  static InfoPointData get linkedProfile => const InfoPointData(
+        title: 'Linked Profile',
+        icon: Icons.link_rounded,
+        body: '''A linked profile is connected to your SilentID.
+
+It appears on your passport as "Linked" and gives a small trust boost (+5 points each, max 25).
+
+You can upgrade it to Verified anytime for stronger trust.''',
+      );
+
+  static InfoPointData get verifiedProfile => const InfoPointData(
+        title: 'Verified Profile',
+        icon: Icons.verified_rounded,
+        body: '''A verified profile has confirmed ownership.
+
+You proved you own this account via token or screenshot.
+
+This gives a strong trust boost (+15 points each, max 75) and shows a green checkmark on your passport.''',
+      );
+
+  static InfoPointData get profileTrustContribution => const InfoPointData(
+        title: 'How profiles help your trust',
+        icon: Icons.trending_up_rounded,
+        body: '''Connected profiles contribute up to 100 points to your TrustScore:
+
+🔗 Linked profiles: +5 pts each (max 25)
+✅ Verified profiles: +15 pts each (max 75)
+
+Tip: Upgrade linked profiles to Verified for 3x more points!''',
+      );
+
+  static InfoPointData get tokenVerification => const InfoPointData(
+        title: 'Token Verification',
+        icon: Icons.code_rounded,
+        body: '''Add a small SilentID code to your profile bio.
+
+This proves you own the account. You can remove the token after verification is complete.
+
+This is the strongest form of verification.''',
+      );
+
+  static InfoPointData get screenshotVerification => const InfoPointData(
+        title: 'Screenshot Verification',
+        icon: Icons.camera_alt_rounded,
+        body: '''Some platforms don't allow bio edits.
+
+We use a live camera photo of your profile screen to confirm ownership.
+
+This is a fallback when token verification isn't possible.''',
+      );
 }

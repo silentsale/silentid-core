@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/info_point_helper.dart';
+import '../../../core/data/info_point_data.dart';
 import '../../../services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -198,12 +200,23 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Column(
                 children: [
-                  Text(
-                    'Your TrustScore',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      color: AppTheme.pureWhite.withValues(alpha: 0.9),
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Your TrustScore',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          color: AppTheme.pureWhite.withValues(alpha: 0.9),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      // Info Point (Section 40.4)
+                      InfoPointHelper(
+                        data: InfoPoints.trustScoreOverall,
+                        iconColor: AppTheme.pureWhite.withValues(alpha: 0.8),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   Text(

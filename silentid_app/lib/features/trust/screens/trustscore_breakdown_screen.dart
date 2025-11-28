@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/info_point_helper.dart';
+import '../../../core/widgets/public_connected_profiles.dart';
+import '../../../core/widgets/connected_profiles_trust_contribution.dart';
+import '../../../core/data/info_point_data.dart';
 
 class TrustScoreBreakdownScreen extends StatefulWidget {
   const TrustScoreBreakdownScreen({super.key});
@@ -13,6 +17,7 @@ class _TrustScoreBreakdownScreenState
     extends State<TrustScoreBreakdownScreen> {
   bool _isLoading = true;
   Map<String, dynamic>? _breakdownData;
+  List<PublicConnectedProfile> _connectedProfiles = [];
 
   @override
   void initState() {
@@ -29,6 +34,36 @@ class _TrustScoreBreakdownScreenState
 
       // Mock data for now
       await Future.delayed(const Duration(seconds: 1));
+
+      // Mock connected profiles (Section 52.7)
+      _connectedProfiles = [
+        PublicConnectedProfile(
+          platformId: 'instagram',
+          platformName: 'Instagram',
+          username: '@johndoe',
+          isVerified: true,
+          verificationMethod: 'token',
+        ),
+        PublicConnectedProfile(
+          platformId: 'vinted',
+          platformName: 'Vinted',
+          username: 'johndoe_vinted',
+          isVerified: true,
+          verificationMethod: 'screenshot',
+        ),
+        PublicConnectedProfile(
+          platformId: 'linkedin',
+          platformName: 'LinkedIn',
+          username: 'john-doe-123',
+          isVerified: false,
+        ),
+        PublicConnectedProfile(
+          platformId: 'depop',
+          platformName: 'Depop',
+          username: '@johndepop',
+          isVerified: false,
+        ),
+      ];
 
       setState(() {
         _breakdownData = {
@@ -147,11 +182,12 @@ class _TrustScoreBreakdownScreenState
                     _buildTotalScoreHeader(),
                     const SizedBox(height: 32),
 
-                    // Component Sections
+                    // Component Sections with Info Points (Section 40.4)
                     _buildComponentSection(
                       'Identity Score',
                       Icons.verified_user,
                       _breakdownData!['components']['identity'],
+                      infoPoint: InfoPoints.identityComponent,
                     ),
                     const SizedBox(height: 24),
 
@@ -159,6 +195,7 @@ class _TrustScoreBreakdownScreenState
                       'Evidence Score',
                       Icons.receipt_long,
                       _breakdownData!['components']['evidence'],
+                      infoPoint: InfoPoints.evidenceComponent,
                     ),
                     const SizedBox(height: 24),
 
@@ -166,6 +203,7 @@ class _TrustScoreBreakdownScreenState
                       'Behaviour Score',
                       Icons.trending_up,
                       _breakdownData!['components']['behaviour'],
+                      infoPoint: InfoPoints.behaviourComponent,
                     ),
                     const SizedBox(height: 24),
 
@@ -173,6 +211,15 @@ class _TrustScoreBreakdownScreenState
                       'Peer Verification Score',
                       Icons.handshake,
                       _breakdownData!['components']['peer'],
+                      infoPoint: InfoPoints.peerVerificationComponent,
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Connected Profiles Trust Contribution (Section 52.7)
+                    ConnectedProfilesTrustContribution(
+                      profiles: _connectedProfiles,
+                      showHeader: true,
+                      expandable: true,
                     ),
                   ],
                 ),
@@ -208,13 +255,22 @@ class _TrustScoreBreakdownScreenState
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Total TrustScore',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+              Row(
+                children: [
+                  const Text(
+                    'Total TrustScore',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  InfoPointHelper(
+                    data: InfoPoints.trustScoreOverall,
+                    iconColor: Colors.white.withValues(alpha: 0.8),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               Text(
@@ -242,8 +298,9 @@ class _TrustScoreBreakdownScreenState
   Widget _buildComponentSection(
     String title,
     IconData icon,
-    Map<String, dynamic> component,
-  ) {
+    Map<String, dynamic> component, {
+    InfoPointData? infoPoint,
+  }) {
     final score = component['score'] as int;
     final max = component['max'] as int;
     final items = component['items'] as List;
@@ -275,13 +332,21 @@ class _TrustScoreBreakdownScreenState
             color: AppTheme.primaryPurple,
             size: 28,
           ),
-          title: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.neutralGray900,
-            ),
+          title: Row(
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.neutralGray900,
+                ),
+              ),
+              if (infoPoint != null) ...[
+                const SizedBox(width: 6),
+                InfoPointHelper(data: infoPoint),
+              ],
+            ],
           ),
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 8),

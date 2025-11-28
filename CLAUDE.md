@@ -87,6 +87,14 @@ Final TrustScore = (Raw Score / 1200) × 1000
 
 Users can share their identity via a public link or a QR-enabled Verified Badge image. Smart fallback chooses the correct format depending on platform restrictions. TrustScore can be public or private; badges and passport adapt automatically. Includes landing-page marketing, QR demos, and in-app education.
 
+### 6. UNIFIED PROFILE LINKING & PLATFORM VERIFICATION
+
+SilentID lets users connect any external profile (Instagram, TikTok, LinkedIn, Depop, eBay, Discord, etc.) using a simple link-first flow. Profiles appear as **Linked** (user added) or **Verified** (SilentID confirmed ownership via token or screenshot). Clear info-points explain everything. Verified profiles boost TrustScore; users control what is shown on their public Passport.
+
+### 7. SILENTID UI DESIGN LANGUAGE
+
+SilentID uses a locked, premium Apple-style UI based on unified spacing (16px grid), card shapes, typography (Inter font), info-points, and scrollable sections. Royal Purple #5A3EB8 for accents only. All screens comply with Section 53 design system. **All UI generation MUST reference Section 53.**
+
 ---
 
 ## GLOBAL RULES (MANDATORY)

@@ -58,8 +58,13 @@ public class TrustScoreService : ITrustScoreService
             .Where(s => s.UserId == userId && s.EvidenceState == EvidenceState.Valid)
             .CountAsync();
 
-        var profileLinksCount = await _context.ProfileLinkEvidences
-            .Where(p => p.UserId == userId && p.EvidenceState == EvidenceState.Valid)
+        // Section 52.7: Count Linked vs Verified profiles separately
+        var linkedProfilesCount = await _context.ProfileLinkEvidences
+            .Where(p => p.UserId == userId && p.EvidenceState == EvidenceState.Valid && p.LinkState == "Linked")
+            .CountAsync();
+
+        var verifiedProfilesCount = await _context.ProfileLinkEvidences
+            .Where(p => p.UserId == userId && p.EvidenceState == EvidenceState.Valid && p.LinkState == "Verified")
             .CountAsync();
 
         var mutualVerificationsCount = await _context.MutualVerifications
@@ -76,7 +81,7 @@ public class TrustScoreService : ITrustScoreService
         var breakdown = new TrustScoreBreakdown
         {
             Identity = BuildIdentityBreakdown(user, identityVerification, accountAgeDays),
-            Evidence = BuildEvidenceBreakdown(receiptsCount, screenshotsCount, profileLinksCount),
+            Evidence = BuildEvidenceBreakdown(receiptsCount, screenshotsCount, linkedProfilesCount, verifiedProfilesCount),
             Behaviour = BuildBehaviourBreakdown(reportsCount, accountAgeDays),
             Peer = BuildPeerBreakdown(mutualVerificationsCount),
             Urs = await BuildUrsBreakdownAsync(userId)
@@ -208,7 +213,7 @@ public class TrustScoreService : ITrustScoreService
         return breakdown;
     }
 
-    private EvidenceBreakdown BuildEvidenceBreakdown(int receiptsCount, int screenshotsCount, int profileLinksCount)
+    private EvidenceBreakdown BuildEvidenceBreakdown(int receiptsCount, int screenshotsCount, int linkedProfilesCount, int verifiedProfilesCount)
     {
         var breakdown = new EvidenceBreakdown();
         var items = new List<ScoreItem>();
@@ -239,18 +244,38 @@ public class TrustScoreService : ITrustScoreService
             breakdown.Score += screenshotPoints;
         }
 
-        // Profile links (up to 50 points)
-        if (profileLinksCount > 0)
+        // Section 52.7: Connected Profiles - Linked (+5 each) and Verified (+15 each)
+        // Maximum 50 points total from profile connections
+        var totalProfilePoints = 0;
+
+        // Verified profiles: +15 points each (Section 52.7)
+        if (verifiedProfilesCount > 0)
         {
-            var profilePoints = Math.Min(profileLinksCount * 25, 50);
+            var verifiedPoints = verifiedProfilesCount * 15;
             items.Add(new ScoreItem
             {
-                Description = $"{profileLinksCount} verified platform profile{(profileLinksCount > 1 ? "s" : "")}",
-                Points = profilePoints,
+                Description = $"{verifiedProfilesCount} verified profile{(verifiedProfilesCount > 1 ? "s" : "")} (ownership confirmed)",
+                Points = verifiedPoints,
                 Status = "completed"
             });
-            breakdown.Score += profilePoints;
+            totalProfilePoints += verifiedPoints;
         }
+
+        // Linked profiles: +5 points each (Section 52.7)
+        if (linkedProfilesCount > 0)
+        {
+            var linkedPoints = linkedProfilesCount * 5;
+            items.Add(new ScoreItem
+            {
+                Description = $"{linkedProfilesCount} linked profile{(linkedProfilesCount > 1 ? "s" : "")} (pending verification)",
+                Points = linkedPoints,
+                Status = "partial"
+            });
+            totalProfilePoints += linkedPoints;
+        }
+
+        // Cap profile points at 50 (per original spec)
+        breakdown.Score += Math.Min(totalProfilePoints, 50);
 
         if (items.Count == 0)
         {

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/skeleton_loader.dart';
+import '../../../core/widgets/info_point_helper.dart';
+import '../../../core/data/info_point_data.dart';
 import '../../../models/mutual_verification.dart';
 import '../../../services/api_service.dart';
 import '../../../services/mutual_verification_service.dart';
@@ -72,13 +74,20 @@ class _MutualVerificationHomeScreenState
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          'Mutual Verifications',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Mutual Verifications',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 8),
+            InfoPointHelper(data: InfoPoints.peerVerificationComponent),
+          ],
         ),
         actions: [
           IconButton(

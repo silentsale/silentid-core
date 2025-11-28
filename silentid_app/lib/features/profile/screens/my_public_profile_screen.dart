@@ -127,9 +127,20 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
                     _buildProfileHeader(),
                     const SizedBox(height: 32),
 
-                    // TrustScore Display
-                    _buildTrustScoreSection(),
-                    const SizedBox(height: 32),
+                    // Platform Ratings (Section 47 - Digital Trust Passport)
+                    if (_profile!.hasPlatformRatings) ...[
+                      _buildPlatformRatingsSection(),
+                      const SizedBox(height: 32),
+                    ],
+
+                    // TrustScore Display (only if user allows)
+                    if (_profile!.shouldShowTrustScore) ...[
+                      _buildTrustScoreSection(),
+                      const SizedBox(height: 32),
+                    ] else ...[
+                      _buildTrustScoreHiddenNotice(),
+                      const SizedBox(height: 32),
+                    ],
 
                     // Badges Section
                     _buildBadgesSection(),
@@ -237,8 +248,183 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
     );
   }
 
+  Widget _buildPlatformRatingsSection() {
+    if (_profile == null || !_profile!.hasPlatformRatings) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'Marketplace Ratings',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.neutralGray900,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppTheme.successGreen.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Verified',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.successGreen,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.neutralGray300),
+          ),
+          child: Column(
+            children: _profile!.level3VerifiedRatings
+                .asMap()
+                .entries
+                .map((entry) {
+              final rating = entry.value;
+              final isLast =
+                  entry.key == _profile!.level3VerifiedRatings.length - 1;
+              return Column(
+                children: [
+                  _buildPlatformRatingRow(rating),
+                  if (!isLast)
+                    const Divider(height: 24, color: AppTheme.neutralGray300),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Ratings from Level 3 verified profiles only',
+          style: TextStyle(
+            fontSize: 12,
+            color: AppTheme.neutralGray700,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPlatformRatingRow(PlatformRating rating) {
+    return Row(
+      children: [
+        // Platform icon
+        Text(
+          rating.platformIcon,
+          style: const TextStyle(fontSize: 24),
+        ),
+        const SizedBox(width: 12),
+        // Platform name and review count
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                rating.platform,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.neutralGray900,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${rating.reviewCount} reviews',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.neutralGray700,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Rating display
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            rating.displayRating,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.primaryPurple,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTrustScoreHiddenNotice() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.neutralGray300.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.neutralGray300),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.visibility_off_outlined,
+            color: AppTheme.neutralGray700,
+            size: 32,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'TrustScore Hidden',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.neutralGray900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Your TrustScore is private. Enable visibility in Privacy Settings to show it on your public profile.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              color: AppTheme.neutralGray700,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/settings/privacy');
+            },
+            child: const Text('Privacy Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTrustScoreSection() {
-    if (_profile == null) return const SizedBox.shrink();
+    if (_profile == null || !_profile!.shouldShowTrustScore) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -269,7 +455,7 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${_profile!.trustScore}',
+            '${_profile!.trustScore ?? 0}',
             style: const TextStyle(
               fontSize: 56,
               fontWeight: FontWeight.bold,
@@ -278,7 +464,7 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            _profile!.trustScoreLabel,
+            _profile!.trustScoreLabel ?? 'Hidden',
             style: const TextStyle(
               fontSize: 16,
               color: Colors.white,
@@ -287,7 +473,7 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
           ),
           const SizedBox(height: 8),
           TrustScoreStarRating.large(
-            trustScore: _profile!.trustScore,
+            trustScore: _profile!.trustScore ?? 0,
             showNumericScore: false,
             colorOverride: Colors.white,
           ),

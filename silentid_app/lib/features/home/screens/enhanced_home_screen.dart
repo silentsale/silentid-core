@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/offline_indicator.dart';
+import '../../../core/widgets/onboarding_checklist.dart';
 import '../../../core/utils/animations.dart';
 import '../../../services/auth_service.dart';
 
@@ -16,6 +18,7 @@ class EnhancedHomeScreen extends StatefulWidget {
 
 class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
   final _authService = AuthService();
+  static const _storage = FlutterSecureStorage();
   String? _userEmail;
   int _selectedIndex = 0;
   bool _isOnline = true; // TODO: Implement connectivity check
@@ -25,11 +28,41 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
   final int _verifyBadgeCount = 2; // Example: 2 pending verification requests
   final int _profileBadgeCount = 1; // Example: 1 security alert
 
+  // Section 50.2.2 - Onboarding checklist state
+  bool _showOnboardingChecklist = true;
+  bool _identityVerified = false;
+  bool _profileConnected = false;
+  bool _mutualVerificationComplete = false;
+
   @override
   void initState() {
     super.initState();
     _loadUserEmail();
     _checkConnectivity();
+    _loadOnboardingState();
+  }
+
+  /// Load onboarding checklist state from secure storage
+  Future<void> _loadOnboardingState() async {
+    final dismissed = await _storage.read(key: 'onboarding_checklist_dismissed');
+    final identity = await _storage.read(key: 'identity_verified');
+    final profile = await _storage.read(key: 'profile_connected');
+    final mutual = await _storage.read(key: 'mutual_verification_complete');
+
+    setState(() {
+      _showOnboardingChecklist = dismissed != 'true';
+      _identityVerified = identity == 'true';
+      _profileConnected = profile == 'true';
+      _mutualVerificationComplete = mutual == 'true';
+    });
+  }
+
+  /// Dismiss the onboarding checklist permanently
+  Future<void> _dismissOnboardingChecklist() async {
+    await _storage.write(key: 'onboarding_checklist_dismissed', value: 'true');
+    setState(() {
+      _showOnboardingChecklist = false;
+    });
   }
 
   Future<void> _loadUserEmail() async {
@@ -232,6 +265,11 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
   }
 
   Widget _buildHomeTab() {
+    // Check if all onboarding steps complete
+    final allStepsComplete = _identityVerified &&
+        _profileConnected &&
+        _mutualVerificationComplete;
+
     return RefreshIndicator(
       onRefresh: _refreshTab,
       color: AppTheme.primaryPurple,
@@ -266,7 +304,23 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
                 ),
               ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+
+            // Section 50.2.2 - Onboarding Checklist (show for new users)
+            if (_showOnboardingChecklist)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: OnboardingChecklist(
+                  identityVerified: _identityVerified,
+                  profileConnected: _profileConnected,
+                  mutualVerificationComplete: _mutualVerificationComplete,
+                  onVerifyIdentityTap: () => context.push('/identity/intro'),
+                  onConnectProfileTap: () => context.push('/profiles/connect'),
+                  onMutualVerificationTap: () =>
+                      context.push('/mutual-verification'),
+                  onDismiss: allStepsComplete ? _dismissOnboardingChecklist : null,
+                ),
+              ),
 
             // TrustScore card with animation
             AppAnimations.scaleIn(
@@ -281,6 +335,15 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
               title: 'Verify Identity',
               subtitle: 'Complete your Stripe verification',
               onTap: () => context.push('/identity/intro'),
+            ),
+
+            const SizedBox(height: 16),
+
+            _buildQuickActionCard(
+              icon: Icons.link,
+              title: 'Connect Profiles',
+              subtitle: 'Link your Vinted, eBay, Depop ratings',
+              onTap: () => context.push('/profiles/connect'),
             ),
 
             const SizedBox(height: 16),

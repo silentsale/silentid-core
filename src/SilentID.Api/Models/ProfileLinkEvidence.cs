@@ -26,6 +26,27 @@ public class ProfileLinkEvidence
     /// </summary>
     public Platform Platform { get; set; }
 
+    // ========== SECTION 52 FIELDS ==========
+
+    /// <summary>
+    /// Extracted username from the profile URL (e.g., @shopname, /in/username).
+    /// </summary>
+    [MaxLength(200)]
+    public string? Username { get; set; }
+
+    /// <summary>
+    /// Whether this profile should be shown on the public passport.
+    /// Defaults to true - user can toggle off for privacy.
+    /// </summary>
+    public bool ShowOnPassport { get; set; } = true;
+
+    /// <summary>
+    /// Profile link state: "Linked" (user-added) or "Verified" (ownership confirmed).
+    /// Per Section 52.4.
+    /// </summary>
+    [MaxLength(20)]
+    public string LinkState { get; set; } = "Linked";
+
     /// <summary>
     /// Scraped data stored as JSON (rating, reviews, join date, username, etc.).
     /// </summary>

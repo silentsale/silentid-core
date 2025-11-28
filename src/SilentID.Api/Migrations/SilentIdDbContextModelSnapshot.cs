@@ -612,6 +612,11 @@ namespace SilentID.Api.Migrations
                     b.Property<int>("IntegrityScore")
                         .HasColumnType("integer");
 
+                    b.Property<string>("LinkState")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<int>("ManualScreenshotCount")
                         .HasColumnType("integer");
 
@@ -639,6 +644,9 @@ namespace SilentID.Api.Migrations
                     b.Property<string>("ScrapeDataJson")
                         .HasColumnType("text");
 
+                    b.Property<bool>("ShowOnPassport")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("SnapshotHash")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
@@ -653,6 +661,10 @@ namespace SilentID.Api.Migrations
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Username")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<int>("UsernameMatchScore")
                         .HasColumnType("integer");
@@ -746,6 +758,61 @@ namespace SilentID.Api.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("ReceiptEvidences");
+                });
+
+            modelBuilder.Entity("SilentID.Api.Models.Referral", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InvitedEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid?>("RefereeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("RefereePointsAwarded")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReferralCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("ReferrerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ReferrerPointsAwarded")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("SignedUpAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RefereeId");
+
+                    b.HasIndex("ReferralCode");
+
+                    b.HasIndex("ReferrerId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Referrals");
                 });
 
             modelBuilder.Entity("SilentID.Api.Models.Report", b =>
@@ -1121,6 +1188,14 @@ namespace SilentID.Api.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<string>("ReferralCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("ReferredByCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<string>("SignupDeviceId")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -1140,6 +1215,9 @@ namespace SilentID.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("ReferralCode")
                         .IsUnique();
 
                     b.HasIndex("Username")
@@ -1239,6 +1317,24 @@ namespace SilentID.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SilentID.Api.Models.Referral", b =>
+                {
+                    b.HasOne("SilentID.Api.Models.User", "Referee")
+                        .WithMany()
+                        .HasForeignKey("RefereeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SilentID.Api.Models.User", "Referrer")
+                        .WithMany()
+                        .HasForeignKey("ReferrerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Referee");
+
+                    b.Navigation("Referrer");
                 });
 
             modelBuilder.Entity("SilentID.Api.Models.Report", b =>

@@ -6,6 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/widgets/info_point_helper.dart';
+import '../../../core/data/info_point_data.dart';
 import '../../../services/api_service.dart';
 
 class ScreenshotUploadScreen extends StatefulWidget {
@@ -262,7 +264,7 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
 
               const SizedBox(height: 32),
 
-              // Warning box
+              // Warning box with Info Point (Section 40.4)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -287,6 +289,8 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    InfoPointHelper(data: InfoPoints.screenshotIntegrity),
                   ],
                 ),
               ),

@@ -305,6 +305,9 @@ public class EvidenceController : ControllerBase
             {
                 URL = request.Url,
                 Platform = request.Platform,
+                Username = request.Username, // Section 52: Store extracted username
+                LinkState = "Linked", // Section 52.4: Initial state is "Linked"
+                ShowOnPassport = true, // Section 52: Default to visible
                 ScrapeDataJson = null, // Placeholder - real scraper would populate this
                 UsernameMatchScore = 90, // Placeholder - real scraping would calculate actual score
                 IntegrityScore = 100,
@@ -313,7 +316,8 @@ public class EvidenceController : ControllerBase
 
             var savedProfileLink = await _evidenceService.AddProfileLinkEvidenceAsync(userId, profileLink);
 
-            _logger.LogInformation("Profile link added: {ProfileLinkId} for user {UserId}", savedProfileLink.Id, userId);
+            _logger.LogInformation("Profile link added: {ProfileLinkId} for user {UserId}, Platform={Platform}, Username={Username}",
+                savedProfileLink.Id, userId, savedProfileLink.Platform, savedProfileLink.Username);
 
             return CreatedAtAction(
                 nameof(GetProfileLink),
@@ -323,6 +327,9 @@ public class EvidenceController : ControllerBase
                     id = savedProfileLink.Id,
                     url = savedProfileLink.URL,
                     platform = savedProfileLink.Platform.ToString(),
+                    username = savedProfileLink.Username,
+                    linkState = savedProfileLink.LinkState, // Section 52.4
+                    showOnPassport = savedProfileLink.ShowOnPassport, // Section 52
                     usernameMatchScore = savedProfileLink.UsernameMatchScore,
                     integrityScore = savedProfileLink.IntegrityScore,
                     evidenceState = savedProfileLink.EvidenceState.ToString(),
@@ -357,6 +364,9 @@ public class EvidenceController : ControllerBase
                 id = profileLink.Id,
                 url = profileLink.URL,
                 platform = profileLink.Platform.ToString(),
+                username = profileLink.Username, // Section 52
+                linkState = profileLink.LinkState, // Section 52.4
+                showOnPassport = profileLink.ShowOnPassport, // Section 52
                 scrapeDataJson = profileLink.ScrapeDataJson,
                 usernameMatchScore = profileLink.UsernameMatchScore,
                 integrityScore = profileLink.IntegrityScore,
@@ -389,6 +399,10 @@ public class EvidenceController : ControllerBase
 
             var profileLinks = await _evidenceService.GetUserProfileLinksAsync(userId);
 
+            // Section 52: Calculate counts for Linked vs Verified
+            var linkedCount = profileLinks.Count(p => p.LinkState == "Linked");
+            var verifiedCount = profileLinks.Count(p => p.LinkState == "Verified");
+
             return Ok(new
             {
                 profileLinks = profileLinks.Select(p => new
@@ -396,6 +410,9 @@ public class EvidenceController : ControllerBase
                     id = p.Id,
                     url = p.URL,
                     platform = p.Platform.ToString(),
+                    username = p.Username, // Section 52
+                    linkState = p.LinkState, // Section 52.4
+                    showOnPassport = p.ShowOnPassport, // Section 52
                     usernameMatchScore = p.UsernameMatchScore,
                     integrityScore = p.IntegrityScore,
                     evidenceState = p.EvidenceState.ToString(),
@@ -406,13 +423,80 @@ public class EvidenceController : ControllerBase
                     createdAt = p.CreatedAt,
                     updatedAt = p.UpdatedAt
                 }),
-                count = profileLinks.Count
+                count = profileLinks.Count,
+                linkedCount = linkedCount, // Section 52
+                verifiedCount = verifiedCount // Section 52
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving profile links");
             return StatusCode(500, new { error = "internal_error", message = "Failed to retrieve profile links." });
+        }
+    }
+
+    // ========== SECTION 52 ENDPOINTS ==========
+
+    /// <summary>
+    /// DELETE /v1/evidence/profile-links/{id} - Remove a connected profile
+    /// </summary>
+    [HttpDelete("profile-links/{id}")]
+    public async Task<IActionResult> DeleteProfileLink(Guid id)
+    {
+        try
+        {
+            var userId = GetUserId();
+
+            var deleted = await _evidenceService.DeleteProfileLinkAsync(id, userId);
+            if (!deleted)
+            {
+                return NotFound(new { error = "not_found", message = "Profile link not found." });
+            }
+
+            _logger.LogInformation("Profile link deleted: {ProfileLinkId} for user {UserId}", id, userId);
+
+            return Ok(new { message = "Profile link removed successfully." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting profile link {ProfileLinkId}", id);
+            return StatusCode(500, new { error = "internal_error", message = "Failed to delete profile link." });
+        }
+    }
+
+    /// <summary>
+    /// PATCH /v1/evidence/profile-links/{id}/visibility - Toggle passport visibility
+    /// </summary>
+    [HttpPatch("profile-links/{id}/visibility")]
+    public async Task<IActionResult> UpdateProfileLinkVisibility(Guid id, [FromBody] UpdateVisibilityRequest request)
+    {
+        try
+        {
+            var userId = GetUserId();
+
+            var profileLink = await _evidenceService.UpdateProfileLinkVisibilityAsync(id, userId, request.ShowOnPassport);
+            if (profileLink == null)
+            {
+                return NotFound(new { error = "not_found", message = "Profile link not found." });
+            }
+
+            _logger.LogInformation(
+                "Profile link visibility updated: {ProfileLinkId} for user {UserId}, ShowOnPassport={ShowOnPassport}",
+                id, userId, request.ShowOnPassport);
+
+            return Ok(new
+            {
+                id = profileLink.Id,
+                showOnPassport = profileLink.ShowOnPassport,
+                message = request.ShowOnPassport
+                    ? "Profile will now appear on your public passport."
+                    : "Profile hidden from your public passport."
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating profile link visibility {ProfileLinkId}", id);
+            return StatusCode(500, new { error = "internal_error", message = "Failed to update visibility." });
         }
     }
 
@@ -855,6 +939,18 @@ public class AddProfileLinkRequest
 {
     public string Url { get; set; } = string.Empty;
     public Platform Platform { get; set; }
+    /// <summary>
+    /// Extracted username from the profile URL (optional - can be auto-detected).
+    /// </summary>
+    public string? Username { get; set; }
+}
+
+public class UpdateVisibilityRequest
+{
+    /// <summary>
+    /// Whether to show this profile on the public passport.
+    /// </summary>
+    public bool ShowOnPassport { get; set; }
 }
 
 public class ConfirmTokenRequest

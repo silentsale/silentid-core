@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/widgets/info_point_helper.dart';
+import '../../../core/data/info_point_data.dart';
 import '../../../services/auth_service.dart';
 
 class OtpScreen extends StatefulWidget {
@@ -168,14 +170,20 @@ class _OtpScreenState extends State<OtpScreen> {
             children: [
               const SizedBox(height: 24),
 
-              // Title
-              Text(
-                'Check your email',
-                style: GoogleFonts.inter(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.deepBlack,
-                ),
+              // Title with Info Point (Section 40.4)
+              Row(
+                children: [
+                  Text(
+                    'Check your email',
+                    style: GoogleFonts.inter(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.deepBlack,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  InfoPointHelper(data: InfoPoints.emailOTP),
+                ],
               ),
 
               const SizedBox(height: 12),

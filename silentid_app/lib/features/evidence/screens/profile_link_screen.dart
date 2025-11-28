@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../services/api_service.dart';
+import 'level3_verification_screen.dart';
 
 class ProfileLinkScreen extends StatefulWidget {
   const ProfileLinkScreen({super.key});
@@ -71,7 +72,7 @@ class _ProfileLinkScreenState extends State<ProfileLinkScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _api.post(
+      final response = await _api.post(
         '/v1/evidence/profile-links',
         data: {
           'url': _urlController.text.trim(),
@@ -80,13 +81,41 @@ class _ProfileLinkScreenState extends State<ProfileLinkScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile link added successfully'),
-            backgroundColor: AppTheme.successGreen,
+        // Extract profile link ID from response for verification
+        final profileLinkId = response.data['id']?.toString();
+        final profileUrl = _urlController.text.trim();
+        final platform = _detectedPlatform ?? 'Other';
+
+        // Navigate to Level 3 Verification flow (Section 49)
+        final verified = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Level3VerificationScreen(
+              profileUrl: profileUrl,
+              platform: platform,
+              profileLinkId: profileLinkId,
+            ),
           ),
         );
-        context.pop();
+
+        if (mounted) {
+          if (verified == true) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile verified at Level 3!'),
+                backgroundColor: AppTheme.successGreen,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile added at Level 1'),
+                backgroundColor: AppTheme.successGreen,
+              ),
+            );
+          }
+          context.pop();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -243,7 +272,7 @@ class _ProfileLinkScreenState extends State<ProfileLinkScreen> {
 
                 // Submit button
                 PrimaryButton(
-                  text: 'Scan Profile',
+                  text: 'Continue to Verification',
                   isLoading: _isLoading,
                   onPressed: _isLoading ? () {} : _submitProfile,
                 ),

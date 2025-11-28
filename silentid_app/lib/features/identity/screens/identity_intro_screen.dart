@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/widgets/info_point_helper.dart';
+import '../../../core/data/info_point_data.dart';
 
 class IdentityIntroScreen extends StatelessWidget {
   const IdentityIntroScreen({super.key});
@@ -43,14 +45,20 @@ class IdentityIntroScreen extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              // Title
-              Text(
-                'Verify your identity',
-                style: GoogleFonts.inter(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.deepBlack,
-                ),
+              // Title with Info Point (Section 40.4)
+              Row(
+                children: [
+                  Text(
+                    'Verify your identity',
+                    style: GoogleFonts.inter(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.deepBlack,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  InfoPointHelper(data: InfoPoints.stripeIdentity),
+                ],
               ),
 
               const SizedBox(height: 16),

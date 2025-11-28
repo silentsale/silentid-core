@@ -9,11 +9,13 @@ import '../theme/app_theme.dart';
 class InfoPoint extends StatelessWidget {
   final VoidCallback onTap;
   final String semanticLabel;
+  final Color? iconColor; // Custom color for dark backgrounds
 
   const InfoPoint({
     super.key,
     required this.onTap,
     required this.semanticLabel,
+    this.iconColor,
   });
 
   @override
@@ -31,7 +33,7 @@ class InfoPoint extends StatelessWidget {
           child: Icon(
             Icons.info_outline,
             size: 20,
-            color: AppTheme.neutralGray700,
+            color: iconColor ?? AppTheme.neutralGray700,
           ),
         ),
       ),

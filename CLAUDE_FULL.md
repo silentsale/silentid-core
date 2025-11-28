@@ -14012,6 +14012,1044 @@ This produces organic viral growth without violating the rules of major platform
 **END OF SECTION 51**
 
 ---
+
+## SECTION 52 — Unified Profile Linking & Platform Verification
+*(User-Friendly, All Platforms: TikTok, Instagram, LinkedIn, Depop, eBay, Discord, Marketplaces, Communities, etc.)*
+
+### 52.1 Purpose
+SilentID allows users to connect ANY of their online profiles—social accounts, marketplace profiles, professional profiles, community accounts, gaming accounts—into one verified identity.
+
+This sits under **Level 2 – Platform Verification**.
+
+The system uses:
+- **Linked** (user added the profile)
+- **Verified** (SilentID confirmed ownership)
+
+The experience must be simple, clear, and non-technical.
+
+---
+
+### 52.2 User Experience Overview
+
+#### Screen: "Connect Your Profiles"
+Text shown:
+
+**Connect your other profiles**
+This helps prove your online presence and increases trust.
+
+**ⓘ Why connect profiles?**
+- Builds a stronger reputation
+- Shows your identity is consistent
+- Helps people trust you faster
+- You choose what becomes public
+
+Button: **+ Add Profile**
+
+---
+
+### 52.3 Three Verification Methods (All Platforms)
+
+SilentID supports exactly **three** flows under Level 2:
+
+#### Flow A — ⭐ Share / Paste Link (Recommended)
+The fastest and simplest method.
+
+User either:
+- Shares their profile from another app → SilentID
+- OR pastes the profile link manually
+
+SilentID automatically:
+- Detects the platform (instagram/depop/ebay/tiktok/etc.)
+- Extracts the username
+- Shows:
+
+> "We detected your {Platform} profile: @{username}
+> Status: Linked (Not Verified Yet)
+> [Confirm]"
+
+**ⓘ Linked Profile**
+A linked profile is connected to your SilentID.
+You can upgrade it to Verified anytime.
+
+State after confirmation: **Linked**
+
+---
+
+#### Flow B — 🔐 Token Verification (Strong Ownership)
+User taps "Upgrade to Verified".
+
+SilentID shows:
+
+**Copy this code:**
+`SilentID-verify-4BF29`
+
+User pastes it into:
+- Instagram/TikTok/Depop bio
+- eBay About Me
+- LinkedIn "About" section
+- Discord "About me"
+- Any public profile section
+
+User taps: **Check now**
+
+SilentID detects the token and confirms ownership.
+
+State becomes: **Verified (token)**
+
+**ⓘ Verified Profile**
+You added a small SilentID code to your profile.
+This proves the account belongs to you.
+
+---
+
+#### Flow C — 📸 Screenshot Verification (Fallback)
+Used when token isn't possible.
+
+Flow:
+- SilentID opens camera (live photo only)
+- User takes a picture of their profile screen
+- SilentID extracts username and confirms match
+
+State becomes: **Verified (screenshot)**
+
+**ⓘ Why screenshot?**
+Some platforms don't allow tokens.
+We use a live photo to confirm it's your real profile.
+
+---
+
+### 52.4 Unified States (All Platforms)
+
+Every connected profile is one of two states:
+
+#### 1. **Linked**
+- Created by sharing/pasting link
+- Shown on passport as "Linked {Platform} account"
+- Medium TrustScore impact
+- Button: **Upgrade to Verified**
+
+#### 2. **Verified**
+- Achieved via token or screenshot
+- Shown publicly as "Verified {Platform}: @username"
+- Higher TrustScore impact
+- Considered strong Level 2 evidence
+
+Displayed clearly with a green tick.
+
+---
+
+### 52.5 "Connected Profiles" Screen (User View)
+
+SilentID shows:
+
+**Connected Profiles**
+- Instagram — @user123 — **Linked**
+  ⓘ Linked | [Upgrade to Verified]
+
+- Depop — @shopname — **Verified**
+  ⓘ Verified (token)
+
+- LinkedIn — /in/name — **Linked**
+  ⓘ Linked | [Verify now]
+
+Info overlays:
+
+**ⓘ Linked**
+You connected this profile by sharing the link.
+It appears on your SilentID Passport.
+Upgrade to Verified for stronger trust.
+
+**ⓘ Verified**
+SilentID confirmed you own this account.
+This boosts your TrustScore.
+
+---
+
+### 52.6 Public Passport Display (External View)
+
+People who open a SilentID passport see:
+
+**External Profiles**
+- ✅ Verified Instagram: @username
+- 🔗 Linked TikTok: @user123
+- 🔗 Linked LinkedIn profile
+- ✅ Verified Depop seller: @shopname
+
+Info overlay:
+
+**ⓘ What does "Verified" mean?**
+The user proved ownership via token or live screenshot.
+
+**ⓘ What does "Linked" mean?**
+This account was shared by the user.
+It is connected but not fully verified.
+
+---
+
+### 52.7 TrustScore Integration
+
+- **Linked profiles**
+  - Small trust boost
+  - Shows online presence
+
+- **Verified profiles**
+  - Strong trust boost
+  - Adds reputation credibility
+  - Helps unlock higher trust tiers
+
+**ⓘ How this helps your trust**
+Connecting and verifying your profiles helps SilentID confirm your reputation and identity.
+
+---
+
+### 52.8 Privacy & Safety
+
+- Only public/consented data is used
+- No private messages or hidden info
+- Users choose which profiles appear on their passport
+- Linked/Verified profiles can be removed any time
+
+**ⓘ Your privacy**
+SilentID never shares or exposes your private data.
+Only public or user-approved information is shown.
+
+---
+
+### 52.9 Summary
+
+SilentID provides one simple flow to connect **any** external profile using:
+- Share/paste link (Linked)
+- Token (Verified)
+- Screenshot (Verified)
+
+This unified system works for all social networks, marketplaces, and communities and is fully aligned with Level 2 verification and the TrustScore.
+
+---
+
+### 52.10 Integration with Existing Sections
+
+**Section 52 integrates with:**
+
+- **Section 5 (Core Features):** Level 2 Platform Verification expanded with Linked/Verified states
+- **Section 49 (Level 3 Verification):** Level 3 uses similar token/screenshot methods but with full ownership proofs
+- **Section 47 (Digital Trust Passport):** Connected profiles displayed on public passport
+- **Section 40 (UI Info Points):** All ⓘ tooltips use Info Point system for education
+- **Section 39 (App UI):** "Connected Profiles" screen in Profile section
+- **Section 19 (Help Center):** New help article: "How to Connect Your External Profiles"
+
+---
+
+**END OF SECTION 52**
+
+---
+
+## SECTION 53 — SilentID UI Design Language & Style Rules
+
+### 53.1 Purpose
+
+This section defines the **locked, premium Apple-style design system** for all SilentID screens and components. Every UI element—whether generated by Claude IDE, MCP servers, UI agents, or manual development—**MUST** comply with these rules.
+
+**Design Philosophy:**
+- Clean, minimal, trustworthy
+- White space is a feature, not a waste
+- Trust-focused hierarchy (TrustScore → Evidence → Actions)
+- Info-points for education, not clutter
+- Scrollable content, fixed navigation
+
+**Reference Implementation:**
+See `silentid_app/lib/features/profiles/screens/connect_profiles_screen.dart` for production-quality example.
+
+---
+
+### 53.2 Color System (Locked)
+
+**Primary Colors:**
+```
+Primary Purple: #5A3EB8 (RGB: 90, 62, 184)
+Dark Mode Purple: #462F8F (RGB: 70, 47, 143)
+Soft Lilac: #E8E2FF (RGB: 232, 226, 255)
+Deep Black: #0A0A0A (RGB: 10, 10, 10)
+Pure White: #FFFFFF (RGB: 255, 255, 255)
+```
+
+**Neutral Grays:**
+```
+Gray 900 (Headings): #111111 (RGB: 17, 17, 17)
+Gray 700 (Body Text): #4C4C4C (RGB: 76, 76, 76)
+Gray 300 (Borders): #DADADA (RGB: 218, 218, 218)
+```
+
+**Semantic Colors:**
+```
+Success Green: #1FBF71 (RGB: 31, 191, 113)
+Warning Amber: #FFC043 (RGB: 255, 192, 67)
+Danger Red: #D04C4C (RGB: 208, 76, 76)
+```
+
+**Usage Rules:**
+- **Primary Purple (#5A3EB8)**: CTA buttons, links, active states, icons (accent only)
+- **White (#FFFFFF)**: Screen backgrounds, card backgrounds
+- **Gray 900 (#111111)**: Primary headings, important labels
+- **Gray 700 (#4C4C4C)**: Body text, secondary labels
+- **Gray 300 (#DADADA)**: Card borders, dividers, input borders
+- **Never use purple for:**
+  - Screen backgrounds
+  - Large fills
+  - Card backgrounds
+  - Border colors (except active states)
+
+**Platform Brand Colors:**
+- Instagram: Use official Instagram gradient or #E4405F
+- TikTok: #000000
+- LinkedIn: #0077B5
+- eBay: #E53238
+- Depop: Official Depop red
+- Discord: #5865F2
+- **Rule:** Always use official brand colors for platform logos and icons
+
+---
+
+### 53.3 Typography System (Inter Font Family)
+
+**Font:** Google Fonts Inter (SF Pro style alternative for cross-platform)
+
+**Type Scale:**
+```
+Display Large:    32px, Weight 700, Line Height 1.2
+Display Medium:   24px, Weight 700, Line Height 1.3
+Display Small:    20px, Weight 700, Line Height 1.3
+
+Heading 1:        20px, Weight 700, Line Height 1.3
+Heading 2:        18px, Weight 600, Line Height 1.4
+Heading 3:        16px, Weight 600, Line Height 1.4
+Heading 4:        15px, Weight 600, Line Height 1.4
+
+Body Large:       16px, Weight 400, Line Height 1.5
+Body Medium:      15px, Weight 400, Line Height 1.5
+Body Small:       14px, Weight 400, Line Height 1.5
+
+Label Large:      14px, Weight 500, Line Height 1.4
+Label Medium:     13px, Weight 500, Line Height 1.4
+Label Small:      12px, Weight 500, Line Height 1.3
+
+Caption:          12px, Weight 400, Line Height 1.3
+Overline:         11px, Weight 500, Line Height 1.2, Uppercase
+```
+
+**Font Weight Standards:**
+- 700 (Bold): Display text, primary headings
+- 600 (Semibold): Section headings, emphasized labels
+- 500 (Medium): Buttons, labels, navigation items
+- 400 (Regular): Body text, descriptions
+
+**Color Application:**
+- Primary headings: Gray 900 (#111111)
+- Body text: Gray 700 (#4C4C4C)
+- Buttons: White on purple background
+- Links: Primary Purple (#5A3EB8)
+- Disabled text: Gray 300 (#DADADA)
+
+---
+
+### 53.4 Spacing Grid (16px Base Unit)
+
+**Standard Spacing Scale:**
+```
+4px   (0.25x) - Icon padding, tight spacing
+8px   (0.5x)  - Component internal spacing, chip padding
+12px  (0.75x) - Card padding (small), icon containers
+16px  (1x)    - Base unit, list item spacing, input padding
+24px  (1.5x)  - Section spacing, screen padding
+32px  (2x)    - Large section gaps
+48px  (3x)    - Major section dividers
+64px  (4x)    - Screen-level spacing (rare)
+```
+
+**Layout Rules:**
+- Screen padding: 24px horizontal, 24px top (below AppBar)
+- Card padding: 16px all sides
+- List item spacing: 16px vertical gap between items
+- Section spacing: 24px between major sections
+- Button height: 52px (primary), 48px (secondary)
+- Input field height: 52px minimum
+- Icon touch target: 48×48px minimum
+
+**Responsive Breakpoints:**
+- Mobile: < 600px (16-24px padding)
+- Tablet: 600-1024px (32px padding)
+- Desktop: > 1024px (max-width 1200px, centered)
+
+---
+
+### 53.5 Card & Container System
+
+**Card Types:**
+
+**1. Standard Card (Default)**
+```dart
+Container(
+  padding: EdgeInsets.all(16),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(color: AppTheme.neutralGray300),
+  ),
+)
+```
+
+**2. Info Card (Education / Info-Point Trigger)**
+```dart
+Container(
+  padding: EdgeInsets.all(16),
+  decoration: BoxDecoration(
+    gradient: LinearGradient(
+      colors: [
+        AppTheme.primaryPurple.withValues(alpha: 0.08),
+        AppTheme.primaryPurple.withValues(alpha: 0.03),
+      ],
+    ),
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(
+      color: AppTheme.primaryPurple.withValues(alpha: 0.2),
+    ),
+  ),
+)
+```
+
+**3. Success Card (Verification Complete)**
+```dart
+Container(
+  padding: EdgeInsets.all(16),
+  decoration: BoxDecoration(
+    color: AppTheme.successGreen.withValues(alpha: 0.08),
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(
+      color: AppTheme.successGreen.withValues(alpha: 0.3),
+    ),
+  ),
+)
+```
+
+**4. Warning Card**
+```dart
+Container(
+  padding: EdgeInsets.all(16),
+  decoration: BoxDecoration(
+    color: AppTheme.warningAmber.withValues(alpha: 0.08),
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(
+      color: AppTheme.warningAmber.withValues(alpha: 0.3),
+    ),
+  ),
+)
+```
+
+**Border Radius Standards:**
+- Cards: 12px
+- Buttons: 12px
+- Inputs: 12px
+- Chips/Tags: 20px (pill shape)
+- Icon containers: 8-12px
+- Bottom sheets: 24px (top corners only)
+
+**Elevation & Shadows:**
+- Prefer borders over shadows
+- Cards: No shadow (border only)
+- Bottom sheets: Subtle shadow (elevation 8)
+- Modals: Medium shadow (elevation 16)
+- Floating buttons: Soft shadow (elevation 4)
+
+---
+
+### 53.6 Button System
+
+**Primary Button (CTA)**
+```dart
+Material(
+  color: AppTheme.primaryPurple,
+  borderRadius: BorderRadius.circular(12),
+  child: InkWell(
+    onTap: () { HapticFeedback.mediumImpact(); },
+    child: Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.add_rounded, color: Colors.white, size: 22),
+          SizedBox(width: 8),
+          Text('Button Text', style: /* w600, 16px, white */),
+        ],
+      ),
+    ),
+  ),
+)
+```
+
+**Secondary Button (Outline)**
+```dart
+Container(
+  decoration: BoxDecoration(
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(color: AppTheme.neutralGray300),
+  ),
+  child: InkWell(
+    onTap: () { HapticFeedback.selectionClick(); },
+    child: Container(
+      padding: EdgeInsets.symmetric(vertical: 14),
+      child: /* centered content */,
+    ),
+  ),
+)
+```
+
+**Button Specifications:**
+- Minimum height: 52px (primary), 48px (secondary)
+- Full width by default (mobile)
+- Haptic feedback: `mediumImpact()` for primary, `selectionClick()` for secondary
+- Icon + text spacing: 8px
+- Corner radius: 12px
+- Disabled state: 40% opacity
+
+---
+
+### 53.7 Info-Point Integration (Section 40)
+
+**Info-Point Trigger Pattern:**
+```dart
+GestureDetector(
+  onTap: () => InfoModal.show(
+    context,
+    title: 'Feature Name',
+    body: '2-4 line explanation of the feature...',
+    icon: Icons.info_outline_rounded,
+  ),
+  child: Row(
+    children: [
+      Icon(Icons.info_outline_rounded,
+           color: AppTheme.primaryPurple,
+           size: 20),
+      SizedBox(width: 4),
+      Text('Tap to learn more',
+           style: /* 13px, purple */),
+    ],
+  ),
+)
+```
+
+**Info-Point Rules (from Section 40):**
+- Display in bottom sheet modal
+- 2-4 lines maximum explanation
+- Optional CTA button ("Learn More" → Help Center)
+- Icon at top (24px, purple)
+- Close button always visible
+
+**Visual Indicator:**
+```dart
+Container(
+  padding: EdgeInsets.all(8),
+  decoration: BoxDecoration(
+    color: AppTheme.primaryPurple.withValues(alpha: 0.15),
+    borderRadius: BorderRadius.circular(8),
+  ),
+  child: Icon(Icons.info_outline_rounded,
+             color: AppTheme.primaryPurple,
+             size: 20),
+)
+```
+
+---
+
+### 53.8 Screen Layout Structure
+
+**Standard Screen Pattern:**
+```
+┌─────────────────────────────┐
+│ AppBar (Fixed)              │ ← White bg, 0 elevation, centered title
+├─────────────────────────────┤
+│ ┌─────────────────────────┐ │
+│ │ Header Section (Static) │ │ ← Icon + Title + Subtitle
+│ └─────────────────────────┘ │
+│                             │
+│ ┌─────────────────────────┐ │
+│ │ Info Card (Optional)    │ │ ← Education trigger
+│ └─────────────────────────┘ │
+│                             │
+│ ╔═════════════════════════╗ │
+│ ║ Scrollable Content      ║ │ ← SingleChildScrollView
+│ ║ - Cards                 ║ │   24px padding
+│ ║ - Lists                 ║ │   16px spacing between items
+│ ║ - Actions               ║ │
+│ ║                         ║ │
+│ ╚═════════════════════════╝ │
+│                             │
+│ [Primary CTA Button]        │ ← Fixed at bottom (optional)
+└─────────────────────────────┘
+```
+
+**Implementation:**
+```dart
+Scaffold(
+  backgroundColor: Colors.white,
+  appBar: AppBar(
+    title: Text('Screen Title',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+    backgroundColor: Colors.white,
+    elevation: 0,
+  ),
+  body: SingleChildScrollView(
+    padding: EdgeInsets.all(24),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHeader(),
+        SizedBox(height: 24),
+        _buildInfoCard(),
+        SizedBox(height: 24),
+        _buildContent(),
+      ],
+    ),
+  ),
+)
+```
+
+**Scrolling Behavior:**
+- AppBar: Fixed (does not scroll)
+- Header section: Static OR scrolls with content (depends on context)
+- Content area: Always scrollable via `SingleChildScrollView`
+- Bottom CTA: Fixed OR scrolls (depends on context)
+
+---
+
+### 53.9 Icon System
+
+**Icon Library:** Material Icons (`Icons.*` from Flutter)
+
+**Icon Sizes:**
+```
+Extra Small: 16px (chips, inline indicators)
+Small:       20px (info triggers, labels)
+Medium:      24px (standard buttons, nav items)
+Large:       28px (feature headers)
+Extra Large: 32px (empty states, illustrations)
+```
+
+**Icon Containers (Feature Icons):**
+```dart
+Container(
+  padding: EdgeInsets.all(12),
+  decoration: BoxDecoration(
+    color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: Icon(
+    Icons.link_rounded,
+    color: AppTheme.primaryPurple,
+    size: 28,
+  ),
+)
+```
+
+**Icon Colors:**
+- Primary actions: Purple (#5A3EB8)
+- Secondary actions: Gray 700 (#4C4C4C)
+- Success states: Green (#1FBF71)
+- Warning states: Amber (#FFC043)
+- Danger states: Red (#D04C4C)
+- Platform logos: Official brand colors
+
+---
+
+### 53.10 List & Card Patterns
+
+**Profile Connection Card:**
+```dart
+Container(
+  padding: EdgeInsets.all(16),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(color: AppTheme.neutralGray300),
+  ),
+  child: Row(
+    children: [
+      // Platform icon (28px)
+      Icon(platform.icon, size: 28, color: platform.brandColor),
+      SizedBox(width: 12),
+      // Content
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Platform Name', /* 15px, w600 */),
+            Text('@username', /* 13px, gray700 */),
+          ],
+        ),
+      ),
+      // Status badge
+      Container(/* Linked or Verified badge */),
+    ],
+  ),
+)
+```
+
+**Chip/Tag Pattern:**
+```dart
+Container(
+  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  decoration: BoxDecoration(
+    color: AppTheme.neutralGray300.withValues(alpha: 0.3),
+    borderRadius: BorderRadius.circular(20),
+    border: Border.all(color: AppTheme.neutralGray300),
+  ),
+  child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(Icons.platform, size: 16),
+      SizedBox(width: 6),
+      Text('Label', /* 12px, w500 */),
+    ],
+  ),
+)
+```
+
+---
+
+### 53.11 Empty States & Placeholders
+
+**Empty State Pattern:**
+```dart
+Center(
+  child: Padding(
+    padding: EdgeInsets.all(48),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.feature_icon,
+          size: 64,
+          color: AppTheme.neutralGray300,
+        ),
+        SizedBox(height: 16),
+        Text(
+          'No items yet',
+          style: GoogleFonts.inter(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.neutralGray700,
+          ),
+        ),
+        SizedBox(height: 8),
+        Text(
+          'Get started by adding your first item',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: AppTheme.neutralGray700,
+          ),
+        ),
+      ],
+    ),
+  ),
+)
+```
+
+---
+
+### 53.12 Input Fields
+
+**Standard Text Input:**
+```dart
+TextField(
+  decoration: InputDecoration(
+    filled: true,
+    fillColor: Colors.white,
+    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: AppTheme.neutralGray300),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: AppTheme.primaryPurple, width: 2),
+    ),
+    hintText: 'Enter text',
+    hintStyle: GoogleFonts.inter(color: AppTheme.neutralGray700, fontSize: 14),
+  ),
+)
+```
+
+**Input Rules:**
+- Corner radius: 12px
+- Height: 52px minimum
+- Padding: 16px horizontal
+- Border: 1px Gray 300 (default), 2px Purple (focused)
+- Error state: Red border + red helper text below
+
+---
+
+### 53.13 Loading & Progress Indicators
+
+**Circular Progress (Indeterminate):**
+```dart
+CircularProgressIndicator(
+  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryPurple),
+  strokeWidth: 3,
+)
+```
+
+**Linear Progress (Determinate):**
+```dart
+LinearProgressIndicator(
+  value: 0.7,
+  backgroundColor: AppTheme.neutralGray300,
+  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryPurple),
+)
+```
+
+**Loading Overlay:**
+- Full screen semi-transparent overlay (black 50% opacity)
+- Centered circular progress indicator
+- Optional "Loading..." text below (14px, white)
+
+---
+
+### 53.14 Modal & Bottom Sheet System
+
+**Info-Point Bottom Sheet (from Section 40):**
+```dart
+showModalBottomSheet(
+  context: context,
+  isScrollControlled: true,
+  backgroundColor: Colors.white,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  ),
+  builder: (context) => Padding(
+    padding: EdgeInsets.all(24),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Handle bar
+        Container(
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: AppTheme.neutralGray300,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        SizedBox(height: 24),
+        // Content
+        // ...
+      ],
+    ),
+  ),
+)
+```
+
+**Bottom Sheet Rules:**
+- Top corner radius: 24px
+- Padding: 24px all sides
+- Handle bar: 40×4px, gray 300, 24px from top
+- Close button: Top right (optional)
+- Max height: 90% of screen
+
+---
+
+### 53.15 Trust-Focused UI Patterns
+
+**TrustScore Display:**
+```dart
+Row(
+  children: [
+    Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppTheme.successGreen.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.verified_rounded,
+               size: 16,
+               color: AppTheme.successGreen),
+          SizedBox(width: 4),
+          Text('850', /* 14px, w600, green */),
+        ],
+      ),
+    ),
+    SizedBox(width: 8),
+    Text('Very High Trust', /* 13px, gray700 */),
+  ],
+)
+```
+
+**Verification Badge:**
+```dart
+Container(
+  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+  decoration: BoxDecoration(
+    color: AppTheme.successGreen.withValues(alpha: 0.15),
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(Icons.check_circle_rounded,
+           size: 14,
+           color: AppTheme.successGreen),
+      SizedBox(width: 4),
+      Text('Verified', /* 11px, w500, green */),
+    ],
+  ),
+)
+```
+
+---
+
+### 53.16 Accessibility Requirements
+
+**Minimum Standards:**
+- Touch targets: 48×48px minimum
+- Color contrast: WCAG AA (4.5:1 for normal text, 3:1 for large text)
+- Text scaling: Support system font size settings
+- Semantic labels: All interactive elements labeled
+- Screen reader support: Meaningful labels for images, buttons, links
+
+**Haptic Feedback:**
+- Primary actions: `HapticFeedback.mediumImpact()`
+- Secondary actions: `HapticFeedback.selectionClick()`
+- Success events: `HapticFeedback.notificationFeedback(FeedbackType.success)`
+- Error events: `HapticFeedback.notificationFeedback(FeedbackType.error)`
+
+---
+
+### 53.17 Animation Standards
+
+**Standard Durations:**
+- Micro-interactions: 150ms (button press, icon change)
+- Transitions: 300ms (screen navigation, card expansion)
+- Complex animations: 500ms (loading sequences, multi-step)
+
+**Easing Curves:**
+- `Curves.easeInOut` (default)
+- `Curves.easeOut` (entrance)
+- `Curves.easeIn` (exit)
+- `Curves.fastOutSlowIn` (Material standard)
+
+**Animation Rules:**
+- Keep animations subtle and purposeful
+- Never block user input during animations
+- Provide skip options for long animations
+- Respect system animation preferences (reduce motion)
+
+---
+
+### 53.18 Code Implementation Requirements
+
+**Flutter Widget Standards:**
+```dart
+// ✅ CORRECT: Clean, reusable, follows design system
+Widget _buildFeatureCard() {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: AppTheme.neutralGray300),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Title', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        Text('Description', style: GoogleFonts.inter(fontSize: 14, color: AppTheme.neutralGray700)),
+      ],
+    ),
+  );
+}
+
+// ❌ WRONG: Hardcoded values, non-standard spacing, no theme
+Widget _buildBadCard() {
+  return Container(
+    padding: EdgeInsets.all(10),  // Wrong spacing
+    decoration: BoxDecoration(
+      color: Color(0xFFF5F5F5),  // Wrong color
+      borderRadius: BorderRadius.circular(8),  // Wrong radius
+    ),
+    child: Text('Title', style: TextStyle(fontSize: 15)),  // No font family
+  );
+}
+```
+
+**Required Imports:**
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/info_modal.dart';  // For info-points
+```
+
+---
+
+### 53.19 Quality Checklist for UI Generation
+
+**Before Marking UI Complete:**
+- [ ] All colors from AppTheme (no hardcoded hex values)
+- [ ] Spacing follows 16px grid (4, 8, 12, 16, 24, 32, 48)
+- [ ] Typography uses GoogleFonts.inter with correct weights
+- [ ] Border radius: 12px (cards/buttons), 20px (chips), 24px (bottom sheets)
+- [ ] Info-points follow Section 40 pattern
+- [ ] Icons sized correctly (16, 20, 24, 28, 32)
+- [ ] Touch targets ≥ 48×48px
+- [ ] Haptic feedback on interactions
+- [ ] White background (screens), white cards with gray borders
+- [ ] Purple used ONLY for accents, CTAs, links
+- [ ] Platform logos use official brand colors
+- [ ] Scrolling behavior correct (AppBar fixed, content scrolls)
+- [ ] Empty states included for all list views
+- [ ] Loading states included for async operations
+- [ ] Accessibility labels present
+
+---
+
+### 53.20 Agent & MCP Binding Rules
+
+**Mandatory for ALL UI Generation:**
+1. Claude IDE agents MUST load Section 53 before generating any UI code
+2. Figma MCP MUST use Section 53 as design spec source
+3. Playwright MCP MUST validate UI against Section 53 selectors
+4. Magic UI MCP MUST apply Section 53 patterns to generated components
+5. Any deviation from Section 53 requires explicit user approval
+
+**Enforcement:**
+- Code review MUST check Section 53 compliance
+- Automated linting SHOULD flag non-compliant spacing/colors
+- CI/CD pipeline MAY include visual regression tests against Section 53
+
+---
+
+### 53.21 Integration with Existing Sections
+
+**Section 53 integrates with:**
+
+- **Section 40 (UI Info Points):** Info-point modal patterns, education system
+- **Section 39 (App UI Navigation):** Screen structure, navigation patterns
+- **Section 47 (Digital Trust Passport):** TrustScore display patterns, verification badges
+- **Section 52 (Profile Linking):** Connected profiles cards, platform chips
+- **Section 50 (User Growth):** Onboarding UI, gamification elements
+- **Section 51 (Trust Passport Sharing):** Badge generation, QR code display
+
+**Design Token Export:**
+All values in Section 53 are the canonical design tokens. Any design tool, code generator, or MCP server MUST use these exact values.
+
+---
+
+**END OF SECTION 53**
+
+---
 ## END OF MASTER SPECIFICATION
 
 This document contains the complete, authoritative specification for SilentID.
@@ -14055,10 +15093,12 @@ This document contains the complete, authoritative specification for SilentID.
 - **Section 49:** Level 3 Marketplace Profile Verification (Share-Intent & Token-in-Bio) — NEW
 - **Section 50:** User Growth Strategy (5-Phase Activation to Network Growth) — NEW
 - **Section 51:** Public Trust Passport Sharing, Verified Badge System & TrustScore Visibility Control — NEW
+- **Section 52:** Unified Profile Linking & Platform Verification (Level 2, All Platforms) — NEW
+- **Section 53:** SilentID UI Design Language & Style Rules (Locked Design System) — NEW
 
 
 
-**Document Version:** 1.8.0
+**Document Version:** 1.9.0
 **Last Updated:** 2025-11-27
 **Created:** 2025-11-21
 **Purpose:** Master reference for SilentID development

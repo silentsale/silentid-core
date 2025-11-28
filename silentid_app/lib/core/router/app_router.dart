@@ -32,7 +32,15 @@ import '../../features/subscriptions/screens/subscription_overview_screen.dart';
 import '../../features/subscriptions/screens/upgrade_premium_screen.dart';
 import '../../features/subscriptions/screens/upgrade_pro_screen.dart';
 import '../../features/profile/screens/public_profile_viewer_screen.dart';
+import '../../features/profiles/screens/connect_profiles_screen.dart';
+import '../../features/profiles/screens/add_profile_screen.dart';
+import '../../features/profiles/screens/connected_profiles_screen.dart';
+import '../../features/profiles/screens/upgrade_to_verified_screen.dart';
+import '../../features/onboarding/screens/onboarding_tour_screen.dart';
+import '../../features/referral/screens/referral_screen.dart';
+import '../../features/sharing/screens/sharing_education_screen.dart';
 import '../../services/auth_service.dart';
+import '../../services/profile_linking_service.dart';
 import '../widgets/main_shell.dart';
 
 class AppRouter {
@@ -45,14 +53,21 @@ class AppRouter {
       final isAuthRoute = state.matchedLocation == '/' ||
           state.matchedLocation == '/email' ||
           state.matchedLocation == '/otp';
+      final isOnboardingRoute = state.matchedLocation == '/onboarding/tour';
 
-      // If authenticated and trying to access auth routes, redirect to home
+      // If authenticated and trying to access auth routes, check for onboarding
       if (isAuthenticated && isAuthRoute) {
+        // Check if onboarding has been completed (Section 50.2.1)
+        final hasCompletedOnboarding =
+            await OnboardingTourScreen.hasCompletedOnboarding();
+        if (!hasCompletedOnboarding) {
+          return '/onboarding/tour';
+        }
         return '/home';
       }
 
       // If not authenticated and trying to access protected routes, redirect to welcome
-      if (!isAuthenticated && !isAuthRoute) {
+      if (!isAuthenticated && !isAuthRoute && !isOnboardingRoute) {
         return '/';
       }
 
@@ -268,6 +283,53 @@ class AppRouter {
               }
               return PublicProfileViewerScreen(username: username);
             },
+          ),
+          // Section 52 - Connected Profiles routes
+          GoRoute(
+            path: '/profiles/connect',
+            name: 'connect-profiles',
+            builder: (context, state) => const ConnectProfilesScreen(),
+          ),
+          GoRoute(
+            path: '/profiles/add',
+            name: 'add-profile',
+            builder: (context, state) => const AddProfileScreen(),
+          ),
+          GoRoute(
+            path: '/profiles/connected',
+            name: 'connected-profiles',
+            builder: (context, state) => const ConnectedProfilesScreen(),
+          ),
+          GoRoute(
+            path: '/profiles/upgrade',
+            name: 'upgrade-to-verified',
+            builder: (context, state) {
+              final profile = state.extra as ConnectedProfile?;
+              if (profile == null) {
+                return const Scaffold(
+                  body: Center(child: Text('Profile required')),
+                );
+              }
+              return UpgradeToVerifiedScreen(profile: profile);
+            },
+          ),
+          // Section 50 - Onboarding routes
+          GoRoute(
+            path: '/onboarding/tour',
+            name: 'onboarding-tour',
+            builder: (context, state) => const OnboardingTourScreen(),
+          ),
+          // Section 50 - Referral routes
+          GoRoute(
+            path: '/referral',
+            name: 'referral',
+            builder: (context, state) => const ReferralScreen(),
+          ),
+          // Section 51 - Sharing Education routes
+          GoRoute(
+            path: '/sharing/education',
+            name: 'sharing-education',
+            builder: (context, state) => const SharingEducationScreen(),
           ),
         ],
       ),

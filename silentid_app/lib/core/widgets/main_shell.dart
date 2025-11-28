@@ -157,6 +157,8 @@ class ShellRouteHelper {
       return 0;
     } else if (location.startsWith('/evidence')) {
       return 1;
+    } else if (location.startsWith('/profiles')) {
+      return 1; // Connected Profiles are part of Evidence (Section 52)
     } else if (location.startsWith('/mutual-verification')) {
       return 2;
     } else if (location.startsWith('/profile')) {
@@ -169,6 +171,12 @@ class ShellRouteHelper {
       return 3; // Settings screens are part of Profile
     } else if (location.startsWith('/subscriptions')) {
       return 3; // Subscription screens are part of Profile
+    } else if (location.startsWith('/onboarding')) {
+      return 0; // Onboarding is part of Home flow
+    } else if (location.startsWith('/referral')) {
+      return 3; // Referral is part of Profile
+    } else if (location.startsWith('/sharing')) {
+      return 3; // Sharing is part of Profile
     }
     return 0; // Default to Home
   }
@@ -179,7 +187,8 @@ class ShellRouteHelper {
     if (location == '/' ||
         location == '/email' ||
         location == '/otp' ||
-        location.startsWith('/identity/verify')) {
+        location.startsWith('/identity/verify') ||
+        location.startsWith('/onboarding/tour')) {
       return false;
     }
     return true;

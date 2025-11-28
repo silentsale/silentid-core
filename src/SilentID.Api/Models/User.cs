@@ -43,6 +43,19 @@ public class User
     [StringLength(200)]
     public string? SignupDeviceId { get; set; }
 
+    // Section 50.6.1 - Referral Program
+    /// <summary>
+    /// User's unique referral code (8-character alphanumeric)
+    /// </summary>
+    [StringLength(20)]
+    public string? ReferralCode { get; set; }
+
+    /// <summary>
+    /// The referral code used when this user signed up (if any)
+    /// </summary>
+    [StringLength(20)]
+    public string? ReferredByCode { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

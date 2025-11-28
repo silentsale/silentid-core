@@ -21,6 +21,10 @@ public interface IEvidenceService
     Task<ProfileLinkEvidence?> VerifyShareIntentAsync(Guid profileLinkId, Guid userId, string sharedUrl, string deviceFingerprint);
     Task<bool> IsProfileAlreadyVerifiedByAnotherUserAsync(string url);
     Task<List<ProfileLinkEvidence>> GetUserProfileLinksAsync(Guid userId);
+
+    // Section 52 Methods
+    Task<bool> DeleteProfileLinkAsync(Guid profileLinkId, Guid userId);
+    Task<ProfileLinkEvidence?> UpdateProfileLinkVisibilityAsync(Guid profileLinkId, Guid userId, bool showOnPassport);
 }
 
 public class EvidenceService : IEvidenceService
@@ -239,9 +243,10 @@ public class EvidenceService : IEvidenceService
             return null;
         }
 
-        // Token found - upgrade to Level 3
+        // Token found - upgrade to Level 3 and set as Verified (Section 52)
         profileLink.VerificationLevel = 3;
         profileLink.VerificationMethod = "TokenInBio";
+        profileLink.LinkState = "Verified"; // Section 52.4
         profileLink.OwnershipLockedAt = DateTime.UtcNow;
         profileLink.SnapshotHash = ComputeSha256Hash(scrapedBioText);
         profileLink.NextReverifyAt = DateTime.UtcNow.AddDays(90);
@@ -296,9 +301,10 @@ public class EvidenceService : IEvidenceService
             return null;
         }
 
-        // Upgrade to Level 3 via Share-Intent
+        // Upgrade to Level 3 via Share-Intent and set as Verified (Section 52)
         profileLink.VerificationLevel = 3;
         profileLink.VerificationMethod = "ShareIntent";
+        profileLink.LinkState = "Verified"; // Section 52.4
         profileLink.OwnershipLockedAt = DateTime.UtcNow;
         profileLink.SnapshotHash = ComputeSha256Hash($"{sharedUrl}|{deviceFingerprint}|{DateTime.UtcNow:O}");
         profileLink.NextReverifyAt = DateTime.UtcNow.AddDays(90);
@@ -394,5 +400,50 @@ public class EvidenceService : IEvidenceService
             "poshmark" => Platform.Other, // Add to enum if needed
             _ => Platform.Other
         };
+    }
+
+    // ========== SECTION 52 METHODS ==========
+
+    /// <summary>
+    /// Delete a profile link (Section 52).
+    /// </summary>
+    public async Task<bool> DeleteProfileLinkAsync(Guid profileLinkId, Guid userId)
+    {
+        var profileLink = await _context.ProfileLinkEvidences
+            .FirstOrDefaultAsync(p => p.Id == profileLinkId && p.UserId == userId);
+
+        if (profileLink == null)
+        {
+            return false;
+        }
+
+        _context.ProfileLinkEvidences.Remove(profileLink);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Profile link {ProfileLinkId} deleted for user {UserId}", profileLinkId, userId);
+        return true;
+    }
+
+    /// <summary>
+    /// Update profile link passport visibility (Section 52).
+    /// </summary>
+    public async Task<ProfileLinkEvidence?> UpdateProfileLinkVisibilityAsync(Guid profileLinkId, Guid userId, bool showOnPassport)
+    {
+        var profileLink = await _context.ProfileLinkEvidences
+            .FirstOrDefaultAsync(p => p.Id == profileLinkId && p.UserId == userId);
+
+        if (profileLink == null)
+        {
+            return null;
+        }
+
+        profileLink.ShowOnPassport = showOnPassport;
+        profileLink.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Profile link {ProfileLinkId} visibility updated to {ShowOnPassport} for user {UserId}",
+            profileLinkId, showOnPassport, userId);
+        return profileLink;
     }
 }

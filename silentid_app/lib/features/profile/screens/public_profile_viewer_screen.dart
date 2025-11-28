@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/widgets/trust_score_star_rating.dart';
+import '../../../core/widgets/public_connected_profiles.dart';
 import '../../../models/public_profile.dart';
 import '../../../services/public_profile_service.dart';
 import '../../../services/api_service.dart';
@@ -286,7 +287,7 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  '${profile.trustScore}',
+                  '${profile.trustScore ?? 0}',
                   style: GoogleFonts.inter(
                     fontSize: 64,
                     fontWeight: FontWeight.bold,
@@ -295,7 +296,7 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  profile.trustScoreLabel,
+                  profile.trustScoreLabel ?? 'Hidden',
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -304,7 +305,7 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen> {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 TrustScoreStarRating.large(
-                  trustScore: profile.trustScore,
+                  trustScore: profile.trustScore ?? 0,
                   showNumericScore: false,
                   colorOverride: AppTheme.pureWhite,
                 ),
@@ -329,6 +330,15 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen> {
               spacing: 8,
               runSpacing: 8,
               children: profile.badges.map((badge) => _buildBadge(badge)).toList(),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+
+          // Connected Profiles Section (Section 52.6)
+          if (profile.hasConnectedProfiles) ...[
+            PublicConnectedProfilesWidget(
+              profiles: profile.connectedProfiles,
+              showInfoButton: true,
             ),
             const SizedBox(height: AppSpacing.lg),
           ],

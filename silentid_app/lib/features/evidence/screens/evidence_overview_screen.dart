@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/info_point_helper.dart';
+import '../../../core/data/info_point_data.dart';
 
 class EvidenceOverviewScreen extends StatelessWidget {
   const EvidenceOverviewScreen({super.key});
@@ -46,6 +48,7 @@ class EvidenceOverviewScreen extends StatelessWidget {
                 count: 0, // TODO: Get from API
                 countLabel: 'receipts verified',
                 onTap: () => context.push('/evidence/receipts'),
+                infoPoint: InfoPoints.emailScanning,
               ),
 
               const SizedBox(height: 16),
@@ -60,6 +63,7 @@ class EvidenceOverviewScreen extends StatelessWidget {
                 count: 0, // TODO: Get from API
                 countLabel: 'screenshots uploaded',
                 onTap: () => context.push('/evidence/screenshots'),
+                infoPoint: InfoPoints.screenshotIntegrity,
               ),
 
               const SizedBox(height: 16),
@@ -74,6 +78,7 @@ class EvidenceOverviewScreen extends StatelessWidget {
                 count: 0, // TODO: Get from API
                 countLabel: 'profiles linked',
                 onTap: () => context.push('/evidence/profile-links'),
+                infoPoint: InfoPoints.evidenceVault,
               ),
 
               const SizedBox(height: 32),
@@ -121,6 +126,7 @@ class EvidenceOverviewScreen extends StatelessWidget {
     required int count,
     required String countLabel,
     required VoidCallback onTap,
+    InfoPointData? infoPoint,
   }) {
     return InkWell(
       onTap: onTap,
@@ -154,13 +160,21 @@ class EvidenceOverviewScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        title,
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.deepBlack,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            title,
+                            style: GoogleFonts.inter(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.deepBlack,
+                            ),
+                          ),
+                          if (infoPoint != null) ...[
+                            const SizedBox(width: 6),
+                            InfoPointHelper(data: infoPoint),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
