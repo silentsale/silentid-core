@@ -22,10 +22,6 @@ import '../../features/settings/screens/privacy_settings_screen.dart';
 import '../../features/settings/screens/connected_devices_screen.dart';
 import '../../features/settings/screens/data_export_screen.dart';
 import '../../features/settings/screens/delete_account_screen.dart';
-import '../../features/mutual_verification/screens/mutual_verification_home_screen.dart';
-import '../../features/mutual_verification/screens/create_verification_screen.dart';
-import '../../features/mutual_verification/screens/incoming_requests_screen.dart';
-import '../../features/mutual_verification/screens/verification_details_screen.dart';
 import '../../features/safety/screens/report_user_screen.dart';
 import '../../features/safety/screens/my_reports_screen.dart';
 import '../../features/safety/screens/report_details_screen.dart';
@@ -40,6 +36,10 @@ import '../../features/profiles/screens/upgrade_to_verified_screen.dart';
 import '../../features/onboarding/screens/onboarding_tour_screen.dart';
 import '../../features/referral/screens/referral_screen.dart';
 import '../../features/sharing/screens/sharing_education_screen.dart';
+import '../../features/security/screens/security_center_screen.dart';
+import '../../features/security/screens/login_activity_screen.dart';
+import '../../features/security/screens/security_alerts_screen.dart';
+import '../../features/security/screens/security_risk_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/profile_linking_service.dart';
 import '../widgets/main_shell.dart';
@@ -209,34 +209,6 @@ class AppRouter {
             builder: (context, state) => const DeleteAccountScreen(),
           ),
           GoRoute(
-            path: '/mutual-verification',
-            name: 'mutual-verification',
-            builder: (context, state) => const MutualVerificationHomeScreen(),
-          ),
-          GoRoute(
-            path: '/mutual-verification/create',
-            name: 'create-verification',
-            builder: (context, state) => const CreateVerificationScreen(),
-          ),
-          GoRoute(
-            path: '/mutual-verification/incoming',
-            name: 'incoming-requests',
-            builder: (context, state) => const IncomingRequestsScreen(),
-          ),
-          GoRoute(
-            path: '/mutual-verification/details/:id',
-            name: 'verification-details',
-            builder: (context, state) {
-              final id = state.pathParameters['id'];
-              if (id == null) {
-                return const Scaffold(
-                  body: Center(child: Text('Verification ID required')),
-                );
-              }
-              return VerificationDetailsScreen(verificationId: id);
-            },
-          ),
-          GoRoute(
             path: '/safety/report',
             name: 'report-user',
             builder: (context, state) {
@@ -336,6 +308,42 @@ class AppRouter {
             path: '/sharing/education',
             name: 'sharing-education',
             builder: (context, state) => const SharingEducationScreen(),
+          ),
+          // Section 15 - Security Center routes
+          GoRoute(
+            path: '/security',
+            name: 'security-center',
+            builder: (context, state) => const SecurityCenterScreen(),
+          ),
+          GoRoute(
+            path: '/security/login-activity',
+            name: 'login-activity',
+            builder: (context, state) => const LoginActivityScreen(),
+          ),
+          GoRoute(
+            path: '/security/alerts',
+            name: 'security-alerts',
+            builder: (context, state) => const SecurityAlertsScreen(),
+          ),
+          GoRoute(
+            path: '/security/identity',
+            name: 'security-identity',
+            redirect: (context, state) => '/identity/status',
+          ),
+          GoRoute(
+            path: '/security/vault',
+            name: 'security-vault',
+            redirect: (context, state) => '/evidence',
+          ),
+          GoRoute(
+            path: '/security/device',
+            name: 'security-device',
+            redirect: (context, state) => '/settings/devices',
+          ),
+          GoRoute(
+            path: '/security/risk',
+            name: 'security-risk',
+            builder: (context, state) => const SecurityRiskScreen(),
           ),
         ],
       ),

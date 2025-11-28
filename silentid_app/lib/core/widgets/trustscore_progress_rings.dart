@@ -6,39 +6,34 @@ import '../theme/app_theme.dart';
 /// TrustScore Progress Rings Widget (Section 50.3.2)
 ///
 /// Gamifies the TrustScore by showing progress rings for each category:
-/// - Identity (200 max)
-/// - Evidence (300 max)
-/// - Behaviour (300 max)
-/// - Peer Verification (200 max)
+/// - Identity (250 max)
+/// - Evidence (400 max)
+/// - Behaviour (350 max)
 ///
 /// Also supports nudges for pending actions.
 class TrustScoreProgressRings extends StatelessWidget {
   final int identityScore;
   final int evidenceScore;
   final int behaviourScore;
-  final int peerScore;
   final int? pendingVerifications;
   final int? pendingConnections;
   final VoidCallback? onIdentityTap;
   final VoidCallback? onEvidenceTap;
   final VoidCallback? onBehaviourTap;
-  final VoidCallback? onPeerTap;
 
   const TrustScoreProgressRings({
     super.key,
     required this.identityScore,
     required this.evidenceScore,
     required this.behaviourScore,
-    required this.peerScore,
     this.pendingVerifications,
     this.pendingConnections,
     this.onIdentityTap,
     this.onEvidenceTap,
     this.onBehaviourTap,
-    this.onPeerTap,
   });
 
-  int get totalScore => identityScore + evidenceScore + behaviourScore + peerScore;
+  int get totalScore => identityScore + evidenceScore + behaviourScore;
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +93,7 @@ class TrustScoreProgressRings extends StatelessWidget {
               _buildProgressRing(
                 label: 'Identity',
                 score: identityScore,
-                maxScore: 200,
+                maxScore: 250,
                 color: AppTheme.primaryPurple,
                 icon: Icons.shield_outlined,
                 onTap: onIdentityTap,
@@ -106,7 +101,7 @@ class TrustScoreProgressRings extends StatelessWidget {
               _buildProgressRing(
                 label: 'Evidence',
                 score: evidenceScore,
-                maxScore: 300,
+                maxScore: 400,
                 color: AppTheme.warningAmber,
                 icon: Icons.folder_outlined,
                 onTap: onEvidenceTap,
@@ -122,21 +117,10 @@ class TrustScoreProgressRings extends StatelessWidget {
               _buildProgressRing(
                 label: 'Behaviour',
                 score: behaviourScore,
-                maxScore: 300,
+                maxScore: 350,
                 color: AppTheme.successGreen,
                 icon: Icons.trending_up,
                 onTap: onBehaviourTap,
-              ),
-              _buildProgressRing(
-                label: 'Peer',
-                score: peerScore,
-                maxScore: 200,
-                color: const Color(0xFF3B82F6), // Blue
-                icon: Icons.people_outline,
-                onTap: onPeerTap,
-                badge: pendingVerifications != null && pendingVerifications! > 0
-                    ? pendingVerifications.toString()
-                    : null,
               ),
             ],
           ),

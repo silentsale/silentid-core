@@ -599,11 +599,6 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
                 'Account Age',
                 _profile!.accountAge,
               ),
-              const Divider(height: 24),
-              _buildMetricRow(
-                'Mutual Verifications',
-                _profile!.mutualVerificationCount.toString(),
-              ),
             ],
           ),
         ),

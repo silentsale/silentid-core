@@ -46,7 +46,6 @@ builder.Services.AddScoped<IDuplicateDetectionService, DuplicateDetectionService
 builder.Services.AddScoped<IStripeIdentityService, StripeIdentityService>();
 builder.Services.AddScoped<IEvidenceService, EvidenceService>();
 builder.Services.AddScoped<ITrustScoreService, TrustScoreService>();
-builder.Services.AddScoped<IMutualVerificationService, MutualVerificationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
@@ -57,6 +56,7 @@ builder.Services.AddScoped<IExtractionService, ExtractionService>();
 builder.Services.AddScoped<IReferralService, ReferralService>();
 builder.Services.AddScoped<IForwardingAliasService, ForwardingAliasService>();
 builder.Services.AddScoped<IReceiptParsingService, ReceiptParsingService>();
+builder.Services.AddScoped<ISecurityCenterService, SecurityCenterService>();
 
 // Add HttpClient factory for OAuth services
 builder.Services.AddHttpClient();

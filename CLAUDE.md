@@ -63,11 +63,13 @@
 
 **Calculation Formula:**
 ```
-Raw Score = Identity + Evidence + Behaviour + Peer + URS (max 1200)
-Final TrustScore = (Raw Score / 1200) × 1000
+TrustScore = Identity + Evidence + Behaviour (max 1000)
 ```
 
-**Components:** Identity (200), Evidence (300), Behaviour (300), Peer (200), URS (200)
+**Components:**
+- **Identity (250 pts):** Email verification, Stripe Identity verification, passkey setup
+- **Evidence (400 pts):** Receipts, screenshots, verified profile links from marketplaces
+- **Behaviour (350 pts):** Account age, login patterns, platform engagement, risk signals
 
 **Labels:** 850-1000 Exceptional | 700-849 Very High | 550-699 High | 400-549 Moderate | 250-399 Low | 0-249 High Risk
 
@@ -95,6 +97,10 @@ SilentID lets users connect any external profile (Instagram, TikTok, LinkedIn, D
 
 SilentID uses a locked, premium Apple-style UI based on unified spacing (16px grid), card shapes, typography (Inter font), info-points, and scrollable sections. Royal Purple #5A3EB8 for accents only. All screens comply with Section 53 design system. **All UI generation MUST reference Section 53.**
 
+### 8. LOGIN, DEVICES & SESSION SECURITY
+
+**100% passwordless authentication** with intelligent method selection: Passkey → Apple/Google → Email OTP (fallback only). New or suspicious devices trigger step-up authentication using stronger methods. High-risk patterns may temporarily restrict OTP access. Sessions are short-lived, device-bound (fingerprint + app version), and renew silently only on trusted devices. Login events feed into TrustScore (stable logins boost score) and RiskScore (suspicious patterns flagged). **Full rules in Section 54 of CLAUDE_FULL.md.**
+
 ---
 
 ## GLOBAL RULES (MANDATORY)
@@ -106,8 +112,8 @@ SilentID uses a locked, premium Apple-style UI based on unified spacing (16px gr
 3. **EMAIL = IDENTITY ANCHOR:** One email per account. Duplicate detection enforced.
 4. **OWNERSHIP FIRST:** NEVER extract data from marketplace profile until ownership verified.
 5. **DEFAMATION-SAFE LANGUAGE:** Never say "scammer", "fraudster". Use "safety concern flagged", "risk signals detected".
-6. **EVIDENCE VAULT CAP:** Max 15% of TrustScore (45 points). Cannot override verified behavior.
-7. **LEVEL 3 ONLY FOR URS:** Only Level 3 verified profiles contribute to Universal Reputation Score.
+6. **EVIDENCE VAULT CAP:** Max 15% of TrustScore. Cannot override verified behavior.
+7. **LEVEL 3 FOR TRUST BOOST:** Only Level 3 verified profiles contribute maximum points to Evidence score.
 
 ---
 

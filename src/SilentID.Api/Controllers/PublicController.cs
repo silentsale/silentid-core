@@ -52,7 +52,6 @@ public class PublicController : ControllerBase
         public string AccountAge { get; set; } = string.Empty;
         public List<string> VerifiedPlatforms { get; set; } = new();
         public int VerifiedTransactionCount { get; set; }
-        public int MutualVerificationCount { get; set; }
         public List<string> Badges { get; set; } = new();
         public string? RiskWarning { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -174,18 +173,12 @@ public class PublicController : ControllerBase
             .Where(r => r.UserId == user.Id && r.EvidenceState == EvidenceState.Valid)
             .CountAsync();
 
-        // Count mutual verifications
-        var mutualVerificationCount = await _context.MutualVerifications
-            .AsNoTracking()
-            .Where(m => (m.UserAId == user.Id || m.UserBId == user.Id) && m.Status == MutualVerificationStatus.Confirmed)
-            .CountAsync();
-
         // Calculate account age
         var accountAgeDays = (DateTime.UtcNow - user.CreatedAt).Days;
         var accountAge = accountAgeDays == 0 ? "Today" : $"{accountAgeDays} days";
 
         // Generate badges
-        var badges = GenerateBadges(identityVerified, verifiedTransactionCount, mutualVerificationCount);
+        var badges = GenerateBadges(identityVerified, verifiedTransactionCount);
 
         // Check for verified safety reports (≥3 verified reports = public warning)
         var verifiedReportCount = await _context.Reports
@@ -262,7 +255,6 @@ public class PublicController : ControllerBase
             AccountAge = accountAge,
             VerifiedPlatforms = verifiedPlatforms,
             VerifiedTransactionCount = verifiedTransactionCount,
-            MutualVerificationCount = mutualVerificationCount,
             Badges = badges,
             RiskWarning = riskWarning,
             CreatedAt = user.CreatedAt,
@@ -365,7 +357,7 @@ public class PublicController : ControllerBase
     /// <summary>
     /// Generates user-facing badges based on verification status and activity.
     /// </summary>
-    private static List<string> GenerateBadges(bool identityVerified, int transactionCount, int mutualVerificationCount)
+    private static List<string> GenerateBadges(bool identityVerified, int transactionCount)
     {
         var badges = new List<string>();
 
@@ -378,9 +370,6 @@ public class PublicController : ControllerBase
             badges.Add("100+ verified transactions");
         else if (transactionCount >= 50)
             badges.Add("50+ verified transactions");
-
-        if (mutualVerificationCount >= 20)
-            badges.Add("Peer-verified user");
 
         return badges;
     }

@@ -131,14 +131,6 @@ class _TrustScoreBreakdownScreenState
                     ),
                     const SizedBox(height: 24),
 
-                    _buildComponentSection(
-                      'Peer Verification Score',
-                      Icons.handshake,
-                      _breakdownData!['components']['peer'],
-                      infoPoint: InfoPoints.peerVerificationComponent,
-                    ),
-                    const SizedBox(height: 24),
-
                     // URS Component (Section 47)
                     if (_breakdownData!['components']['urs'] != null)
                       _buildComponentSection(

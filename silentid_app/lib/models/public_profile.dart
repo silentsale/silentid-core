@@ -80,7 +80,6 @@ class PublicProfile {
   final String accountAge; // "180 days", "Today", etc.
   final List<String> verifiedPlatforms; // ["Vinted", "eBay", "Depop"]
   final int verifiedTransactionCount;
-  final int mutualVerificationCount;
   final List<String> badges; // ["Identity Verified", "500+ verified transactions"]
   final String? riskWarning; // ⚠️ Safety concern message (if any)
   final DateTime createdAt;
@@ -97,7 +96,6 @@ class PublicProfile {
     required this.accountAge,
     required this.verifiedPlatforms,
     required this.verifiedTransactionCount,
-    required this.mutualVerificationCount,
     required this.badges,
     this.riskWarning,
     required this.createdAt,
@@ -133,7 +131,6 @@ class PublicProfile {
           .map((e) => e as String)
           .toList(),
       verifiedTransactionCount: json['verifiedTransactionCount'] as int,
-      mutualVerificationCount: json['mutualVerificationCount'] as int,
       badges:
           (json['badges'] as List<dynamic>).map((e) => e as String).toList(),
       riskWarning: json['riskWarning'] as String?,
@@ -155,7 +152,6 @@ class PublicProfile {
       'accountAge': accountAge,
       'verifiedPlatforms': verifiedPlatforms,
       'verifiedTransactionCount': verifiedTransactionCount,
-      'mutualVerificationCount': mutualVerificationCount,
       'badges': badges,
       'riskWarning': riskWarning,
       'createdAt': createdAt.toIso8601String(),

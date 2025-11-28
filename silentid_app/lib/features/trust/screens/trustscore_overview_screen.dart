@@ -39,13 +39,11 @@ class _TrustScoreOverviewScreenState extends State<TrustScoreOverviewScreen> {
             'score': response.data['totalScore'] ?? 0,
             'level': response.data['label'] ?? 'Unknown',
             'identity': response.data['identityScore'] ?? 0,
-            'identityMax': 200,
+            'identityMax': 250,
             'evidence': response.data['evidenceScore'] ?? 0,
-            'evidenceMax': 300,
+            'evidenceMax': 400,
             'behaviour': response.data['behaviourScore'] ?? 0,
-            'behaviourMax': 300,
-            'peer': response.data['peerScore'] ?? 0,
-            'peerMax': 200,
+            'behaviourMax': 350,
           };
           _isLoading = false;
         });
@@ -125,14 +123,6 @@ class _TrustScoreOverviewScreenState extends State<TrustScoreOverviewScreen> {
                       _trustScoreData!['behaviour'],
                       _trustScoreData!['behaviourMax'],
                       Icons.trending_up,
-                    ),
-                    const SizedBox(height: 16),
-
-                    _buildComponentCard(
-                      'Peer Verification',
-                      _trustScoreData!['peer'],
-                      _trustScoreData!['peerMax'],
-                      Icons.handshake,
                     ),
                     const SizedBox(height: 32),
 

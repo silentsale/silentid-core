@@ -40,7 +40,6 @@ class UserApiService {
       evidenceCount: evidence.totalCount,
       // These require additional endpoints not yet implemented
       riskScore: 0,
-      mutualVerificationsCount: 0,
     );
   }
 
@@ -127,7 +126,6 @@ class UserProfile {
   final String trustLevel;
   final int riskScore;
   final int evidenceCount;
-  final int mutualVerificationsCount;
 
   UserProfile({
     required this.id,
@@ -145,7 +143,6 @@ class UserProfile {
     required this.trustLevel,
     required this.riskScore,
     required this.evidenceCount,
-    required this.mutualVerificationsCount,
   });
 
   /// Get display name or fallback to username or email

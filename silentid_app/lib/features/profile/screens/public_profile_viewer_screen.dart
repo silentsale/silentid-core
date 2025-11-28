@@ -368,8 +368,8 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen> {
               Expanded(
                 child: _buildMetricCard(
                   icon: Icons.verified_user_outlined,
-                  label: 'Verified',
-                  value: '${profile.mutualVerificationCount}',
+                  label: 'Platforms',
+                  value: '${profile.verifiedPlatforms.length}',
                 ),
               ),
             ],

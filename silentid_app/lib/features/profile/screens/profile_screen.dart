@@ -39,7 +39,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String get accountType => _profile?.accountType ?? "Free";
   int get riskScore => _profile?.riskScore ?? 0;
   int get evidenceCount => _profile?.evidenceCount ?? 0;
-  int get mutualVerificationsCount => _profile?.mutualVerificationsCount ?? 0;
 
   @override
   void initState() {
@@ -392,29 +391,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 showChevron: false,
               ),
 
-              Divider(height: 1, color: AppTheme.neutralGray300),
-
-              SettingsListItem(
-                icon: Icons.check_circle_outline,
-                title: "Mutual verification",
-                subtitle: "$mutualVerificationsCount verified",
-                onTap: () {
-                  Navigator.pushNamed(context, '/mutual-verification');
-                },
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    InfoPointHelper(data: InfoPoints.peerVerificationComponent),
-                    const SizedBox(width: AppSpacing.xs),
-                    const Icon(
-                      Icons.chevron_right,
-                      size: 24,
-                      color: AppTheme.neutralGray700,
-                    ),
-                  ],
-                ),
-                showChevron: false,
-              ),
             ],
           ),
         ),

@@ -33,15 +33,13 @@ class TrustScoreApiService {
   }
 }
 
-/// TrustScore summary response model
+/// TrustScore summary response model (3-component: Identity 250, Evidence 400, Behaviour 350)
 class TrustScoreSummary {
   final int totalScore;
   final String label;
   final int identityScore;
   final int evidenceScore;
   final int behaviourScore;
-  final int peerScore;
-  final int ursScore;
   final DateTime? lastCalculated;
 
   TrustScoreSummary({
@@ -50,8 +48,6 @@ class TrustScoreSummary {
     required this.identityScore,
     required this.evidenceScore,
     required this.behaviourScore,
-    required this.peerScore,
-    required this.ursScore,
     this.lastCalculated,
   });
 
@@ -62,8 +58,6 @@ class TrustScoreSummary {
       identityScore: json['identityScore'] ?? 0,
       evidenceScore: json['evidenceScore'] ?? 0,
       behaviourScore: json['behaviourScore'] ?? 0,
-      peerScore: json['peerScore'] ?? 0,
-      ursScore: json['ursScore'] ?? 0,
       lastCalculated: json['lastCalculated'] != null
           ? DateTime.tryParse(json['lastCalculated'])
           : null,
@@ -71,15 +65,13 @@ class TrustScoreSummary {
   }
 }
 
-/// TrustScore breakdown response model
+/// TrustScore breakdown response model (3-component model)
 class TrustScoreBreakdownResponse {
   final int totalScore;
   final String label;
   final ComponentBreakdown identity;
   final ComponentBreakdown evidence;
   final ComponentBreakdown behaviour;
-  final ComponentBreakdown peer;
-  final ComponentBreakdown urs;
 
   TrustScoreBreakdownResponse({
     required this.totalScore,
@@ -87,8 +79,6 @@ class TrustScoreBreakdownResponse {
     required this.identity,
     required this.evidence,
     required this.behaviour,
-    required this.peer,
-    required this.urs,
   });
 
   factory TrustScoreBreakdownResponse.fromJson(Map<String, dynamic> json) {
@@ -102,10 +92,6 @@ class TrustScoreBreakdownResponse {
           components['evidence'] as Map<String, dynamic>? ?? {}),
       behaviour: ComponentBreakdown.fromJson(
           components['behaviour'] as Map<String, dynamic>? ?? {}),
-      peer: ComponentBreakdown.fromJson(
-          components['peer'] as Map<String, dynamic>? ?? {}),
-      urs: ComponentBreakdown.fromJson(
-          components['urs'] as Map<String, dynamic>? ?? {}),
     );
   }
 
@@ -118,14 +104,12 @@ class TrustScoreBreakdownResponse {
         'identity': identity.toUiFormat(),
         'evidence': evidence.toUiFormat(),
         'behaviour': behaviour.toUiFormat(),
-        'peer': peer.toUiFormat(),
-        'urs': urs.toUiFormat(),
       },
     };
   }
 }
 
-/// Component breakdown model (identity, evidence, behaviour, peer, urs)
+/// Component breakdown model (identity, evidence, behaviour)
 class ComponentBreakdown {
   final int score;
   final int maxScore;
@@ -223,14 +207,12 @@ class TrustScoreHistoryResponse {
   }
 }
 
-/// Individual TrustScore snapshot for history
+/// Individual TrustScore snapshot for history (3-component model)
 class TrustScoreSnapshot {
   final int score;
   final int identityScore;
   final int evidenceScore;
   final int behaviourScore;
-  final int peerScore;
-  final int ursScore;
   final DateTime date;
 
   TrustScoreSnapshot({
@@ -238,8 +220,6 @@ class TrustScoreSnapshot {
     required this.identityScore,
     required this.evidenceScore,
     required this.behaviourScore,
-    required this.peerScore,
-    required this.ursScore,
     required this.date,
   });
 
@@ -249,8 +229,6 @@ class TrustScoreSnapshot {
       identityScore: json['identityScore'] ?? 0,
       evidenceScore: json['evidenceScore'] ?? 0,
       behaviourScore: json['behaviourScore'] ?? 0,
-      peerScore: json['peerScore'] ?? 0,
-      ursScore: json['ursScore'] ?? 0,
       date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
     );
   }

@@ -67,32 +67,23 @@ public class TrustScoreService : ITrustScoreService
             .Where(p => p.UserId == userId && p.EvidenceState == EvidenceState.Valid && p.LinkState == "Verified")
             .CountAsync();
 
-        var mutualVerificationsCount = await _context.MutualVerifications
-            .Where(m => (m.UserAId == userId || m.UserBId == userId) && m.Status == MutualVerificationStatus.Confirmed)
-            .CountAsync();
-
         var reportsCount = await _context.Reports
             .Where(r => r.ReportedUserId == userId && r.Status == ReportStatus.Verified)
             .CountAsync();
 
         var accountAgeDays = (DateTime.UtcNow - user.CreatedAt).Days;
 
-        // Build breakdown (5 components: Identity, Evidence, Behaviour, Peer, URS)
+        // Build breakdown (3 components: Identity 250, Evidence 400, Behaviour 350 = max 1000)
         var breakdown = new TrustScoreBreakdown
         {
             Identity = BuildIdentityBreakdown(user, identityVerification, accountAgeDays),
             Evidence = BuildEvidenceBreakdown(receiptsCount, screenshotsCount, linkedProfilesCount, verifiedProfilesCount),
-            Behaviour = BuildBehaviourBreakdown(reportsCount, accountAgeDays),
-            Peer = BuildPeerBreakdown(mutualVerificationsCount),
-            Urs = await BuildUrsBreakdownAsync(userId)
+            Behaviour = BuildBehaviourBreakdown(reportsCount, accountAgeDays)
         };
 
-        // Section 47: New 5-component formula
-        // Raw score = Identity (200) + Evidence (300) + Behaviour (300) + Peer (200) + URS (200) = max 1200
-        // Final TrustScore = (Raw Score / 1200) × 1000 (normalized to 0-1000)
-        var rawScore = breakdown.Identity.Score + breakdown.Evidence.Score +
-                       breakdown.Behaviour.Score + breakdown.Peer.Score + breakdown.Urs.Score;
-        breakdown.TotalScore = (int)Math.Round((rawScore / 1200.0) * 1000);
+        // 3-component formula: Identity (250) + Evidence (400) + Behaviour (350) = max 1000
+        // No normalization required
+        breakdown.TotalScore = breakdown.Identity.Score + breakdown.Evidence.Score + breakdown.Behaviour.Score;
         breakdown.Label = GetTrustLabel(breakdown.TotalScore);
 
         return breakdown;
@@ -122,8 +113,8 @@ public class TrustScoreService : ITrustScoreService
             IdentityScore = breakdown.Identity.Score,
             EvidenceScore = breakdown.Evidence.Score,
             BehaviourScore = breakdown.Behaviour.Score,
-            PeerScore = breakdown.Peer.Score,
-            UrsScore = breakdown.Urs.Score, // Section 47: Add URS component
+            PeerScore = 0, // Deprecated - kept for backwards compatibility
+            UrsScore = 0,  // Deprecated - kept for backwards compatibility
             BreakdownJson = System.Text.Json.JsonSerializer.Serialize(breakdown),
             CreatedAt = DateTime.UtcNow
         };
@@ -131,8 +122,8 @@ public class TrustScoreService : ITrustScoreService
         _context.TrustScoreSnapshots.Add(snapshot);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("TrustScore calculated for user {UserId}: {Score} (Identity:{Identity} Evidence:{Evidence} Behaviour:{Behaviour} Peer:{Peer} URS:{Urs})",
-            userId, snapshot.Score, snapshot.IdentityScore, snapshot.EvidenceScore, snapshot.BehaviourScore, snapshot.PeerScore, snapshot.UrsScore);
+        _logger.LogInformation("TrustScore calculated for user {UserId}: {Score} (Identity:{Identity} Evidence:{Evidence} Behaviour:{Behaviour})",
+            userId, snapshot.Score, snapshot.IdentityScore, snapshot.EvidenceScore, snapshot.BehaviourScore);
 
         return snapshot;
     }
@@ -164,16 +155,16 @@ public class TrustScoreService : ITrustScoreService
             });
         }
 
-        // Email verification (25 points)
+        // Email verification (50 points)
         if (user.IsEmailVerified)
         {
             items.Add(new ScoreItem
             {
                 Description = "Email verified",
-                Points = 25,
+                Points = 50,
                 Status = "completed"
             });
-            breakdown.Score += 25;
+            breakdown.Score += 50;
         }
         else
         {
@@ -185,28 +176,28 @@ public class TrustScoreService : ITrustScoreService
             });
         }
 
-        // Phone verification (15 points)
+        // Phone verification (30 points)
         if (user.IsPhoneVerified)
         {
             items.Add(new ScoreItem
             {
                 Description = "Phone verified",
-                Points = 15,
+                Points = 30,
                 Status = "completed"
             });
-            breakdown.Score += 15;
+            breakdown.Score += 30;
         }
 
-        // Account age (10 points)
+        // Account age (20 points)
         if (accountAgeDays >= 30)
         {
             items.Add(new ScoreItem
             {
                 Description = "Account active for 30+ days",
-                Points = 10,
+                Points = 20,
                 Status = "completed"
             });
-            breakdown.Score += 10;
+            breakdown.Score += 20;
         }
 
         breakdown.Items = items;
@@ -218,10 +209,10 @@ public class TrustScoreService : ITrustScoreService
         var breakdown = new EvidenceBreakdown();
         var items = new List<ScoreItem>();
 
-        // Receipts (up to 150 points)
+        // Receipts (up to 200 points)
         if (receiptsCount > 0)
         {
-            var receiptPoints = Math.Min(receiptsCount * 5, 150);
+            var receiptPoints = Math.Min(receiptsCount * 5, 200);
             items.Add(new ScoreItem
             {
                 Description = $"{receiptsCount} verified receipt{(receiptsCount > 1 ? "s" : "")}",
@@ -231,10 +222,10 @@ public class TrustScoreService : ITrustScoreService
             breakdown.Score += receiptPoints;
         }
 
-        // Screenshots (up to 100 points)
+        // Screenshots (up to 120 points)
         if (screenshotsCount > 0)
         {
-            var screenshotPoints = Math.Min(screenshotsCount * 10, 100);
+            var screenshotPoints = Math.Min(screenshotsCount * 10, 120);
             items.Add(new ScoreItem
             {
                 Description = $"{screenshotsCount} verified screenshot{(screenshotsCount > 1 ? "s" : "")}",
@@ -244,14 +235,14 @@ public class TrustScoreService : ITrustScoreService
             breakdown.Score += screenshotPoints;
         }
 
-        // Section 52.7: Connected Profiles - Linked (+5 each) and Verified (+15 each)
-        // Maximum 50 points total from profile connections
+        // Section 52.7: Connected Profiles - Linked (+8 each) and Verified (+20 each)
+        // Maximum 80 points total from profile connections
         var totalProfilePoints = 0;
 
-        // Verified profiles: +15 points each (Section 52.7)
+        // Verified profiles: +20 points each (Section 52.7)
         if (verifiedProfilesCount > 0)
         {
-            var verifiedPoints = verifiedProfilesCount * 15;
+            var verifiedPoints = verifiedProfilesCount * 20;
             items.Add(new ScoreItem
             {
                 Description = $"{verifiedProfilesCount} verified profile{(verifiedProfilesCount > 1 ? "s" : "")} (ownership confirmed)",
@@ -261,10 +252,10 @@ public class TrustScoreService : ITrustScoreService
             totalProfilePoints += verifiedPoints;
         }
 
-        // Linked profiles: +5 points each (Section 52.7)
+        // Linked profiles: +8 points each (Section 52.7)
         if (linkedProfilesCount > 0)
         {
-            var linkedPoints = linkedProfilesCount * 5;
+            var linkedPoints = linkedProfilesCount * 8;
             items.Add(new ScoreItem
             {
                 Description = $"{linkedProfilesCount} linked profile{(linkedProfilesCount > 1 ? "s" : "")} (pending verification)",
@@ -274,8 +265,8 @@ public class TrustScoreService : ITrustScoreService
             totalProfilePoints += linkedPoints;
         }
 
-        // Cap profile points at 50 (per original spec)
-        breakdown.Score += Math.Min(totalProfilePoints, 50);
+        // Cap profile points at 80 (per 3-component model)
+        breakdown.Score += Math.Min(totalProfilePoints, 80);
 
         if (items.Count == 0)
         {
@@ -296,20 +287,20 @@ public class TrustScoreService : ITrustScoreService
         var breakdown = new BehaviourBreakdown();
         var items = new List<ScoreItem>();
 
-        // No safety reports (100 points base)
+        // No safety reports (150 points base)
         if (reportsCount == 0)
         {
             items.Add(new ScoreItem
             {
                 Description = "No verified safety reports",
-                Points = 100,
+                Points = 150,
                 Status = "completed"
             });
-            breakdown.Score += 100;
+            breakdown.Score += 150;
         }
         else
         {
-            var deduction = Math.Min(reportsCount * 50, 100);
+            var deduction = Math.Min(reportsCount * 75, 150);
             items.Add(new ScoreItem
             {
                 Description = $"{reportsCount} verified safety report{(reportsCount > 1 ? "s" : "")}",
@@ -364,90 +355,8 @@ public class TrustScoreService : ITrustScoreService
         return breakdown;
     }
 
-    private PeerBreakdown BuildPeerBreakdown(int mutualVerificationsCount)
-    {
-        var breakdown = new PeerBreakdown();
-        var items = new List<ScoreItem>();
-
-        // Mutual verifications (up to 200 points)
-        if (mutualVerificationsCount > 0)
-        {
-            var peerPoints = Math.Min(mutualVerificationsCount * 20, 200);
-            items.Add(new ScoreItem
-            {
-                Description = $"{mutualVerificationsCount} mutual verification{(mutualVerificationsCount > 1 ? "s" : "")}",
-                Points = peerPoints,
-                Status = "completed"
-            });
-            breakdown.Score += peerPoints;
-        }
-        else
-        {
-            items.Add(new ScoreItem
-            {
-                Description = "No mutual verifications yet",
-                Points = 0,
-                Status = "missing"
-            });
-        }
-
-        breakdown.Items = items;
-        return breakdown;
-    }
-
-    private async Task<UrsBreakdown> BuildUrsBreakdownAsync(Guid userId)
-    {
-        var breakdown = new UrsBreakdown();
-        var items = new List<ScoreItem>();
-
-        // Get all non-expired external ratings for this user
-        var externalRatings = await _context.ExternalRatings
-            .AsNoTracking()
-            .Where(er => er.UserId == userId && er.ExpiresAt > DateTime.UtcNow)
-            .ToListAsync();
-
-        if (externalRatings.Count == 0)
-        {
-            items.Add(new ScoreItem
-            {
-                Description = "No verified platform ratings yet",
-                Points = 0,
-                Status = "missing"
-            });
-            breakdown.Items = items;
-            return breakdown;
-        }
-
-        // Calculate weighted average URS
-        // Formula: Sum(WeightedScore) / Sum(CombinedWeight) normalized to 0-200 scale
-        decimal totalWeightedScore = externalRatings.Sum(er => er.WeightedScore);
-        decimal totalWeight = externalRatings.Sum(er => er.CombinedWeight);
-
-        decimal averageScore = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;
-
-        // Convert from 0-100 (normalized rating) to 0-200 (URS points)
-        int ursPoints = (int)Math.Round((averageScore / 100.0m) * 200);
-        breakdown.Score = Math.Min(ursPoints, 200); // Cap at 200
-
-        // Add breakdown items for each platform
-        var platformGroups = externalRatings.GroupBy(er => er.Platform);
-        foreach (var group in platformGroups)
-        {
-            var platformRatings = group.ToList();
-            var avgPlatformRating = platformRatings.Average(r => r.NormalizedRating);
-            var totalReviews = platformRatings.Sum(r => r.ReviewCount);
-
-            items.Add(new ScoreItem
-            {
-                Description = $"{group.Key}: {avgPlatformRating:F1}/100 rating ({totalReviews} reviews)",
-                Points = (int)Math.Round((avgPlatformRating / 100.0m) * 50), // Max 50 points per platform shown
-                Status = "completed"
-            });
-        }
-
-        breakdown.Items = items;
-        return breakdown;
-    }
+    // NOTE: BuildPeerBreakdown and BuildUrsBreakdownAsync removed in 3-component model refactor
+    // Peer (Mutual Verification) and URS components deprecated - scores set to 0 for backwards compatibility
 
     private string GetTrustLabel(int score)
     {

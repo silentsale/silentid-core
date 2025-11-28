@@ -22,8 +22,7 @@ public class SilentIdDbContext : DbContext
     public DbSet<ProfileLinkEvidence> ProfileLinkEvidences { get; set; } = null!;
     public DbSet<ExternalRating> ExternalRatings { get; set; } = null!;
 
-    // Trust & verification tables
-    public DbSet<MutualVerification> MutualVerifications { get; set; } = null!;
+    // Trust tables
     public DbSet<TrustScoreSnapshot> TrustScoreSnapshots { get; set; } = null!;
 
     // Risk & safety tables
@@ -160,24 +159,6 @@ public class SilentIdDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // MutualVerification configuration
-        modelBuilder.Entity<MutualVerification>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.UserAId);
-            entity.HasIndex(e => e.UserBId);
-
-            entity.HasOne(e => e.UserA)
-                .WithMany()
-                .HasForeignKey(e => e.UserAId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(e => e.UserB)
-                .WithMany()
-                .HasForeignKey(e => e.UserBId)
-                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // TrustScoreSnapshot configuration

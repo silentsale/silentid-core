@@ -63,6 +63,18 @@ class ApiConstants {
   // Account deletion endpoints
   static String get accountDelete => '$apiBaseUrl/users/me';
 
+  // Security Center endpoints (Section 15)
+  static String get securityOverview => '$apiBaseUrl/security/overview';
+  static String get securityLoginHistory => '$apiBaseUrl/security/login-history';
+  static String get securityRiskScore => '$apiBaseUrl/security/risk-score';
+  static String get securityAlerts => '$apiBaseUrl/security/alerts';
+  static String get securityAlertsCount => '$apiBaseUrl/security/alerts/count';
+  static String securityAlertMarkRead(String alertId) => '$apiBaseUrl/security/alerts/$alertId/mark-read';
+  static String get securityAlertsMarkAllRead => '$apiBaseUrl/security/alerts/mark-all-read';
+  static String get securityIdentityStatus => '$apiBaseUrl/security/identity-status';
+  static String get securityVaultHealth => '$apiBaseUrl/security/vault-health';
+  static String get securityBreachCheck => '$apiBaseUrl/security/breach-check';
+
   // Storage keys
   static const String accessTokenKey = 'access_token';
   static const String refreshTokenKey = 'refresh_token';

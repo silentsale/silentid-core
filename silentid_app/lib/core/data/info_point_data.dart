@@ -42,10 +42,9 @@ class InfoPoints {
         body: '''Your TrustScore (0-1000) shows how trustworthy you are to deal with online.
 
 It's calculated from:
-• Identity verification
-• Evidence you upload
-• Your behaviour
-• Peer confirmations
+• Identity verification (250 pts)
+• Evidence you upload (400 pts)
+• Your behaviour (350 pts)
 
 Higher score = more trust = better reputation.''',
         learnMoreText: 'Learn More',
@@ -55,7 +54,7 @@ Higher score = more trust = better reputation.''',
   static InfoPointData get identityComponent => const InfoPointData(
         title: 'Identity Component',
         icon: Icons.shield_outlined,
-        body: '''Worth up to 200 points.
+        body: '''Worth up to 250 points.
 
 Earned by verifying your identity with Stripe and confirming your email/phone.''',
         learnMoreText: 'Learn More',
@@ -65,7 +64,7 @@ Earned by verifying your identity with Stripe and confirming your email/phone.''
   static InfoPointData get evidenceComponent => const InfoPointData(
         title: 'Evidence Component',
         icon: Icons.folder_outlined,
-        body: '''Worth up to 300 points.
+        body: '''Worth up to 400 points.
 
 Earned by uploading receipts, screenshots, and linking your marketplace profiles.''',
         learnMoreText: 'Learn More',
@@ -75,19 +74,9 @@ Earned by uploading receipts, screenshots, and linking your marketplace profiles
   static InfoPointData get behaviourComponent => const InfoPointData(
         title: 'Behaviour Component',
         icon: Icons.trending_up,
-        body: '''Worth up to 300 points.
+        body: '''Worth up to 350 points.
 
 Based on having no safety reports, consistent activity, and account longevity.''',
-      );
-
-  static InfoPointData get peerVerificationComponent => const InfoPointData(
-        title: 'Peer Verification Component',
-        icon: Icons.people_outline,
-        body: '''Worth up to 200 points.
-
-Earned by getting mutual confirmations from people you've traded with.''',
-        learnMoreText: 'Learn More',
-        learnMoreUrl: 'https://help.silentid.co.uk/mutual-verification',
       );
 
   static InfoPointData get ursComponent => const InfoPointData(

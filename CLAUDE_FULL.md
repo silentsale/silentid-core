@@ -307,20 +307,17 @@ A **portable, evidence-backed trust profile** that works everywhere:
 
 ### TrustScore Engine (0–1000)
 
-**Version 1.8.0 Update:** TrustScore now uses **5 components** with raw max of 1200 points, normalized to 1000.
+**Version 1.9.0 Update:** TrustScore uses **3 components** with max 1000 points (no normalization required).
 
 **Calculation Formula:**
 ```
-Raw Score = Identity + Evidence + Behaviour + Peer + URS (max 1200)
-Final TrustScore = (Raw Score / 1200) × 1000 (normalized to 0-1000)
+TrustScore = Identity + Evidence + Behaviour (max 1000)
 ```
 
-**5-Component Breakdown:**
-- **Identity (200 pts):** Stripe verification, email verified, phone verified, device consistency
-- **Evidence (300 pts):** receipts, screenshots, public profile data, evidence quality (capped at 15% per vault)
-- **Behaviour (300 pts):** no reports, on-time shipping, account longevity, cross-platform consistency
-- **Peer Verification (200 pts):** mutual endorsements, returning partner transactions
-- **URS - Universal Reputation Score (200 pts):** Cross-platform ratings aggregation from verified external profiles
+**3-Component Breakdown:**
+- **Identity (250 pts):** Stripe Identity verification, email verified, passkey enabled, device consistency
+- **Evidence (400 pts):** Receipts, screenshots, verified profile links, evidence quality and diversity
+- **Behaviour (350 pts):** Account longevity, login patterns, platform engagement, no risk signals, cross-platform consistency
 
 **Score Labels (Updated):**
 - 850–1000: Exceptional Trust (NEW)
@@ -340,9 +337,8 @@ Final TrustScore = (Raw Score / 1200) × 1000 (normalized to 0-1000)
 - Username (@sarahtrusted)
 - TrustScore + label
 - Identity Verified badge
-- Verified platforms
+- Verified platforms (connected profiles)
 - Number of receipts parsed
-- Number of mutual verifications
 - Account age
 - Risk warnings (gentle wording if applicable)
 - QR code for sharing
@@ -1512,22 +1508,16 @@ Users (hub)
 - POST /v1/evidence/profile-links (User)
 - GET /v1/evidence/profile-links/{id} (User)
 
-**5. Mutual Verifications (4 endpoints)**
-- POST /v1/mutual-verifications (User)
-- GET /v1/mutual-verifications/incoming (User)
-- POST /v1/mutual-verifications/{id}/respond (User)
-- GET /v1/mutual-verifications (User)
-
-**6. TrustScore (3 endpoints)**
+**5. TrustScore (3 endpoints)**
 - GET /v1/trustscore/me (User)
 - GET /v1/trustscore/me/breakdown (User)
 - GET /v1/trustscore/me/history (User)
 
-**7. Public Profile (2 endpoints)**
+**6. Public Profile (2 endpoints)**
 - GET /v1/public/profile/{username} (Public)
 - GET /v1/public/availability/{username} (Public)
 
-**8. Safety Reports (3 endpoints)**
+**7. Safety Reports (3 endpoints)**
 - POST /v1/reports (User)
 - POST /v1/reports/{id}/evidence (User)
 - GET /v1/reports/mine (User)
@@ -1571,9 +1561,9 @@ Flutter with Material 3 theming, Custom SilentID theme, Dark & light mode suppor
 3. Identity Module (Stripe verification, ID status)
 4. Evidence Module (receipts, screenshots, profile links)
 5. Trust Module (TrustScore overview, breakdowns, history)
-6. Mutual Verification Module (transaction requests, confirmations)
-7. Public Profile Module (preview, share, QR)
-8. Safety Module (reporting, my reports)
+6. Public Profile Module (preview, share, QR)
+7. Safety Module (reporting, my reports)
+8. Security Module (security center, login activity, alerts, risk status)
 9. Settings & Account (profile, privacy, devices, export, delete, subscriptions)
 10. Admin (future/hidden route)
 
@@ -1581,10 +1571,10 @@ Flutter with Material 3 theming, Custom SilentID theme, Dark & light mode suppor
 **Initial Stack:** Auth → Identity verification → First-time flows
 
 **Bottom Navigation (4 tabs):**
-1. Home (Trust overview)
-2. Evidence (Receipts, screenshots, profiles)
-3. Verify (Mutual transactions, scan profiles)
-4. Settings (Account, privacy, subscription)
+1. Home (Trust overview, quick actions)
+2. Evidence (Receipts, screenshots, profile links)
+3. Trust (TrustScore breakdown, history)
+4. Settings (Account, privacy, security, subscription)
 
 ### 39 Key Screens
 **Auth Module (5):** Welcome, EmailEntry, OTPVerification, PasskeySetupPrompt, SuspiciousLogin
@@ -1595,11 +1585,11 @@ Flutter with Material 3 theming, Custom SilentID theme, Dark & light mode suppor
 
 **Trust Module (3):** TrustScoreOverview, TrustScoreBreakdown, TrustScoreHistory
 
-**Mutual Verification Module (4):** MutualVerificationHome, CreateVerification, IncomingRequests, VerificationDetails
-
 **Public Profile Module (3):** MyPublicProfilePreview, ShareProfile, PublicProfileViewer
 
 **Safety Module (3):** ReportUser, MyReportsList, ReportDetails
+
+**Security Module (4):** SecurityCenter, LoginActivity, SecurityAlerts, SecurityRisk
 
 **Settings & Account (10):** SettingsHome, AccountDetails, PrivacySettings, ConnectedDevices, DataExport, DeleteAccount, SubscriptionOverview, UpgradeToPremium, UpgradeToPro, LegalDocs
 
@@ -1697,11 +1687,11 @@ Flutter with Material 3 theming, Custom SilentID theme, Dark & light mode suppor
 - List views for evidence
 - Checkpoint: User sees TrustScore and evidence from backend
 
-**Phase 13 — Mutual Verification & Public Profile UI**
-- Implement mutual verification flows (create, accept, list)
+**Phase 13 — Security Center & Public Profile UI**
+- Implement Security Center (login activity, risk status, alerts)
 - Implement My Public Profile preview
 - QR code generation + share sheet
-- Checkpoint: Two test users can mutually verify transaction
+- Checkpoint: User can view security status and share public profile
 
 **Phase 14 — Safety Reports & Settings UI**
 - Build ReportUserScreen (categories, evidence upload)
@@ -1947,7 +1937,7 @@ Once you answer questions:
 |-------|-------|---------|
 | 0-15 | Safe | Normal operation |
 | 16-40 | Medium Risk | Warning banner, encouraged ID verification, some features limited |
-| 41-70 | High Risk | Mandatory identity re-check, evidence uploads disabled, mutual verification blocked |
+| 41-70 | High Risk | Mandatory identity re-check, evidence uploads disabled, profile linking blocked |
 | 71-100 | Critical | Account frozen, admin notified, user must provide additional evidence |
 
 ### Subscription Features Matrix
@@ -3229,42 +3219,38 @@ Your **TrustScore** is a 0-1000 point score that represents how trustworthy you 
 
 ---
 
-## The 4 Components
+## The 3 Components
 
-Your TrustScore is calculated from 4 areas:
+Your TrustScore is calculated from 3 areas (max 1000 points total):
 
-### 1. Identity (200 points max)
-- ✅ Stripe Identity verification: +200
-- ✅ Email verified: included
-- ✅ Phone verified: included
-- ✅ Device consistency: included
+### 1. Identity (250 points max)
+- ✅ Stripe Identity verification: +150
+- ✅ Email verified: +50
+- ✅ Passkey enabled: +30
+- ✅ Device consistency: +20
 
-### 2. Evidence (300 points max)
+### 2. Evidence (400 points max)
 - Email receipts from marketplaces
 - Screenshots of your seller profiles
-- Public profile links (Vinted, eBay, Depop, etc.)
-- Quality and integrity of evidence
+- Verified profile links (Vinted, eBay, Depop, etc.)
+- Quality, diversity, and integrity of evidence
 
-### 3. Behaviour (300 points max)
+### 3. Behaviour (350 points max)
 - No safety reports against you
-- On-time shipping patterns
-- Account longevity
+- Account longevity and consistency
+- Login patterns and platform engagement
 - Cross-platform consistency
-
-### 4. Peer Verification (200 points max)
-- Mutual verifications with other users
-- Returning transaction partners
-- Confirmed deals
+- No active risk signals
 
 ---
 
 ## How to Improve Your TrustScore
 
 **Quick Wins:**
-1. Complete Stripe Identity verification (+200 points)
-2. Add email receipts from past marketplace sales
-3. Link your public seller profiles
-4. Request mutual verifications from people you've traded with
+1. Complete Stripe Identity verification (+250 points)
+2. Add email receipts from past marketplace sales (+Evidence points)
+3. Link and verify your public seller profiles (+Evidence points)
+4. Enable passkeys for extra Identity points
 
 **Long-Term:**
 - Maintain a clean record (no reports)
@@ -15048,6 +15034,809 @@ All values in Section 53 are the canonical design tokens. Any design tool, code 
 ---
 
 **END OF SECTION 53**
+
+---
+
+## SECTION 54 — Login, Devices & Session Security (Passwordless Rules)
+
+### 54.1 Purpose
+
+This section defines the **complete passwordless authentication, device trust, and session security system** for SilentID. All login flows, device management, and session handling **MUST** comply with these rules.
+
+**Security Philosophy:**
+- Passwordless by design - never store or accept passwords
+- Strong method preference - always use the most secure available method
+- Device trust scoring - evaluate device trustworthiness continuously
+- Adaptive security - step-up authentication based on risk
+- Transparent security - users understand why security measures are applied
+
+**Core Principle:** Security should enhance trust without sacrificing user experience.
+
+---
+
+### 54.2 Authentication Method Hierarchy
+
+**Supported Methods (Strongest → Weakest):**
+
+1. **Passkeys (WebAuthn/FIDO2)** - Strongest
+   - Hardware-bound cryptographic keys
+   - Phishing-resistant
+   - Device-local biometric verification
+   - No shared secrets
+
+2. **Apple Sign-In / Google Sign-In** - Strong
+   - Platform-native authentication
+   - Multi-factor by default
+   - Verified email addresses
+   - Trusted identity providers
+
+3. **Email OTP (One-Time Password)** - Fallback Only
+   - 6-digit code sent to verified email
+   - Time-limited (5 minutes)
+   - Rate-limited to prevent brute force
+   - Should only be used when stronger methods unavailable
+
+**Method Selection Rules:**
+
+```
+Login Attempt Flow:
+1. Check if user has Passkey registered → Prompt Passkey
+2. Else check if Apple/Google linked → Prompt Apple/Google Sign-In
+3. Else → Offer Email OTP (with warning about weaker security)
+
+If user has multiple methods:
+- Always prefer Passkey first
+- Show "Use a different method" option
+- Log method downgrade (for risk scoring)
+```
+
+**FORBIDDEN:**
+- Password creation or storage
+- Password-based login
+- Password reset flows
+- SMS OTP (not supported - email OTP only)
+
+---
+
+### 54.3 Device Trust & Fingerprinting
+
+**Device Fingerprint Components:**
+
+```json
+{
+  "deviceId": "UUID (client-generated, persisted)",
+  "platform": "iOS | Android | Windows | macOS | Linux | Web",
+  "osVersion": "iOS 17.2",
+  "appVersion": "1.2.3",
+  "deviceModel": "iPhone 15 Pro",
+  "screenResolution": "1170x2532",
+  "timezone": "Europe/London",
+  "language": "en-GB",
+  "firstSeenAt": "2024-01-15T10:00:00Z",
+  "lastSeenAt": "2024-02-20T14:30:00Z",
+  "loginCount": 47,
+  "ipAddressHistory": ["1.2.3.4", "5.6.7.8"]
+}
+```
+
+**Device Trust Levels:**
+
+| Trust Level | Criteria | Login Behavior |
+|------------|----------|----------------|
+| **Trusted** | 10+ logins, 30+ days old, no risk signals | Silent session renewal allowed |
+| **Known** | 3-9 logins, 7-29 days old, minor risk signals | Standard login required |
+| **New** | 0-2 logins OR < 7 days old | Step-up authentication required |
+| **Suspicious** | Risk signals detected (geo anomaly, velocity) | Strong step-up + alert user |
+| **Blocked** | High risk score, admin flag, breach detected | Login denied, support contact required |
+
+**Device Fingerprint Matching:**
+
+- **Exact Match:** All components identical → Trusted device
+- **Partial Match:** Device ID matches, but OS/app version changed → Known device (minor risk)
+- **No Match:** New device ID → New device (step-up required)
+- **Conflicting Match:** Device ID matches, but major changes (platform, model) → Suspicious (strong step-up)
+
+---
+
+### 54.4 Step-Up Authentication
+
+**Step-Up Triggers:**
+
+1. **New Device Detection**
+   - Device fingerprint never seen before
+   - Device ID not in user's device list
+
+2. **Suspicious Activity**
+   - Login from new country (geo anomaly)
+   - Multiple rapid login attempts (velocity check)
+   - Device fingerprint mismatch (ID matches but components changed)
+   - Login after long dormancy (> 90 days)
+
+3. **High-Value Actions**
+   - Changing email address
+   - Deleting account
+   - Accessing admin functions
+   - Downloading evidence vault export
+
+4. **Risk Score Threshold Exceeded**
+   - RiskScore > 600 (High Risk tier)
+   - Multiple failed login attempts
+   - Device flagged by fraud system
+
+**Step-Up Response Matrix:**
+
+| Risk Level | Required Step-Up | Additional Measures |
+|------------|-----------------|---------------------|
+| **Low Risk** | Use stronger auth method (Passkey > Apple/Google) | None |
+| **Medium Risk** | Require strongest available method + email verification | Send security alert email |
+| **High Risk** | Require Passkey (if available) OR Apple/Google + email OTP | Temporary session (1 hour), send SMS alert |
+| **Critical Risk** | Block login, require support contact | Lock account, notify user all channels |
+
+**Step-Up Implementation:**
+
+```
+New Device Login Flow:
+1. User enters email address
+2. System checks device fingerprint → New device detected
+3. System prompts: "New device detected. For security, we need extra verification."
+4. System requires strongest available method:
+   - If user has Passkey → Require Passkey
+   - Else if user has Apple/Google → Require Apple/Google Sign-In
+   - Else → Require Email OTP + additional email confirmation link
+5. After successful auth, send email: "New login from iPhone 15 Pro in London, UK"
+6. Mark device as "New" (3 logins required to become "Known")
+```
+
+**User Communication:**
+
+- Always explain WHY step-up is required
+- Use plain language: "We noticed a login from a new device" (not "Risk threshold exceeded")
+- Provide contact option if user locked out incorrectly
+- Show device details: "iPhone 15 Pro in London, UK at 2:30 PM"
+
+---
+
+### 54.5 Session Management
+
+**Session Specifications:**
+
+```json
+{
+  "sessionId": "UUID",
+  "userId": "UUID",
+  "deviceId": "UUID (from device fingerprint)",
+  "authMethod": "passkey | apple | google | otp",
+  "createdAt": "2024-02-20T14:30:00Z",
+  "expiresAt": "2024-02-27T14:30:00Z (7 days default)",
+  "lastActivityAt": "2024-02-20T16:45:00Z",
+  "deviceFingerprint": { /* full fingerprint */ },
+  "ipAddress": "1.2.3.4",
+  "sessionType": "standard | temporary | admin",
+  "canSilentRenew": true
+}
+```
+
+**Session Lifetime Rules:**
+
+| Session Type | Lifetime | Renewal | Use Case |
+|--------------|----------|---------|----------|
+| **Standard** | 7 days | Silent renewal if trusted device | Normal app usage |
+| **Temporary** | 1 hour | No renewal, re-auth required | Step-up scenarios, high-risk devices |
+| **Admin** | 30 minutes | No renewal, re-auth required | Admin dashboard access |
+| **Remember Me** | 30 days | Silent renewal if trusted device | User opted in (mobile only) |
+
+**Session Binding:**
+
+Sessions are bound to:
+1. **Device ID** - Must match exactly
+2. **App Version** - Major version changes require re-auth
+3. **IP Range** - Large geo changes trigger re-auth
+4. **User Agent** - Changes trigger re-auth (web only)
+
+**Silent Session Renewal:**
+
+Allowed ONLY if ALL conditions met:
+- Device trust level = "Trusted"
+- No risk signals in last 7 days
+- IP address within known range
+- App version unchanged
+- Session activity within last 24 hours
+
+**Session Invalidation Triggers:**
+
+- User logs out explicitly
+- Session expires (7 days standard, 1 hour temporary)
+- User changes email address
+- User deletes account
+- Admin flags account for review
+- Device fingerprint mismatch detected
+- RiskScore exceeds threshold (> 700)
+- User reports unauthorized access
+
+**Multi-Device Sessions:**
+
+- Users can be logged in on multiple devices simultaneously
+- Each device has separate session
+- Logging out on one device does NOT log out others
+- User can view all active sessions in Settings
+- User can remotely log out specific devices
+
+---
+
+### 54.6 Login Behavior Analysis
+
+**Tracked Login Metrics:**
+
+```json
+{
+  "loginAttempts": {
+    "successful": 145,
+    "failed": 3,
+    "lastFailedAt": "2024-02-18T10:00:00Z",
+    "consecutiveFailures": 0
+  },
+  "loginPatterns": {
+    "averageLoginTime": "09:00 - 18:00 GMT",
+    "averageLoginDay": "Mon-Fri",
+    "commonLocations": ["London, UK", "Manchester, UK"],
+    "commonDevices": ["iPhone 15 Pro", "MacBook Pro"]
+  },
+  "anomalies": {
+    "geoAnomalies": 0,
+    "velocityViolations": 0,
+    "deviceChanges": 2
+  }
+}
+```
+
+**Anomaly Detection Rules:**
+
+**1. Geographic Anomaly:**
+- Login from country never seen before → Medium risk
+- Login from country 1000+ km away within 1 hour → High risk (impossible travel)
+- Login from high-risk country (fraud hotspot) → Medium risk
+
+**2. Velocity Violations:**
+- 5+ failed login attempts within 5 minutes → High risk (possible credential stuffing)
+- 10+ successful logins within 1 hour → Medium risk (possible account sharing)
+- 3+ login attempts from different IPs within 5 minutes → High risk
+
+**3. Device Pattern Changes:**
+- Login from new device type (iOS → Android) → Low risk (notify user)
+- Login from new OS version (major upgrade) → Low risk
+- Login from completely different device model → Medium risk (step-up)
+
+**4. Temporal Anomalies:**
+- Login outside usual time window (e.g., 3 AM when user typically logs in 9 AM - 6 PM) → Low risk
+- Login after 90+ days dormancy → Medium risk (step-up)
+
+**Risk Score Impact:**
+
+Each anomaly adds to RiskScore:
+- Geographic anomaly: +50 points
+- Velocity violation: +100 points
+- Failed login attempt: +20 points per attempt
+- Impossible travel: +200 points
+- Device pattern change: +30 points
+
+RiskScore decays over time:
+- -10 points per day with no anomalies
+- Successful strong auth (Passkey) → -50 points
+- 30 days clean record → reset to baseline
+
+---
+
+### 54.7 OTP Restrictions & High-Risk Mitigation
+
+**Email OTP Restriction Scenarios:**
+
+OTP access is **temporarily restricted** (24-48 hours) if:
+
+1. **Repeated Failed Attempts:**
+   - 5+ failed OTP attempts within 1 hour
+   - 10+ failed OTP attempts within 24 hours
+
+2. **Velocity Abuse:**
+   - 10+ OTP codes requested within 1 hour
+   - 20+ OTP codes requested within 24 hours
+
+3. **High RiskScore:**
+   - RiskScore > 700 (High Risk)
+   - Multiple geo anomalies detected
+   - Impossible travel pattern detected
+
+4. **Fraud Signals:**
+   - Email address flagged in breach database
+   - IP address on fraud blacklist
+   - Device fingerprint matches known fraud pattern
+
+**Restriction Response:**
+
+When OTP is restricted:
+```
+Message to user:
+"For your security, email OTP login is temporarily unavailable.
+Please use Apple Sign-In, Google Sign-In, or Passkey to log in.
+
+If you don't have access to these methods, contact support."
+
+[Contact Support Button]
+```
+
+**Alternative Methods During Restriction:**
+- Passkey (if registered) → Allowed
+- Apple/Google Sign-In (if linked) → Allowed
+- Email OTP → Blocked for 24-48 hours
+- Account recovery → Requires support contact
+
+**Unrestricting OTP:**
+
+OTP access is restored when:
+- 24-48 hours elapsed with no further anomalies
+- User successfully authenticates via Passkey or Apple/Google
+- RiskScore drops below 500
+- Support manually unrestricts (after verification)
+
+---
+
+### 54.8 TrustScore & RiskScore Integration
+
+**Login Events → TrustScore Impact:**
+
+| Event | TrustScore Impact | Component |
+|-------|-------------------|-----------|
+| Successful Passkey login | +2 points | Behaviour |
+| Successful Apple/Google login | +1 point | Behaviour |
+| Successful OTP login (trusted device) | +0.5 points | Behaviour |
+| Login from new trusted device | +1 point | Behaviour |
+| 30-day streak of stable logins | +5 points | Behaviour |
+| Failed login attempt | -1 point | Behaviour |
+| Geographic anomaly | -2 points | Behaviour |
+| Step-up authentication completed | +3 points | Behaviour |
+
+**Login Events → RiskScore Impact:**
+
+| Event | RiskScore Impact |
+|-------|------------------|
+| Failed login attempt | +20 points |
+| Geographic anomaly | +50 points |
+| Velocity violation | +100 points |
+| Impossible travel | +200 points |
+| OTP abuse (10+ requests/hour) | +150 points |
+| Device fingerprint mismatch | +30 points |
+| Successful strong auth (Passkey) | -50 points |
+| 7 days clean record | -70 points (decay) |
+
+**RiskScore Thresholds → Login Actions:**
+
+| RiskScore Range | Risk Level | Action |
+|----------------|------------|--------|
+| 0-299 | Low | Standard login allowed |
+| 300-599 | Moderate | Require stronger auth method |
+| 600-799 | High | Step-up authentication + email alert |
+| 800-999 | Critical | Block OTP, require Passkey/Apple/Google + email verification |
+| 1000+ | Blocked | Account locked, support contact required |
+
+---
+
+### 54.9 Account Recovery Rules
+
+**Scenario: User Lost Access to All Auth Methods**
+
+**Recovery Process:**
+
+1. **User initiates recovery:**
+   - Clicks "Can't log in?" on login screen
+   - Enters email address
+
+2. **System sends recovery email:**
+   - Contains magic link (expires in 1 hour)
+   - Contains support contact option
+
+3. **User clicks magic link:**
+   - Opens recovery flow in app/web
+   - Shows account details (masked): "Account created Feb 2024, Email: s***@gmail.com"
+
+4. **Identity verification required:**
+   - Ask security questions (if set)
+   - Request last known evidence item details
+   - Request last TrustScore range
+   - Request last known connected platform
+
+5. **If verification passes:**
+   - Allow user to set new Passkey OR link Apple/Google
+   - Send confirmation email to registered email
+   - Log recovery event (audit trail)
+   - Reset RiskScore to 0
+
+6. **If verification fails:**
+   - Offer support contact
+   - Require manual identity verification (Stripe Identity re-verification)
+   - Support agent reviews account history and manually approves
+
+**Recovery Rate Limiting:**
+- Max 3 recovery attempts per 24 hours per email
+- Max 1 successful recovery per 7 days
+- Multiple failed recoveries → account flagged for manual review
+
+**Security Measures:**
+- Recovery link expires after 1 hour
+- Recovery link single-use only
+- Recovery event logged and sent to user's email
+- If suspicious, require Stripe Identity re-verification
+
+---
+
+### 54.10 Database Schema
+
+**Sessions Table:**
+
+```sql
+CREATE TABLE Sessions (
+  Id UUID PRIMARY KEY,
+  UserId UUID REFERENCES Users(Id),
+  DeviceId UUID NOT NULL,
+  AuthMethod VARCHAR(20) NOT NULL,  -- passkey, apple, google, otp
+  CreatedAt TIMESTAMP NOT NULL,
+  ExpiresAt TIMESTAMP NOT NULL,
+  LastActivityAt TIMESTAMP NOT NULL,
+  DeviceFingerprint JSONB NOT NULL,
+  IpAddress VARCHAR(45) NOT NULL,
+  SessionType VARCHAR(20) NOT NULL,  -- standard, temporary, admin
+  CanSilentRenew BOOLEAN DEFAULT false,
+  InvalidatedAt TIMESTAMP NULL,
+  InvalidationReason VARCHAR(100) NULL
+);
+
+CREATE INDEX idx_sessions_user ON Sessions(UserId);
+CREATE INDEX idx_sessions_device ON Sessions(DeviceId);
+CREATE INDEX idx_sessions_expires ON Sessions(ExpiresAt);
+```
+
+**Devices Table:**
+
+```sql
+CREATE TABLE Devices (
+  Id UUID PRIMARY KEY,
+  UserId UUID REFERENCES Users(Id),
+  DeviceId UUID NOT NULL UNIQUE,
+  Platform VARCHAR(20) NOT NULL,
+  OsVersion VARCHAR(50),
+  AppVersion VARCHAR(20),
+  DeviceModel VARCHAR(100),
+  DeviceFingerprint JSONB NOT NULL,
+  TrustLevel VARCHAR(20) NOT NULL,  -- trusted, known, new, suspicious, blocked
+  FirstSeenAt TIMESTAMP NOT NULL,
+  LastSeenAt TIMESTAMP NOT NULL,
+  LoginCount INT DEFAULT 0,
+  IpAddressHistory JSONB DEFAULT '[]',
+  RiskSignals JSONB DEFAULT '[]',
+  CreatedAt TIMESTAMP DEFAULT NOW(),
+  UpdatedAt TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_devices_user ON Devices(UserId);
+CREATE INDEX idx_devices_device_id ON Devices(DeviceId);
+CREATE INDEX idx_devices_trust_level ON Devices(TrustLevel);
+```
+
+**LoginAttempts Table:**
+
+```sql
+CREATE TABLE LoginAttempts (
+  Id UUID PRIMARY KEY,
+  Email VARCHAR(255) NOT NULL,
+  UserId UUID NULL,  -- NULL if login failed
+  AuthMethod VARCHAR(20) NOT NULL,
+  DeviceFingerprint JSONB NOT NULL,
+  IpAddress VARCHAR(45) NOT NULL,
+  Success BOOLEAN NOT NULL,
+  FailureReason VARCHAR(100) NULL,
+  AttemptedAt TIMESTAMP DEFAULT NOW(),
+  GeoLocation VARCHAR(100) NULL,
+  RiskScore INT DEFAULT 0
+);
+
+CREATE INDEX idx_login_attempts_email ON LoginAttempts(Email);
+CREATE INDEX idx_login_attempts_user ON LoginAttempts(UserId);
+CREATE INDEX idx_login_attempts_attempted_at ON LoginAttempts(AttemptedAt);
+CREATE INDEX idx_login_attempts_success ON LoginAttempts(Success);
+```
+
+---
+
+### 54.11 API Endpoints
+
+**POST /api/auth/initiate-login**
+
+Request:
+```json
+{
+  "email": "user@example.com",
+  "deviceFingerprint": { /* device info */ }
+}
+```
+
+Response:
+```json
+{
+  "availableMethods": ["passkey", "apple", "google", "otp"],
+  "recommendedMethod": "passkey",
+  "requiresStepUp": false,
+  "deviceTrustLevel": "trusted",
+  "sessionId": "temp-session-uuid"
+}
+```
+
+**POST /api/auth/login-passkey**
+
+Request:
+```json
+{
+  "email": "user@example.com",
+  "passkeyCredential": { /* WebAuthn credential */ },
+  "deviceFingerprint": { /* device info */ }
+}
+```
+
+Response:
+```json
+{
+  "sessionToken": "jwt-token",
+  "expiresAt": "2024-02-27T14:30:00Z",
+  "deviceRegistered": true,
+  "trustScore": 850
+}
+```
+
+**POST /api/auth/login-otp**
+
+Request:
+```json
+{
+  "email": "user@example.com",
+  "otpCode": "123456",
+  "deviceFingerprint": { /* device info */ }
+}
+```
+
+Response:
+```json
+{
+  "sessionToken": "jwt-token",
+  "expiresAt": "2024-02-27T14:30:00Z",
+  "sessionType": "standard",
+  "securityAlert": "New device detected. Check your email for details."
+}
+```
+
+**POST /api/auth/renew-session**
+
+Request:
+```json
+{
+  "sessionToken": "current-jwt-token",
+  "deviceFingerprint": { /* device info */ }
+}
+```
+
+Response:
+```json
+{
+  "sessionToken": "new-jwt-token",
+  "expiresAt": "2024-03-05T14:30:00Z",
+  "silentRenewal": true
+}
+```
+
+**GET /api/auth/devices**
+
+Response:
+```json
+{
+  "devices": [
+    {
+      "deviceId": "uuid",
+      "deviceModel": "iPhone 15 Pro",
+      "platform": "iOS",
+      "trustLevel": "trusted",
+      "lastSeenAt": "2024-02-20T16:45:00Z",
+      "loginCount": 47,
+      "location": "London, UK"
+    }
+  ]
+}
+```
+
+**DELETE /api/auth/devices/{deviceId}**
+
+Action: Remotely log out specific device (invalidate all sessions for that device)
+
+---
+
+### 54.12 Frontend Implementation
+
+**Flutter Login Flow Example:**
+
+```dart
+class LoginService {
+  Future<LoginResult> initiateLogin(String email) async {
+    final deviceFingerprint = await DeviceFingerprintService.getFingerprint();
+
+    final response = await api.post('/auth/initiate-login', {
+      'email': email,
+      'deviceFingerprint': deviceFingerprint,
+    });
+
+    return LoginResult(
+      availableMethods: response['availableMethods'],
+      recommendedMethod: response['recommendedMethod'],
+      requiresStepUp: response['requiresStepUp'],
+    );
+  }
+
+  Future<SessionToken> loginWithPasskey(String email) async {
+    // Trigger WebAuthn/FIDO2 flow
+    final credential = await PasskeyService.authenticate(email);
+
+    final response = await api.post('/auth/login-passkey', {
+      'email': email,
+      'passkeyCredential': credential,
+      'deviceFingerprint': await DeviceFingerprintService.getFingerprint(),
+    });
+
+    // Store session token securely
+    await SecureStorage.saveSessionToken(response['sessionToken']);
+
+    return SessionToken.fromJson(response);
+  }
+
+  Future<void> checkSessionValidity() async {
+    final token = await SecureStorage.getSessionToken();
+    if (token == null) return;
+
+    // Check if session needs renewal
+    if (token.expiresAt.isBefore(DateTime.now().add(Duration(hours: 24)))) {
+      await renewSession();
+    }
+  }
+
+  Future<void> renewSession() async {
+    final currentToken = await SecureStorage.getSessionToken();
+
+    try {
+      final response = await api.post('/auth/renew-session', {
+        'sessionToken': currentToken.value,
+        'deviceFingerprint': await DeviceFingerprintService.getFingerprint(),
+      });
+
+      await SecureStorage.saveSessionToken(response['sessionToken']);
+    } catch (e) {
+      // Silent renewal failed, user needs to re-authenticate
+      await logout();
+    }
+  }
+}
+```
+
+---
+
+### 54.13 Security Alerts & Notifications
+
+**Email Alerts Sent to User:**
+
+1. **New Device Login:**
+   ```
+   Subject: New login to your SilentID account
+
+   Hi [Name],
+
+   We detected a new login to your account:
+
+   Device: iPhone 15 Pro
+   Location: London, UK
+   Time: Feb 20, 2024 at 2:30 PM
+
+   If this was you, no action needed.
+
+   If this wasn't you, secure your account immediately:
+   [Secure My Account Button]
+   ```
+
+2. **Step-Up Authentication Completed:**
+   ```
+   Subject: Extra security check completed
+
+   Hi [Name],
+
+   You recently completed extra verification to access your SilentID account.
+
+   Reason: New device detected
+   Method used: Apple Sign-In
+   Time: Feb 20, 2024 at 2:35 PM
+
+   If this wasn't you, contact us immediately.
+   ```
+
+3. **OTP Temporarily Restricted:**
+   ```
+   Subject: Email login temporarily unavailable
+
+   Hi [Name],
+
+   For your security, we've temporarily restricted email OTP login on your account.
+
+   Reason: Unusual login activity detected
+   Available methods: Apple Sign-In, Google Sign-In, Passkey
+
+   This restriction will be lifted in 24 hours.
+
+   If you need help, contact support.
+   ```
+
+4. **Account Recovery Initiated:**
+   ```
+   Subject: Account recovery requested
+
+   Hi [Name],
+
+   Someone requested account recovery for your SilentID account.
+
+   If this was you, click the link below to continue:
+   [Recover My Account Button] (expires in 1 hour)
+
+   If this wasn't you, ignore this email and consider changing your email password.
+   ```
+
+**In-App Notifications:**
+
+- Show banner when logging in from new device
+- Alert when session is about to expire (24 hours before)
+- Notify when device is promoted to "Trusted" status
+- Warn when RiskScore is elevated
+
+---
+
+### 54.14 Integration with Existing Sections
+
+**Section 54 integrates with:**
+
+- **Section 5 (Core Features):** Passwordless authentication as core feature
+- **Section 7 (Anti-Fraud Engine):** Login behavior feeds into RiskScore
+- **Section 8 (Database Schema):** Sessions, Devices, LoginAttempts tables
+- **Section 9 (API Endpoints):** Auth endpoints defined
+- **Section 25 (Risk & Anomaly Signals):** Login anomalies contribute to risk detection
+- **Section 29 (Security Alerts):** Email alerts for security events
+- **Section 39 (App UI):** Device management in Settings screen
+- **Section 53 (UI Design Language):** Login screens follow design system
+
+---
+
+### 54.15 Testing & Validation Checklist
+
+**Before deploying login/session system:**
+
+- [ ] Passkey flow tested on iOS, Android, Web
+- [ ] Apple Sign-In tested with valid Apple ID
+- [ ] Google Sign-In tested with valid Google account
+- [ ] Email OTP delivery tested (spam folder check)
+- [ ] New device detection triggers step-up correctly
+- [ ] Geographic anomaly triggers alert email
+- [ ] Velocity abuse triggers OTP restriction
+- [ ] Session renewal works silently on trusted device
+- [ ] Session renewal fails and requires re-auth on new device
+- [ ] Multi-device sessions work independently
+- [ ] Remote device logout invalidates sessions correctly
+- [ ] Account recovery flow completes successfully
+- [ ] High RiskScore blocks OTP as expected
+- [ ] TrustScore increases with stable login behavior
+- [ ] All email alerts send correctly and contain accurate info
+- [ ] Device fingerprinting captures all required fields
+- [ ] Login attempts logged correctly (success and failure)
+
+---
+
+**END OF SECTION 54**
 
 ---
 ## END OF MASTER SPECIFICATION
