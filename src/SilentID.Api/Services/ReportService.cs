@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SilentID.Api.Data;
 using SilentID.Api.Models;
@@ -8,6 +9,7 @@ public interface IReportService
 {
     Task<Report> CreateReportAsync(Guid reporterId, CreateReportRequest request);
     Task<ReportEvidence> UploadEvidenceAsync(Guid reportId, Guid userId, string fileUrl, string? fileType);
+    Task<ReportEvidence> UploadEvidenceFileAsync(Guid reportId, Guid userId, IFormFile file);
     Task<List<Report>> GetMyReportsAsync(Guid userId);
     Task<Report?> GetReportByIdAsync(Guid reportId, Guid userId);
 }
@@ -15,13 +17,16 @@ public interface IReportService
 public class ReportService : IReportService
 {
     private readonly SilentIdDbContext _context;
+    private readonly IBlobStorageService _blobStorageService;
     private readonly ILogger<ReportService> _logger;
 
     public ReportService(
         SilentIdDbContext context,
+        IBlobStorageService blobStorageService,
         ILogger<ReportService> logger)
     {
         _context = context;
+        _blobStorageService = blobStorageService;
         _logger = logger;
     }
 
@@ -131,6 +136,52 @@ public class ReportService : IReportService
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Evidence uploaded for report {ReportId}", reportId);
+
+        return evidence;
+    }
+
+    public async Task<ReportEvidence> UploadEvidenceFileAsync(Guid reportId, Guid userId, IFormFile file)
+    {
+        var report = await _context.Reports
+            .FirstOrDefaultAsync(r => r.Id == reportId);
+
+        if (report == null)
+        {
+            throw new KeyNotFoundException("Report not found");
+        }
+
+        // Only reporter can upload evidence
+        if (report.ReporterId != userId)
+        {
+            throw new UnauthorizedAccessException("You can only upload evidence to your own reports");
+        }
+
+        // Upload file to blob storage
+        string fileUrl;
+        using (var fileStream = file.OpenReadStream())
+        {
+            fileUrl = await _blobStorageService.UploadFileAsync(
+                fileStream,
+                file.FileName,
+                file.ContentType
+            );
+        }
+
+        _logger.LogInformation("Evidence file uploaded for report {ReportId}: {FileUrl}", reportId, fileUrl);
+
+        // Create evidence record
+        var evidence = new ReportEvidence
+        {
+            ReportId = reportId,
+            FileUrl = fileUrl,
+            FileType = file.ContentType,
+            OCRText = null // Future: OCR processing
+        };
+
+        _context.ReportEvidences.Add(evidence);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Evidence record created for report {ReportId}, ID: {EvidenceId}", reportId, evidence.Id);
 
         return evidence;
     }

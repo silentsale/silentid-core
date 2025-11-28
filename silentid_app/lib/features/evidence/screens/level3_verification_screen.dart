@@ -329,11 +329,14 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
   }
 
   Widget _buildSelectMethodStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Prove you own this profile',
+    return RadioGroup<VerificationMethod>(
+      groupValue: _selectedMethod,
+      onChanged: (value) => setState(() => _selectedMethod = value!),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Prove you own this profile',
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -396,6 +399,7 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
         // Benefits of Level 3
         _buildLevel3Benefits(),
       ],
+      ),
     );
   }
 
@@ -497,8 +501,6 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
                 ),
                 Radio<VerificationMethod>(
                   value: method,
-                  groupValue: _selectedMethod,
-                  onChanged: (v) => setState(() => _selectedMethod = v!),
                   activeColor: AppTheme.primaryPurple,
                 ),
               ],

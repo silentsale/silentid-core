@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import '../models/safety_report.dart';
 import 'api_service.dart';
 
@@ -20,29 +21,46 @@ class SafetyService {
     }
   }
 
-  /// Upload evidence file for a report
-  /// Note: For now, we're using a placeholder URL since file upload to Azure Blob
-  /// requires additional infrastructure (upload URL generation, Azure connection)
-  /// In production, this should:
-  /// 1. Get signed upload URL from backend
-  /// 2. Upload file to Azure Blob Storage
-  /// 3. Submit fileUrl to backend
+  /// Upload evidence file for a report using multipart form upload
+  /// The backend handles Azure Blob Storage upload internally via BlobStorageService
   Future<void> uploadEvidence(String reportId, File file) async {
     try {
-      // TODO: Replace with actual Azure Blob upload
-      // For now, using local file path as placeholder
-      final fileUrl = 'pending-upload://${file.path.split('/').last}';
-      final fileType = file.path.split('.').last;
+      final fileName = file.path.split('/').last;
+      final fileType = _getContentType(fileName);
 
-      await _apiService.post(
-        '/v1/reports/$reportId/evidence',
-        data: {
-          'fileUrl': fileUrl,
-          'fileType': fileType,
-        },
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          file.path,
+          filename: fileName,
+          contentType: DioMediaType.parse(fileType),
+        ),
+        'reportId': reportId,
+      });
+
+      await _apiService.uploadMultipart(
+        '/v1/reports/$reportId/evidence/upload',
+        formData: formData,
       );
     } catch (e) {
       throw Exception('Failed to upload evidence: ${e.toString()}');
+    }
+  }
+
+  /// Get content type from filename
+  String _getContentType(String fileName) {
+    final ext = fileName.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'webp':
+        return 'image/webp';
+      case 'pdf':
+        return 'application/pdf';
+      default:
+        return 'application/octet-stream';
     }
   }
 

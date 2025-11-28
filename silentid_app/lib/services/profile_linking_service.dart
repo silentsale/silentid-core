@@ -466,6 +466,42 @@ class ProfileLinkingService {
     return _parseProfileLinkResponse(response.data);
   }
 
+  /// Verify if verification token exists in profile bio
+  /// Scrapes profile URL and checks if token is present
+  /// Returns true if token found, false otherwise
+  Future<bool> verifyTokenInProfile(String profileId) async {
+    try {
+      // Backend will scrape the profile URL and verify token presence
+      final response = await _api.post(
+        ApiConstants.profileLinkConfirmToken(profileId),
+        data: {'checkOnly': true},
+      );
+      return response.data['tokenFound'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Upgrade a linked profile to verified status
+  /// Used after successful token or screenshot verification
+  Future<ConnectedProfile> upgradeToVerified({
+    required ConnectedProfile profile,
+    required ProfileLinkState verificationMethod,
+  }) async {
+    final methodString = verificationMethod == ProfileLinkState.verifiedToken
+        ? 'TokenInBio'
+        : 'Screenshot';
+
+    final response = await _api.post(
+      ApiConstants.profileLinkConfirmToken(profile.id),
+      data: {
+        'verificationMethod': methodString,
+        'confirmUpgrade': true,
+      },
+    );
+    return _parseProfileLinkResponse(response.data);
+  }
+
   /// Parse API response to ConnectedProfile model
   ConnectedProfile _parseProfileLinkResponse(Map<String, dynamic> json) {
     // Map backend linkState to ProfileLinkState enum

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/widgets/settings_list_item.dart';
@@ -27,7 +29,6 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _userApi = UserApiService();
 
-  bool _isLoading = true;
   UserProfile? _profile;
 
   // Derived getters for backwards compatibility
@@ -47,15 +48,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfile() async {
-    setState(() => _isLoading = true);
     try {
       final profile = await _userApi.getUserProfile();
-      setState(() {
-        _profile = profile;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _profile = profile;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load profile: $e')),
@@ -420,7 +420,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 subtitle: riskScore < 20 ? "All clear" : "Review needed",
                 iconColor: riskScore < 20 ? AppTheme.successGreen : AppTheme.warningAmber,
                 onTap: () {
-                  // TODO: Navigate to Security Center
+                  context.push('/security');
                 },
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -468,7 +468,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: "Login methods",
                 subtitle: "Passkey, Apple, Google, Email",
                 onTap: () {
-                  // TODO: Navigate to Login methods
+                  _showLoginMethodsComingSoon();
                 },
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -594,7 +594,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: "Connected services",
                 subtitle: "Email, permissions",
                 onTap: () {
-                  // TODO: Navigate to Connected services
+                  _showConnectedServicesComingSoon();
                 },
               ),
 
@@ -682,7 +682,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.help_outline,
                 title: "Help Center",
                 onTap: () {
-                  // TODO: Navigate to Help Center
+                  _launchUrl('https://help.silentid.co.uk');
                 },
               ),
 
@@ -692,7 +692,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.chat_bubble_outline,
                 title: "Contact support",
                 onTap: () {
-                  // TODO: Navigate to Contact support
+                  _launchUrl('mailto:support@silentid.co.uk?subject=SilentID%20Support%20Request');
                 },
               ),
 
@@ -742,7 +742,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.description_outlined,
                 title: "Terms & Conditions",
                 onTap: () {
-                  // TODO: Open Terms & Conditions
+                  _launchUrl('https://silentid.co.uk/terms');
                 },
               ),
 
@@ -752,7 +752,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.lock_outline,
                 title: "Privacy Policy",
                 onTap: () {
-                  // TODO: Open Privacy Policy
+                  _launchUrl('https://silentid.co.uk/privacy');
                 },
               ),
 
@@ -762,7 +762,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.code_outlined,
                 title: "Licenses & credits",
                 onTap: () {
-                  // TODO: Show licenses
+                  showLicensePage(
+                    context: context,
+                    applicationName: 'SilentID',
+                    applicationVersion: '1.0.0 (MVP)',
+                    applicationLegalese: '\u00a9 2024 SILENTSALE LTD\nAll rights reserved.',
+                  );
                 },
               ),
 
@@ -789,6 +794,164 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  // Helper method to launch URLs
+  Future<void> _launchUrl(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    try {
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not open $urlString'),
+              backgroundColor: AppTheme.dangerRed,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error opening link: $e'),
+            backgroundColor: AppTheme.dangerRed,
+          ),
+        );
+      }
+    }
+  }
+
+  // Placeholder for Login Methods screen (Coming Soon)
+  void _showLoginMethodsComingSoon() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.vpn_key_outlined,
+              color: AppTheme.primaryPurple,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              'Login Methods',
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Manage your passwordless login methods here.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: AppTheme.neutralGray700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _buildLoginMethodRow(Icons.fingerprint, 'Passkey', 'Coming soon'),
+            _buildLoginMethodRow(Icons.apple, 'Apple Sign-In', 'Connected'),
+            _buildLoginMethodRow(Icons.g_mobiledata_rounded, 'Google Sign-In', 'Available'),
+            _buildLoginMethodRow(Icons.email_outlined, 'Email OTP', 'Available'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Close',
+              style: GoogleFonts.inter(
+                color: AppTheme.primaryPurple,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginMethodRow(IconData icon, String title, String status) {
+    final bool isConnected = status == 'Connected';
+    final bool isComingSoon = status == 'Coming soon';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: isConnected ? AppTheme.successGreen : AppTheme.neutralGray700,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: isConnected
+                  ? AppTheme.successGreen.withValues(alpha: 0.1)
+                  : isComingSoon
+                      ? AppTheme.warningAmber.withValues(alpha: 0.1)
+                      : AppTheme.neutralGray300.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              status,
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: isConnected
+                    ? AppTheme.successGreen
+                    : isComingSoon
+                        ? AppTheme.warningAmber
+                        : AppTheme.neutralGray700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Placeholder for Connected Services screen (Coming Soon)
+  void _showConnectedServicesComingSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.info_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Connected Services management coming soon',
+                style: GoogleFonts.inter(fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppTheme.primaryPurple,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 3),
+      ),
     );
   }
 }

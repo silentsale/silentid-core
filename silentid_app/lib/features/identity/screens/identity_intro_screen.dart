@@ -134,7 +134,8 @@ class IdentityIntroScreen extends StatelessWidget {
               PrimaryButton(
                 text: 'Start Verification',
                 onPressed: () {
-                  // TODO: Navigate to Stripe verification WebView
+                  // Navigate to Stripe Identity WebView which calls backend
+                  // to create verification session and loads Stripe Identity UI
                   context.push('/identity/verify');
                 },
               ),

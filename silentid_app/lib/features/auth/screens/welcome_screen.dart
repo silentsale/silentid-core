@@ -133,6 +133,105 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     }
   }
 
+  Future<void> _handlePasskeySignIn() async {
+    // Show "Coming Soon" dialog with passkey information
+    // Passkey authentication will be fully implemented when backend WebAuthn support is ready
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.fingerprint,
+                color: AppTheme.primaryPurple,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Passkey Sign-In',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.deepBlack,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Passkey authentication is coming soon!',
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.deepBlack,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Passkeys use Face ID, Touch ID, or fingerprint to provide secure, passwordless login.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: AppTheme.neutralGray700,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.softLilac.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                    color: AppTheme.primaryPurple,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'For now, please use Apple, Google, or Email sign-in.',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: AppTheme.neutralGray700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Got it',
+              style: GoogleFonts.inter(
+                color: AppTheme.primaryPurple,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -229,14 +328,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 text: 'Use a Passkey',
                 icon: Icons.fingerprint,
                 isSecondary: true,
-                onPressed: () {
-                  // TODO: Implement Passkey Sign-In
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Passkey Sign-In coming soon'),
-                    ),
-                  );
-                },
+                onPressed: _handlePasskeySignIn,
               ),
 
               const Spacer(),

@@ -52,7 +52,7 @@ public class ReportController : ControllerBase
     }
 
     /// <summary>
-    /// Upload evidence for an existing report.
+    /// Upload evidence for an existing report (JSON body with fileUrl).
     /// </summary>
     [HttpPost("{id}/evidence")]
     public async Task<IActionResult> UploadEvidence(Guid id, [FromBody] UploadReportEvidenceRequest request)
@@ -77,6 +77,62 @@ public class ReportController : ControllerBase
         catch (UnauthorizedAccessException)
         {
             return Forbid();
+        }
+    }
+
+    /// <summary>
+    /// Upload evidence file for an existing report (multipart form-data upload).
+    /// This handles file upload to Azure Blob Storage internally.
+    /// </summary>
+    [HttpPost("{id}/evidence/upload")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadEvidenceFile(Guid id, [FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { error = "invalid_file", message = "Please provide a valid file." });
+        }
+
+        // Validate file type (images and PDFs)
+        var allowedContentTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf" };
+        if (!allowedContentTypes.Contains(file.ContentType.ToLowerInvariant()))
+        {
+            return BadRequest(new { error = "invalid_file_type", message = "Only image files (JPEG, PNG, WebP) and PDFs are allowed." });
+        }
+
+        // Validate file size (max 10MB)
+        const int maxFileSizeBytes = 10 * 1024 * 1024;
+        if (file.Length > maxFileSizeBytes)
+        {
+            return BadRequest(new { error = "file_too_large", message = "File size must not exceed 10MB." });
+        }
+
+        try
+        {
+            var userId = GetUserIdFromToken();
+            var evidence = await _service.UploadEvidenceFileAsync(id, userId, file);
+
+            return Ok(new
+            {
+                id = evidence.Id,
+                reportId = evidence.ReportId,
+                fileUrl = evidence.FileUrl,
+                fileType = evidence.FileType,
+                message = "Evidence uploaded successfully"
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = "report_not_found", message = ex.Message });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading evidence file for report {ReportId}", id);
+            return StatusCode(500, new { error = "internal_error", message = "Failed to upload evidence file." });
         }
     }
 

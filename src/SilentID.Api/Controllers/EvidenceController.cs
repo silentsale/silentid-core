@@ -281,6 +281,53 @@ public class EvidenceController : ControllerBase
     }
 
     /// <summary>
+    /// GET /v1/evidence/screenshots - Get user's screenshots (paginated)
+    /// </summary>
+    [HttpGet("screenshots")]
+    public async Task<IActionResult> GetScreenshots([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        if (page < 1 || pageSize < 1 || pageSize > 100)
+        {
+            return BadRequest(new { error = "invalid_pagination", message = "Page must be >= 1 and pageSize between 1-100." });
+        }
+
+        try
+        {
+            var userId = GetUserId();
+
+            var screenshots = await _evidenceService.GetUserScreenshotsAsync(userId, page, pageSize);
+            var totalCount = await _evidenceService.GetTotalScreenshotsCountAsync(userId);
+
+            return Ok(new
+            {
+                screenshots = screenshots.Select(s => new
+                {
+                    id = s.Id,
+                    fileUrl = s.FileUrl,
+                    platform = s.Platform.ToString(),
+                    ocrText = s.OCRText,
+                    integrityScore = s.IntegrityScore,
+                    fraudFlag = s.FraudFlag,
+                    evidenceState = s.EvidenceState.ToString(),
+                    createdAt = s.CreatedAt
+                }),
+                pagination = new
+                {
+                    page,
+                    pageSize,
+                    totalCount,
+                    totalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving screenshots");
+            return StatusCode(500, new { error = "internal_error", message = "Failed to retrieve screenshots." });
+        }
+    }
+
+    /// <summary>
     /// POST /v1/evidence/profile-links - Add public profile link evidence
     /// </summary>
     [HttpPost("profile-links")]

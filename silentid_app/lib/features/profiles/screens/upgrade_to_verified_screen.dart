@@ -25,7 +25,8 @@ class UpgradeToVerifiedScreen extends StatefulWidget {
 class _UpgradeToVerifiedScreenState extends State<UpgradeToVerifiedScreen> {
   final _service = ProfileLinkingService();
   late PlatformConfig? _platform;
-  late String _verificationToken;
+  String _verificationToken = '';
+  bool _isLoadingToken = true;
 
   bool _isCheckingToken = false;
   bool _tokenCopied = false;
@@ -35,7 +36,32 @@ class _UpgradeToVerifiedScreenState extends State<UpgradeToVerifiedScreen> {
   void initState() {
     super.initState();
     _platform = _service.getPlatformById(widget.profile.platformId);
-    _verificationToken = _service.generateVerificationToken();
+    _loadVerificationToken();
+  }
+
+  Future<void> _loadVerificationToken() async {
+    try {
+      final token = await _service.generateVerificationToken(widget.profile.id);
+      if (mounted) {
+        setState(() {
+          _verificationToken = token;
+          _isLoadingToken = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _verificationToken = 'SID-ERROR';
+          _isLoadingToken = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate token: $e'),
+            backgroundColor: AppTheme.dangerRed,
+          ),
+        );
+      }
+    }
   }
 
   void _copyToken() {
@@ -62,11 +88,8 @@ class _UpgradeToVerifiedScreenState extends State<UpgradeToVerifiedScreen> {
     HapticFeedback.mediumImpact();
 
     try {
-      // Check if token exists in profile
-      final found = await _service.verifyTokenInProfile(
-        widget.profile.profileUrl,
-        _verificationToken,
-      );
+      // Check if token exists in profile bio via backend scraping
+      final found = await _service.verifyTokenInProfile(widget.profile.id);
 
       if (found) {
         // Upgrade to verified
@@ -577,18 +600,39 @@ class _UpgradeToVerifiedScreenState extends State<UpgradeToVerifiedScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        _verificationToken,
-                        style: GoogleFonts.robotoMono(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.neutralGray900,
-                          letterSpacing: 1,
-                        ),
-                      ),
+                      child: _isLoadingToken
+                          ? Row(
+                              children: [
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppTheme.primaryPurple,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Generating token...',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: AppTheme.neutralGray700,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              _verificationToken,
+                              style: GoogleFonts.robotoMono(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.neutralGray900,
+                                letterSpacing: 1,
+                              ),
+                            ),
                     ),
                     GestureDetector(
-                      onTap: _copyToken,
+                      onTap: _isLoadingToken ? null : _copyToken,
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(

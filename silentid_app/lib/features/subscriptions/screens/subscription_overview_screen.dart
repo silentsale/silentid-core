@@ -235,7 +235,6 @@ class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen>
             // Manage Subscription
             OutlinedButton(
               onPressed: () {
-                // TODO: Show subscription management options
                 _showManagementOptions(context);
               },
               style: OutlinedButton.styleFrom(
@@ -334,7 +333,7 @@ class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen>
               title: const Text('Update payment method'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to payment method update
+                _showPaymentMethodUpdate();
               },
             ),
             ListTile(
@@ -342,7 +341,7 @@ class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen>
               title: const Text('View billing history'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to billing history
+                _showBillingHistory();
               },
             ),
             ListTile(
@@ -359,6 +358,235 @@ class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen>
             SizedBox(height: MediaQuery.of(context).padding.bottom),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showPaymentMethodUpdate() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Container(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.lg + MediaQuery.of(context).padding.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.payment_outlined, color: AppTheme.primaryPurple),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Update Payment Method',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.deepBlack,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppTheme.softLilac,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: AppTheme.primaryPurple),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Stripe payment method management will be available in a future update. Your current payment method will continue to be charged.',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: AppTheme.neutralGray700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Got it'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showBillingHistory() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Container(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.lg + MediaQuery.of(context).padding.bottom,
+        ),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.6,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.receipt_outlined, color: AppTheme.primaryPurple),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Billing History',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.deepBlack,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Expanded(
+              child: _subscription != null && _subscription!.isPremium
+                  ? ListView(
+                      children: [
+                        _buildBillingItem(
+                          date: _subscription!.formattedRenewalDate,
+                          amount: '£${_subscription!.monthlyPrice.toStringAsFixed(2)}',
+                          status: 'Upcoming',
+                          isUpcoming: true,
+                        ),
+                        // Show placeholder for past invoices
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.history,
+                                size: 48,
+                                color: AppTheme.neutralGray300,
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                'Past invoices will appear here',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: AppTheme.neutralGray700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.receipt_long_outlined,
+                            size: 48,
+                            color: AppTheme.neutralGray300,
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            'No billing history',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: AppTheme.neutralGray700,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'Upgrade to Premium or Pro to start building history',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              color: AppTheme.neutralGray700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBillingItem({
+    required String date,
+    required String amount,
+    required String status,
+    bool isUpcoming = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: isUpcoming ? AppTheme.softLilac : AppTheme.pureWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isUpcoming ? AppTheme.primaryPurple.withValues(alpha: 0.3) : AppTheme.neutralGray300,
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  date,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.deepBlack,
+                  ),
+                ),
+                Text(
+                  status,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: isUpcoming ? AppTheme.primaryPurple : AppTheme.successGreen,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            amount,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.deepBlack,
+            ),
+          ),
+        ],
       ),
     );
   }

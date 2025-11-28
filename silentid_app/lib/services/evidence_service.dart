@@ -102,14 +102,31 @@ class EvidenceService {
     }
   }
 
-  /// Get all screenshots for the current user
-  Future<List<Screenshot>> getScreenshots() async {
+  /// Get all screenshots for the current user (paginated)
+  Future<List<Screenshot>> getScreenshots({int page = 1, int pageSize = 20}) async {
     try {
-      // Note: Backend doesn't have a list endpoint yet, so we'll return empty for now
-      // TODO: Add GET /v1/evidence/screenshots endpoint in backend
-      return [];
+      final response = await _api.get(
+        '/v1/evidence/screenshots',
+        queryParameters: {'page': page, 'pageSize': pageSize},
+      );
+
+      final screenshots = (response.data['screenshots'] as List)
+          .map((json) => Screenshot.fromJson(json))
+          .toList();
+
+      return screenshots;
     } catch (e) {
       throw Exception('Failed to load screenshots: $e');
+    }
+  }
+
+  /// Get total count of screenshots
+  Future<int> getTotalScreenshotsCount() async {
+    try {
+      final response = await _api.get('/v1/evidence/screenshots');
+      return response.data['pagination']['totalCount'] ?? 0;
+    } catch (e) {
+      return 0;
     }
   }
 
@@ -144,26 +161,50 @@ class EvidenceService {
   /// Get all profile links for the current user
   Future<List<ProfileLink>> getProfileLinks() async {
     try {
-      // Note: Backend doesn't have a list endpoint yet, so we'll return empty for now
-      // TODO: Add GET /v1/evidence/profile-links endpoint in backend
-      return [];
+      final response = await _api.get('/v1/evidence/profile-links');
+
+      final profileLinks = (response.data['profileLinks'] as List)
+          .map((json) => ProfileLink.fromJson(json))
+          .toList();
+
+      return profileLinks;
     } catch (e) {
       throw Exception('Failed to load profile links: $e');
+    }
+  }
+
+  /// Get profile links count and breakdown
+  Future<Map<String, int>> getProfileLinksCounts() async {
+    try {
+      final response = await _api.get('/v1/evidence/profile-links');
+      return {
+        'total': response.data['count'] ?? 0,
+        'linked': response.data['linkedCount'] ?? 0,
+        'verified': response.data['verifiedCount'] ?? 0,
+      };
+    } catch (e) {
+      return {'total': 0, 'linked': 0, 'verified': 0};
     }
   }
 
   /// Get evidence summary (counts for each type)
   Future<EvidenceSummary> getEvidenceSummary() async {
     try {
-      // Get counts from receipts endpoint (has pagination data)
-      final receiptsResponse = await _api.get('/v1/evidence/receipts');
-      final receiptsCount = receiptsResponse.data['pagination']['totalCount'] ?? 0;
+      // Get counts from all evidence endpoints in parallel
+      final results = await Future.wait([
+        _api.get('/v1/evidence/receipts'),
+        _api.get('/v1/evidence/screenshots'),
+        _api.get('/v1/evidence/profile-links'),
+      ]);
 
-      // For screenshots and profile links, we'll use 0 for now since list endpoints don't exist
+      final receiptsCount = results[0].data['pagination']['totalCount'] ?? 0;
+      final screenshotsCount = results[1].data['pagination']['totalCount'] ?? 0;
+      final profileLinksCount = results[2].data['count'] ?? 0;
+
       return EvidenceSummary(
         receiptsCount: receiptsCount,
-        screenshotsCount: 0,
-        profileLinksCount: 0,
+        screenshotsCount: screenshotsCount,
+        profileLinksCount: profileLinksCount,
       );
     } catch (e) {
       return EvidenceSummary(

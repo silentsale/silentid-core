@@ -131,6 +131,24 @@ class ApiService {
     }
   }
 
+  // Multipart upload request (for file uploads)
+  Future<Response> uploadMultipart(
+    String endpoint, {
+    required FormData formData,
+    int maxRetries = 3,
+  }) async {
+    return await _retryableRequest(
+      () => _dio.post(
+        endpoint,
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+        ),
+      ),
+      maxRetries: maxRetries,
+    );
+  }
+
   // Retry logic for network requests
   Future<Response> _retryableRequest(
     Future<Response> Function() request, {

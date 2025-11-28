@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,9 @@ import '../../../core/widgets/offline_indicator.dart';
 import '../../../core/widgets/onboarding_checklist.dart';
 import '../../../core/utils/animations.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/user_api_service.dart';
+import '../../../services/evidence_service.dart';
+import '../../../services/profile_linking_service.dart';
 
 class EnhancedHomeScreen extends StatefulWidget {
   const EnhancedHomeScreen({super.key});
@@ -19,9 +23,16 @@ class EnhancedHomeScreen extends StatefulWidget {
 class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
   final _authService = AuthService();
   static const _storage = FlutterSecureStorage();
+
+  // API Services for data refresh
+  final _userApiService = UserApiService();
+  final _evidenceService = EvidenceService();
+  final _profileLinkingService = ProfileLinkingService();
+
   String? _userEmail;
   int _selectedIndex = 0;
-  bool _isOnline = true; // TODO: Implement connectivity check
+  bool _isOnline = true;
+  bool _isRefreshing = false;
 
   // Badge counts (placeholder - integrate with real data)
   final int _evidenceBadgeCount = 0;
@@ -72,12 +83,39 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
     });
   }
 
+  /// Check internet connectivity by attempting a lightweight HTTP request
+  /// Uses Google's connectivity check endpoint (similar to Android's approach)
   Future<void> _checkConnectivity() async {
-    // TODO: Implement real connectivity check
-    // For now, always online
-    setState(() {
-      _isOnline = true;
-    });
+    try {
+      final dio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 5),
+        receiveTimeout: const Duration(seconds: 5),
+      ));
+
+      // Use Google's generate_204 endpoint - returns 204 No Content if online
+      // This is the same approach used by Android for connectivity checks
+      final response = await dio.get('https://www.google.com/generate_204');
+
+      if (mounted) {
+        setState(() {
+          _isOnline = response.statusCode == 204;
+        });
+      }
+    } on DioException catch (_) {
+      // Any network error means offline
+      if (mounted) {
+        setState(() {
+          _isOnline = false;
+        });
+      }
+    } catch (_) {
+      // Fallback: assume online if check fails unexpectedly
+      if (mounted) {
+        setState(() {
+          _isOnline = true;
+        });
+      }
+    }
   }
 
   Future<void> _handleLogout() async {
@@ -126,14 +164,127 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
     }
   }
 
+  /// Refresh data based on the currently selected tab
+  /// Tab 0 (Home): Refresh user data, TrustScore, connectivity
+  /// Tab 1 (Evidence): Refresh evidence list (receipts, screenshots, profile links)
+  /// Tab 2 (Verify): Refresh verification requests (not implemented yet)
+  /// Tab 3 (Profile): Refresh user profile data
   Future<void> _refreshTab() async {
-    // Simulate refresh
-    await Future.delayed(const Duration(seconds: 1));
+    if (_isRefreshing) return;
 
-    // TODO: Implement real refresh logic based on tab
     setState(() {
-      // Refresh complete
+      _isRefreshing = true;
     });
+
+    try {
+      // Always check connectivity on refresh
+      await _checkConnectivity();
+
+      // If offline, don't attempt data refresh
+      if (!_isOnline) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('You are offline. Please check your connection.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Refresh based on current tab
+      switch (_selectedIndex) {
+        case 0:
+          // Home tab: Refresh user profile and TrustScore
+          await _refreshHomeData();
+          break;
+
+        case 1:
+          // Evidence tab: Refresh evidence list
+          await _refreshEvidenceData();
+          break;
+
+        case 2:
+          // Verify tab: Refresh verification requests
+          // Note: MutualVerificationService removed per specification
+          // Future: Add other verification-related refresh if needed
+          break;
+
+        case 3:
+          // Profile tab: Refresh profile data
+          await _refreshProfileData();
+          break;
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Refresh failed: ${e.toString().replaceAll('Exception: ', '')}'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
+
+  /// Refresh Home tab data: user info, TrustScore, onboarding state
+  Future<void> _refreshHomeData() async {
+    try {
+      // Fetch user profile (includes TrustScore)
+      final userProfile = await _userApiService.getUserProfile();
+
+      // Reload onboarding state
+      await _loadOnboardingState();
+
+      // Update user email if changed
+      if (mounted && userProfile.email != _userEmail) {
+        setState(() {
+          _userEmail = userProfile.email;
+        });
+      }
+    } catch (e) {
+      // Log error but don't crash - partial refresh is acceptable
+      debugPrint('Home refresh error: $e');
+      rethrow;
+    }
+  }
+
+  /// Refresh Evidence tab data: receipts, screenshots, profile links
+  Future<void> _refreshEvidenceData() async {
+    try {
+      // Fetch evidence summary (counts)
+      await _evidenceService.getEvidenceSummary();
+
+      // Fetch receipts list
+      await _evidenceService.getReceipts();
+
+      // Fetch connected profiles
+      await _profileLinkingService.getConnectedProfiles();
+    } catch (e) {
+      debugPrint('Evidence refresh error: $e');
+      rethrow;
+    }
+  }
+
+  /// Refresh Profile tab data: user profile, connected profiles
+  Future<void> _refreshProfileData() async {
+    try {
+      // Fetch full user profile
+      await _userApiService.getUserProfile();
+
+      // Fetch connected profiles for display
+      await _profileLinkingService.getConnectedProfiles();
+    } catch (e) {
+      debugPrint('Profile refresh error: $e');
+      rethrow;
+    }
   }
 
   @override

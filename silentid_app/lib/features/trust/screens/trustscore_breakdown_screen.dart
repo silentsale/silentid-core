@@ -23,7 +23,6 @@ class _TrustScoreBreakdownScreenState
   bool _isLoading = true;
   Map<String, dynamic>? _breakdownData;
   List<PublicConnectedProfile> _connectedProfiles = [];
-  String? _errorMessage;
 
   @override
   void initState() {
@@ -34,7 +33,6 @@ class _TrustScoreBreakdownScreenState
   Future<void> _loadBreakdown() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     try {
@@ -74,7 +72,6 @@ class _TrustScoreBreakdownScreenState
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = e.toString();
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

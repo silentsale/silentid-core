@@ -10,9 +10,11 @@ public interface IEvidenceService
     Task<ScreenshotEvidence> AddScreenshotEvidenceAsync(Guid userId, ScreenshotEvidence screenshot);
     Task<ProfileLinkEvidence> AddProfileLinkEvidenceAsync(Guid userId, ProfileLinkEvidence profileLink);
     Task<List<ReceiptEvidence>> GetUserReceiptsAsync(Guid userId, int page = 1, int pageSize = 20);
+    Task<List<ScreenshotEvidence>> GetUserScreenshotsAsync(Guid userId, int page = 1, int pageSize = 20);
     Task<ScreenshotEvidence?> GetScreenshotAsync(Guid id, Guid userId);
     Task<ProfileLinkEvidence?> GetProfileLinkAsync(Guid id, Guid userId);
     Task<int> GetTotalReceiptsCountAsync(Guid userId);
+    Task<int> GetTotalScreenshotsCountAsync(Guid userId);
     Task<bool> IsDuplicateReceiptAsync(string rawHash);
 
     // Level 3 Verification Methods (Section 5 - Core Features)
@@ -165,6 +167,23 @@ public class EvidenceService : IEvidenceService
     {
         return await _context.ReceiptEvidences
             .CountAsync(r => r.UserId == userId);
+    }
+
+    public async Task<List<ScreenshotEvidence>> GetUserScreenshotsAsync(Guid userId, int page = 1, int pageSize = 20)
+    {
+        return await _context.ScreenshotEvidences
+            .AsNoTracking()
+            .Where(s => s.UserId == userId)
+            .OrderByDescending(s => s.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    public async Task<int> GetTotalScreenshotsCountAsync(Guid userId)
+    {
+        return await _context.ScreenshotEvidences
+            .CountAsync(s => s.UserId == userId);
     }
 
     public async Task<bool> IsDuplicateReceiptAsync(string rawHash)

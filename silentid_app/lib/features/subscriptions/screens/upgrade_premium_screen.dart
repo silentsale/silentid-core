@@ -2,13 +2,123 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../services/subscription_api_service.dart';
 
 /// Upgrade to Premium Screen
 ///
 /// Displays Premium subscription benefits and upgrade flow
 /// Following Section 12 & 16 specifications
-class UpgradePremiumScreen extends StatelessWidget {
+class UpgradePremiumScreen extends StatefulWidget {
   const UpgradePremiumScreen({super.key});
+
+  @override
+  State<UpgradePremiumScreen> createState() => _UpgradePremiumScreenState();
+}
+
+class _UpgradePremiumScreenState extends State<UpgradePremiumScreen> {
+  final _subscriptionApi = SubscriptionApiService();
+  bool _isLoading = false;
+
+  Future<void> _handleUpgrade() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // Show payment method collection dialog
+      // In production, this would use Stripe Payment Sheet
+      final confirmed = await _showPaymentConfirmation();
+
+      if (confirmed == true) {
+        // Call backend to upgrade subscription
+        // Note: In production, paymentMethodId would come from Stripe Payment Sheet
+        await _subscriptionApi.upgradeSubscription(
+          tier: 'Premium',
+          paymentMethodId: 'pm_placeholder', // Would be real Stripe payment method
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Welcome to SilentID Premium!'),
+              backgroundColor: AppTheme.successGreen,
+            ),
+          );
+          Navigator.pop(context, true); // Return success
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Upgrade failed: ${e.toString()}'),
+            backgroundColor: AppTheme.dangerRed,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<bool?> _showPaymentConfirmation() {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Confirm Upgrade',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'You are upgrading to SilentID Premium at £4.99/month.',
+              style: GoogleFonts.inter(),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.softLilac,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                    color: AppTheme.primaryPurple,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Stripe payment integration coming soon. This is a preview of the upgrade flow.',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppTheme.neutralGray700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -224,11 +334,17 @@ class UpgradePremiumScreen extends StatelessWidget {
             child: Column(
               children: [
                 ElevatedButton(
-                  onPressed: () {
-                    // TODO: Handle upgrade
-                    _showPaymentSheet(context);
-                  },
-                  child: const Text('Get Premium — £4.99/month'),
+                  onPressed: _isLoading ? null : _handleUpgrade,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppTheme.pureWhite,
+                          ),
+                        )
+                      : const Text('Get Premium — £4.99/month'),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
@@ -292,29 +408,6 @@ class UpgradePremiumScreen extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showPaymentSheet(BuildContext context) {
-    // TODO: Integrate with Stripe payment
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Coming Soon',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-        ),
-        content: Text(
-          'Stripe payment integration will be added in the next phase.',
-          style: GoogleFonts.inter(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
           ),
         ],
       ),
