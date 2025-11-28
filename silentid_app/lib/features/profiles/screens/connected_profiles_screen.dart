@@ -44,13 +44,22 @@ class _ConnectedProfilesScreenState extends State<ConnectedProfilesScreen> {
         _isLoading = false;
       });
     } else {
-      // Load from service (mock data for now)
+      // Load from service via API
       setState(() => _isLoading = true);
-      await Future.delayed(const Duration(milliseconds: 500));
-      setState(() {
-        _profiles = _service.getMockConnectedProfiles();
-        _isLoading = false;
-      });
+      try {
+        final profiles = await _service.getConnectedProfiles();
+        setState(() {
+          _profiles = profiles;
+          _isLoading = false;
+        });
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to load profiles: $e')),
+          );
+        }
+      }
     }
   }
 

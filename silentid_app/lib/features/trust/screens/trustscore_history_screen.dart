@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../services/trustscore_api_service.dart';
 
 class TrustScoreHistoryScreen extends StatefulWidget {
   const TrustScoreHistoryScreen({super.key});
@@ -11,6 +12,8 @@ class TrustScoreHistoryScreen extends StatefulWidget {
 }
 
 class _TrustScoreHistoryScreenState extends State<TrustScoreHistoryScreen> {
+  final _trustScoreApi = TrustScoreApiService();
+
   bool _isLoading = true;
   List<Map<String, dynamic>>? _historyData;
 
@@ -20,73 +23,43 @@ class _TrustScoreHistoryScreenState extends State<TrustScoreHistoryScreen> {
     _loadHistory();
   }
 
+  /// Get trust label from score
+  String _getTrustLabel(int score) {
+    if (score >= 801) return 'Very High Trust';
+    if (score >= 601) return 'High Trust';
+    if (score >= 401) return 'Moderate Trust';
+    if (score >= 201) return 'Low Trust';
+    return 'High Risk';
+  }
+
   Future<void> _loadHistory() async {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Replace with actual API call
-      // final response = await ApiService().get('/trustscore/me/history');
+      // Fetch history from API (6 months by default)
+      final response = await _trustScoreApi.getTrustScoreHistory(months: 6);
 
-      // Mock data for now (weekly snapshots)
-      await Future.delayed(const Duration(seconds: 1));
+      // Convert API response to UI format
+      final historyList = <Map<String, dynamic>>[];
+      int? previousScore;
+
+      for (final snapshot in response.snapshots) {
+        final change = previousScore != null
+            ? snapshot.score - previousScore
+            : null;
+
+        historyList.add({
+          'date': '${snapshot.date.year}-${snapshot.date.month.toString().padLeft(2, '0')}-${snapshot.date.day.toString().padLeft(2, '0')}',
+          'score': snapshot.score,
+          'label': _getTrustLabel(snapshot.score),
+          'change': change,
+        });
+
+        previousScore = snapshot.score;
+      }
 
       setState(() {
-        _historyData = [
-          {
-            'date': '2025-09-22',
-            'score': 620,
-            'label': 'High Trust',
-            'change': null
-          },
-          {
-            'date': '2025-09-29',
-            'score': 645,
-            'label': 'High Trust',
-            'change': 25
-          },
-          {
-            'date': '2025-10-06',
-            'score': 680,
-            'label': 'High Trust',
-            'change': 35
-          },
-          {
-            'date': '2025-10-13',
-            'score': 695,
-            'label': 'High Trust',
-            'change': 15
-          },
-          {
-            'date': '2025-10-20',
-            'score': 720,
-            'label': 'High Trust',
-            'change': 25
-          },
-          {
-            'date': '2025-10-27',
-            'score': 730,
-            'label': 'High Trust',
-            'change': 10
-          },
-          {
-            'date': '2025-11-03',
-            'score': 745,
-            'label': 'High Trust',
-            'change': 15
-          },
-          {
-            'date': '2025-11-10',
-            'score': 752,
-            'label': 'High Trust',
-            'change': 7
-          },
-          {
-            'date': '2025-11-17',
-            'score': 754,
-            'label': 'High Trust',
-            'change': 2
-          },
-        ];
+        _historyData = historyList;
         _isLoading = false;
       });
     } catch (e) {

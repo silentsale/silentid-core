@@ -5,6 +5,7 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../core/widgets/settings_list_item.dart';
 import '../../../core/widgets/info_point_helper.dart';
 import '../../../core/data/info_point_data.dart';
+import '../../../services/user_api_service.dart';
 
 /// Profile/Settings screen following Section 39 specifications
 ///
@@ -24,16 +25,45 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Mock data - replace with actual state management
-  final String displayName = "Sarah M.";
-  final String username = "@sarahtrusted";
-  final bool isIdentityVerified = true;
-  final int trustScore = 847;
-  final String trustLevel = "High";
-  final String accountType = "Premium";
-  final int riskScore = 12;
-  final int evidenceCount = 124;
-  final int mutualVerificationsCount = 12;
+  final _userApi = UserApiService();
+
+  bool _isLoading = true;
+  UserProfile? _profile;
+
+  // Derived getters for backwards compatibility
+  String get displayName => _profile?.displayNameOrFallback ?? "Loading...";
+  String get username => _profile?.formattedUsername ?? "@user";
+  bool get isIdentityVerified => _profile?.isIdentityVerified ?? false;
+  int get trustScore => _profile?.trustScore ?? 0;
+  String get trustLevel => _profile?.trustLevel ?? "Unknown";
+  String get accountType => _profile?.accountType ?? "Free";
+  int get riskScore => _profile?.riskScore ?? 0;
+  int get evidenceCount => _profile?.evidenceCount ?? 0;
+  int get mutualVerificationsCount => _profile?.mutualVerificationsCount ?? 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    setState(() => _isLoading = true);
+    try {
+      final profile = await _userApi.getUserProfile();
+      setState(() {
+        _profile = profile;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load profile: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

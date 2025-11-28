@@ -4,6 +4,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/enums/button_variant.dart';
+import '../../../core/constants/api_constants.dart';
+import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
 
 class DeleteAccountScreen extends StatefulWidget {
@@ -14,6 +16,7 @@ class DeleteAccountScreen extends StatefulWidget {
 }
 
 class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
+  final _api = ApiService();
   final _authService = AuthService();
   final _usernameController = TextEditingController();
   bool _confirmChecked = false;
@@ -63,10 +66,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     setState(() => _isDeleting = true);
 
     try {
-      // TODO: Replace with actual API call
-      // await ApiService().delete('/users/me');
-
-      await Future.delayed(const Duration(seconds: 2));
+      await _api.delete(ApiConstants.accountDelete);
 
       // Clear auth data
       await _authService.logout();
@@ -84,7 +84,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       setState(() => _isDeleting = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete account: $e')),
+          SnackBar(
+            content: Text('Failed to delete account: $e'),
+            backgroundColor: AppTheme.dangerRed,
+          ),
         );
       }
     }

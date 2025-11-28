@@ -8,6 +8,7 @@ import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/info_point_helper.dart';
 import '../../../core/data/info_point_data.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/referral_api_service.dart';
 
 class OtpScreen extends StatefulWidget {
   final String email;
@@ -32,12 +33,17 @@ class _OtpScreenState extends State<OtpScreen> {
   );
 
   final _authService = AuthService();
+  final _referralApi = ReferralApiService();
+  final _referralCodeController = TextEditingController();
 
   bool _isLoading = false;
   bool _canResend = false;
   int _resendTimer = 30;
   Timer? _timer;
   String? _errorMessage;
+  bool _showReferralInput = false;
+  bool _referralCodeValid = false;
+  bool _isValidatingReferral = false;
 
   @override
   void initState() {
@@ -53,8 +59,38 @@ class _OtpScreenState extends State<OtpScreen> {
     for (var node in _focusNodes) {
       node.dispose();
     }
+    _referralCodeController.dispose();
     _timer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _validateReferralCode(String code) async {
+    if (code.isEmpty) {
+      setState(() {
+        _referralCodeValid = false;
+        _isValidatingReferral = false;
+      });
+      return;
+    }
+
+    setState(() => _isValidatingReferral = true);
+
+    try {
+      final isValid = await _referralApi.validateReferralCode(code);
+      if (mounted) {
+        setState(() {
+          _referralCodeValid = isValid;
+          _isValidatingReferral = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _referralCodeValid = false;
+          _isValidatingReferral = false;
+        });
+      }
+    }
   }
 
   void _startResendTimer() {
@@ -131,8 +167,31 @@ class _OtpScreenState extends State<OtpScreen> {
       if (!mounted) return;
 
       if (result['success']) {
+        // Apply referral code if provided and valid
+        final referralCode = _referralCodeController.text.trim();
+        if (referralCode.isNotEmpty && _referralCodeValid) {
+          try {
+            await _referralApi.applyReferralCode(referralCode);
+            // Show success message briefly
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Referral code applied! You\'ll both get +50 TrustScore when you verify your identity.'),
+                  backgroundColor: AppTheme.successGreen,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          } catch (e) {
+            // Don't block login if referral fails
+            debugPrint('Failed to apply referral code: $e');
+          }
+        }
+
         // Navigate to home screen
-        context.go('/home');
+        if (mounted) {
+          context.go('/home');
+        }
       } else {
         setState(() {
           _errorMessage = result['message'];
@@ -375,6 +434,163 @@ class _OtpScreenState extends State<OtpScreen> {
                   ],
                 ),
               ),
+
+              const SizedBox(height: 24),
+
+              // Referral code section (Section 50.6.1)
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showReferralInput = !_showReferralInput;
+                  });
+                  HapticFeedback.lightImpact();
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _showReferralInput
+                          ? Icons.card_giftcard
+                          : Icons.card_giftcard_outlined,
+                      color: AppTheme.primaryPurple,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Have a referral code?',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.primaryPurple,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      _showReferralInput
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      color: AppTheme.primaryPurple,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+
+              if (_showReferralInput) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.softLilac.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _referralCodeValid
+                          ? AppTheme.successGreen
+                          : AppTheme.neutralGray300,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Enter your friend\'s referral code to both earn +50 TrustScore bonus!',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppTheme.neutralGray700,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _referralCodeController,
+                        textCapitalization: TextCapitalization.characters,
+                        style: GoogleFonts.firaCode(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.deepBlack,
+                          letterSpacing: 2,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'ABCD1234',
+                          hintStyle: GoogleFonts.firaCode(
+                            fontSize: 18,
+                            color: AppTheme.neutralGray700,
+                            letterSpacing: 2,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          suffixIcon: _isValidatingReferral
+                              ? const Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppTheme.primaryPurple,
+                                    ),
+                                  ),
+                                )
+                              : _referralCodeController.text.isNotEmpty
+                                  ? Icon(
+                                      _referralCodeValid
+                                          ? Icons.check_circle
+                                          : Icons.cancel,
+                                      color: _referralCodeValid
+                                          ? AppTheme.successGreen
+                                          : AppTheme.dangerRed,
+                                    )
+                                  : null,
+                        ),
+                        onChanged: (value) {
+                          // Debounce validation
+                          Future.delayed(const Duration(milliseconds: 500), () {
+                            if (_referralCodeController.text == value) {
+                              _validateReferralCode(value.toUpperCase());
+                            }
+                          });
+                        },
+                      ),
+                      if (_referralCodeController.text.isNotEmpty &&
+                          !_isValidatingReferral) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              _referralCodeValid
+                                  ? Icons.check_circle_outline
+                                  : Icons.info_outline,
+                              size: 14,
+                              color: _referralCodeValid
+                                  ? AppTheme.successGreen
+                                  : AppTheme.warningAmber,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _referralCodeValid
+                                  ? 'Valid code! Bonus will be applied after verification.'
+                                  : 'Invalid code. Please check and try again.',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: _referralCodeValid
+                                    ? AppTheme.successGreen
+                                    : AppTheme.warningAmber,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
 
               const Spacer(),
             ],

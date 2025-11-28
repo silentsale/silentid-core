@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../services/referral_api_service.dart';
 
 /// Referral Program Screen (Section 50.6.1)
 ///
@@ -22,7 +23,7 @@ class ReferralScreen extends StatefulWidget {
 }
 
 class _ReferralScreenState extends State<ReferralScreen> {
-  // final _api = ApiService(); // TODO: Enable when API ready
+  final _referralApi = ReferralApiService();
 
   bool _isLoading = true;
   String? _referralCode;
@@ -40,32 +41,22 @@ class _ReferralScreenState extends State<ReferralScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Replace with actual API call
-      // final response = await _api.get('/v1/referrals/me');
-
-      // Mock data for now
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Fetch referral summary and list from API
+      final summary = await _referralApi.getReferralSummary();
+      final referralList = await _referralApi.getReferralList();
 
       setState(() {
-        _referralCode = 'SARAH2024';
-        _referralLink = 'https://silentid.co.uk/r/SARAH2024';
-        _referrals = [
-          ReferralStatus(
-            name: 'James K.',
-            initials: 'JK',
-            status: ReferralState.completed,
-            earnedPoints: 50,
-            completedAt: DateTime.now().subtract(const Duration(days: 3)),
-          ),
-          ReferralStatus(
-            name: 'Emma T.',
-            initials: 'ET',
-            status: ReferralState.pending,
-            earnedPoints: 0,
-            invitedAt: DateTime.now().subtract(const Duration(days: 1)),
-          ),
-        ];
-        _totalEarnedPoints = 50;
+        _referralCode = summary.referralCode;
+        _referralLink = summary.referralLink;
+        _totalEarnedPoints = summary.totalPointsEarned;
+        _referrals = referralList.map((r) => ReferralStatus(
+          name: r.name,
+          initials: r.initials,
+          status: r.referralState,
+          earnedPoints: r.pointsEarned,
+          invitedAt: r.invitedAt,
+          completedAt: r.completedAt,
+        )).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -637,7 +628,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
   }
 }
 
-/// Referral status model
+/// Referral status model (uses ReferralState from referral_api_service.dart)
 class ReferralStatus {
   final String name;
   final String initials;
@@ -654,10 +645,4 @@ class ReferralStatus {
     this.invitedAt,
     this.completedAt,
   });
-}
-
-enum ReferralState {
-  pending,
-  completed,
-  expired,
 }

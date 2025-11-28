@@ -4,6 +4,8 @@ import '../../../core/widgets/info_point_helper.dart';
 import '../../../core/widgets/public_connected_profiles.dart';
 import '../../../core/widgets/connected_profiles_trust_contribution.dart';
 import '../../../core/data/info_point_data.dart';
+import '../../../services/trustscore_api_service.dart';
+import '../../../services/profile_linking_service.dart';
 
 class TrustScoreBreakdownScreen extends StatefulWidget {
   const TrustScoreBreakdownScreen({super.key});
@@ -15,9 +17,13 @@ class TrustScoreBreakdownScreen extends StatefulWidget {
 
 class _TrustScoreBreakdownScreenState
     extends State<TrustScoreBreakdownScreen> {
+  final _trustScoreApi = TrustScoreApiService();
+  final _profileLinkingService = ProfileLinkingService();
+
   bool _isLoading = true;
   Map<String, dynamic>? _breakdownData;
   List<PublicConnectedProfile> _connectedProfiles = [];
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -26,132 +32,50 @@ class _TrustScoreBreakdownScreenState
   }
 
   Future<void> _loadBreakdown() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     try {
-      // TODO: Replace with actual API call
-      // final response = await ApiService().get('/trustscore/me/breakdown');
+      // Fetch TrustScore breakdown and connected profiles in parallel
+      final results = await Future.wait([
+        _trustScoreApi.getTrustScoreBreakdown(),
+        _profileLinkingService.getConnectedProfiles(),
+      ]);
 
-      // Mock data for now
-      await Future.delayed(const Duration(seconds: 1));
+      final breakdown = results[0] as TrustScoreBreakdownResponse;
+      final profiles = results[1] as List<ConnectedProfile>;
 
-      // Mock connected profiles (Section 52.7)
-      _connectedProfiles = [
-        PublicConnectedProfile(
-          platformId: 'instagram',
-          platformName: 'Instagram',
-          username: '@johndoe',
-          isVerified: true,
-          verificationMethod: 'token',
-        ),
-        PublicConnectedProfile(
-          platformId: 'vinted',
-          platformName: 'Vinted',
-          username: 'johndoe_vinted',
-          isVerified: true,
-          verificationMethod: 'screenshot',
-        ),
-        PublicConnectedProfile(
-          platformId: 'linkedin',
-          platformName: 'LinkedIn',
-          username: 'john-doe-123',
-          isVerified: false,
-        ),
-        PublicConnectedProfile(
-          platformId: 'depop',
-          platformName: 'Depop',
-          username: '@johndepop',
-          isVerified: false,
-        ),
-      ];
+      // Convert connected profiles to public format
+      _connectedProfiles = profiles.map((p) {
+        // Get platform name from service
+        final platform = _profileLinkingService.getPlatformById(p.platformId);
+        // Derive verification method from state
+        String? verificationMethod;
+        if (p.state == ProfileLinkState.verifiedToken) {
+          verificationMethod = 'token';
+        } else if (p.state == ProfileLinkState.verifiedScreenshot) {
+          verificationMethod = 'screenshot';
+        }
+        return PublicConnectedProfile(
+          platformId: p.platformId,
+          platformName: platform?.displayName ?? p.platformId,
+          username: p.username,
+          isVerified: p.isVerified,
+          verificationMethod: verificationMethod,
+        );
+      }).toList();
 
       setState(() {
-        _breakdownData = {
-          'totalScore': 754,
-          'level': 'High Trust',
-          'components': {
-            'identity': {
-              'score': 210,
-              'max': 200,
-              'items': [
-                {
-                  'label': 'Stripe Identity Verified',
-                  'points': 200,
-                  'status': 'positive'
-                },
-                {'label': 'Email Verified', 'points': 10, 'status': 'positive'},
-                {'label': 'Phone Not Added', 'points': 0, 'status': 'neutral'},
-              ],
-            },
-            'evidence': {
-              'score': 180,
-              'max': 300,
-              'items': [
-                {
-                  'label': '96 Receipts Verified',
-                  'points': 140,
-                  'status': 'positive'
-                },
-                {
-                  'label': '5 Screenshots Uploaded',
-                  'points': 15,
-                  'status': 'positive'
-                },
-                {
-                  'label': '1 Profile Link Verified',
-                  'points': 25,
-                  'status': 'positive'
-                },
-              ],
-            },
-            'behaviour': {
-              'score': 240,
-              'max': 300,
-              'items': [
-                {
-                  'label': 'No Safety Reports',
-                  'points': 40,
-                  'status': 'positive'
-                },
-                {
-                  'label': 'Account Age (120 days)',
-                  'points': 60,
-                  'status': 'positive'
-                },
-                {
-                  'label': 'Cross-Platform Consistency',
-                  'points': 50,
-                  'status': 'positive'
-                },
-                {
-                  'label': '2 Device Changes',
-                  'points': -10,
-                  'status': 'negative'
-                },
-              ],
-            },
-            'peer': {
-              'score': 124,
-              'max': 200,
-              'items': [
-                {
-                  'label': '12 Mutual Verifications',
-                  'points': 120,
-                  'status': 'positive'
-                },
-                {
-                  'label': '3 Returning Partners',
-                  'points': 4,
-                  'status': 'positive'
-                },
-              ],
-            },
-          },
-        };
+        _breakdownData = breakdown.toUiFormat();
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load breakdown: $e')),
@@ -214,6 +138,17 @@ class _TrustScoreBreakdownScreenState
                       infoPoint: InfoPoints.peerVerificationComponent,
                     ),
                     const SizedBox(height: 24),
+
+                    // URS Component (Section 47)
+                    if (_breakdownData!['components']['urs'] != null)
+                      _buildComponentSection(
+                        'Universal Reputation Score',
+                        Icons.public,
+                        _breakdownData!['components']['urs'],
+                        infoPoint: InfoPoints.ursComponent,
+                      ),
+                    if (_breakdownData!['components']['urs'] != null)
+                      const SizedBox(height: 24),
 
                     // Connected Profiles Trust Contribution (Section 52.7)
                     ConnectedProfilesTrustContribution(

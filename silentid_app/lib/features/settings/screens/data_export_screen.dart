@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/constants/api_constants.dart';
+import '../../../services/api_service.dart';
 
 class DataExportScreen extends StatefulWidget {
   const DataExportScreen({super.key});
@@ -10,16 +12,14 @@ class DataExportScreen extends StatefulWidget {
 }
 
 class _DataExportScreenState extends State<DataExportScreen> {
+  final _api = ApiService();
   bool _isRequesting = false;
 
   Future<void> _requestExport() async {
     setState(() => _isRequesting = true);
 
     try {
-      // TODO: Replace with actual API call
-      // await ApiService().post('/users/me/export');
-
-      await Future.delayed(const Duration(seconds: 2));
+      await _api.post(ApiConstants.dataExportRequest);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -28,13 +28,17 @@ class _DataExportScreenState extends State<DataExportScreen> {
               'Export requested. We\'ll email you a download link when ready.',
             ),
             duration: Duration(seconds: 4),
+            backgroundColor: AppTheme.successGreen,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to request export: $e')),
+          SnackBar(
+            content: Text('Failed to request export: $e'),
+            backgroundColor: AppTheme.dangerRed,
+          ),
         );
       }
     } finally {

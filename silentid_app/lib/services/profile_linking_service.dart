@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../core/constants/api_constants.dart';
+import 'api_service.dart';
 
 /// Unified Profile Linking Service - Section 52
 /// Handles profile detection, linking, and verification states for ALL platforms
@@ -152,6 +154,8 @@ class ProfileLinkingService {
   static final ProfileLinkingService _instance = ProfileLinkingService._();
   factory ProfileLinkingService() => _instance;
   ProfileLinkingService._();
+
+  final ApiService _api = ApiService();
 
   /// All supported platforms per Section 52
   static final List<PlatformConfig> platforms = [
@@ -395,69 +399,154 @@ class ProfileLinkingService {
     );
   }
 
-  /// Generate verification token
-  String generateVerificationToken() {
-    // In production, this would come from the API
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final random = DateTime.now().millisecondsSinceEpoch;
-    String token = '';
-    for (int i = 0; i < 5; i++) {
-      token += chars[(random + i * 7) % chars.length];
-    }
-    return 'SilentID-verify-$token';
+  /// Generate verification token via API
+  /// Returns the token from the backend after creating/updating the profile link
+  Future<String> generateVerificationToken(String profileId) async {
+    final response = await _api.post(
+      ApiConstants.profileLinkGenerateToken(profileId),
+    );
+    return response.data['verificationToken'] ?? '';
   }
 
-  /// Check if token exists in profile (placeholder - needs backend)
-  Future<bool> verifyTokenInProfile(String profileUrl, String token) async {
-    // TODO: Implement backend API call to scrape and check profile
-    // This requires server-side web scraping
-    await Future.delayed(const Duration(seconds: 2));
-
-    // Placeholder: return false for now
-    // In production: return true if token found in profile bio
-    return false;
+  /// Confirm token verification via API
+  /// User has added token to their profile bio, backend will scrape and verify
+  Future<ConnectedProfile> confirmTokenVerification({
+    required String profileId,
+    required String scrapedBioText,
+  }) async {
+    final response = await _api.post(
+      ApiConstants.profileLinkConfirmToken(profileId),
+      data: {'scrapedBioText': scrapedBioText},
+    );
+    return _parseProfileLinkResponse(response.data);
   }
 
-  /// Link a profile (creates Linked state)
+  /// Link a profile (creates Linked state) via API
   Future<ConnectedProfile> linkProfile({
     required String platformId,
     required String username,
     required String profileUrl,
   }) async {
-    // TODO: Call API to save profile link
-    // final response = await _api.post('/v1/profiles/link', data: {...});
+    // Map platformId to backend Platform enum value
+    final platformEnumValue = _mapPlatformIdToEnum(platformId);
+
+    final response = await _api.post(
+      ApiConstants.profileLinks,
+      data: {
+        'url': profileUrl,
+        'platform': platformEnumValue,
+        'username': username,
+      },
+    );
+    return _parseProfileLinkResponse(response.data);
+  }
+
+  /// Get all connected profiles for current user via API
+  Future<List<ConnectedProfile>> getConnectedProfiles() async {
+    final response = await _api.get(ApiConstants.profileLinks);
+    final profileLinks = response.data['profileLinks'] as List<dynamic>? ?? [];
+    return profileLinks
+        .map((p) => _parseProfileLinkResponse(p as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Remove a connected profile via API
+  Future<void> removeProfile(String profileId) async {
+    await _api.delete(ApiConstants.profileLinkById(profileId));
+  }
+
+  /// Toggle profile visibility on public passport via API
+  Future<ConnectedProfile> togglePassportVisibility(
+    ConnectedProfile profile,
+  ) async {
+    final response = await _api.patch(
+      ApiConstants.profileLinkVisibility(profile.id),
+      data: {'showOnPassport': !profile.isPublicOnPassport},
+    );
+    return _parseProfileLinkResponse(response.data);
+  }
+
+  /// Parse API response to ConnectedProfile model
+  ConnectedProfile _parseProfileLinkResponse(Map<String, dynamic> json) {
+    // Map backend linkState to ProfileLinkState enum
+    ProfileLinkState state;
+    final linkState = json['linkState'] as String? ?? 'Linked';
+    final verificationMethod = json['verificationMethod'] as String?;
+
+    if (linkState == 'Verified' || json['verificationLevel'] == 3) {
+      state = verificationMethod == 'TokenInBio'
+          ? ProfileLinkState.verifiedToken
+          : ProfileLinkState.verifiedScreenshot;
+    } else {
+      state = ProfileLinkState.linked;
+    }
+
+    // Map backend platform enum to platformId
+    final platformId = _mapPlatformEnumToId(json['platform']);
 
     return ConnectedProfile(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: json['id']?.toString() ?? '',
       platformId: platformId,
-      username: username,
-      profileUrl: profileUrl,
-      state: ProfileLinkState.linked,
-      connectedAt: DateTime.now(),
+      username: json['username'] ?? '',
+      profileUrl: json['url'] ?? '',
+      state: state,
+      connectedAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+      verifiedAt: json['ownershipLockedAt'] != null
+          ? DateTime.tryParse(json['ownershipLockedAt'])
+          : null,
+      isPublicOnPassport: json['showOnPassport'] ?? true,
     );
   }
 
-  /// Upgrade profile to Verified state
-  Future<ConnectedProfile> upgradeToVerified({
-    required ConnectedProfile profile,
-    required ProfileLinkState verificationMethod,
-  }) async {
-    // TODO: Call API to update profile state
-    // final response = await _api.patch('/v1/profiles/${profile.id}/verify', data: {...});
-
-    return profile.copyWith(
-      state: verificationMethod,
-      verifiedAt: DateTime.now(),
-    );
+  /// Map platformId to backend Platform enum value
+  int _mapPlatformIdToEnum(String platformId) {
+    // Backend Platform enum values (based on Platform.cs)
+    const platformMap = {
+      'vinted': 0,
+      'ebay': 1,
+      'depop': 2,
+      'etsy': 3,
+      'poshmark': 4,
+      'facebook_marketplace': 5,
+      'instagram': 6,
+      'tiktok': 7,
+      'twitter': 8,
+      'youtube': 9,
+      'snapchat': 10,
+      'linkedin': 11,
+      'github': 12,
+      'discord': 13,
+      'twitch': 14,
+      'steam': 15,
+      'reddit': 16,
+    };
+    return platformMap[platformId] ?? 0;
   }
 
-  /// Get all connected profiles for current user
-  Future<List<ConnectedProfile>> getConnectedProfiles() async {
-    // TODO: Implement API call
-    // final response = await _api.get('/v1/profiles/connected');
-
-    // Return empty list for now
-    return [];
+  /// Map backend Platform enum to platformId
+  String _mapPlatformEnumToId(dynamic platform) {
+    // Handle both int and string values
+    final platformValue = platform is int ? platform : int.tryParse(platform?.toString() ?? '0') ?? 0;
+    const platformMap = {
+      0: 'vinted',
+      1: 'ebay',
+      2: 'depop',
+      3: 'etsy',
+      4: 'poshmark',
+      5: 'facebook_marketplace',
+      6: 'instagram',
+      7: 'tiktok',
+      8: 'twitter',
+      9: 'youtube',
+      10: 'snapchat',
+      11: 'linkedin',
+      12: 'github',
+      13: 'discord',
+      14: 'twitch',
+      15: 'steam',
+      16: 'reddit',
+    };
+    return platformMap[platformValue] ?? 'unknown';
   }
 
   /// Get mock connected profiles for demo/standalone screens
@@ -503,21 +592,5 @@ class ProfileLinkingService {
         isPublicOnPassport: false,
       ),
     ];
-  }
-
-  /// Remove a connected profile
-  Future<void> removeProfile(String profileId) async {
-    // TODO: Implement API call
-    // await _api.delete('/v1/profiles/$profileId');
-  }
-
-  /// Toggle profile visibility on public passport
-  Future<ConnectedProfile> togglePassportVisibility(
-    ConnectedProfile profile,
-  ) async {
-    // TODO: Implement API call
-    return profile.copyWith(
-      isPublicOnPassport: !profile.isPublicOnPassport,
-    );
   }
 }

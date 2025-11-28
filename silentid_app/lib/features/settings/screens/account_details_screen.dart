@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../services/user_api_service.dart';
 
 class AccountDetailsScreen extends StatefulWidget {
   const AccountDetailsScreen({super.key});
@@ -14,6 +15,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _displayNameController = TextEditingController();
+  final _userApi = UserApiService();
 
   bool _isLoading = true;
   bool _isSaving = false;
@@ -39,19 +41,15 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Replace with actual API call
-      // final response = await ApiService().get('/users/me');
-
-      // Mock data for now
-      await Future.delayed(const Duration(seconds: 1));
+      final profile = await _userApi.getUserProfile();
 
       setState(() {
-        _email = 'sarah@example.com';
-        _isEmailVerified = true;
-        _phone = null;
-        _isPhoneVerified = false;
-        _usernameController.text = 'sarahtrusted';
-        _displayNameController.text = 'Sarah M.';
+        _email = profile.email;
+        _isEmailVerified = profile.isEmailVerified;
+        _phone = profile.phoneNumber;
+        _isPhoneVerified = profile.isPhoneVerified;
+        _usernameController.text = profile.username ?? '';
+        _displayNameController.text = profile.displayName ?? '';
         _isLoading = false;
       });
     } catch (e) {
@@ -72,23 +70,26 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     setState(() => _isSaving = true);
 
     try {
-      // TODO: Replace with actual API call
-      // await ApiService().patch('/users/me', {
-      //   'username': _usernameController.text,
-      //   'displayName': _displayNameController.text,
-      // });
-
-      await Future.delayed(const Duration(seconds: 1));
+      await _userApi.updateUserProfile(
+        username: _usernameController.text,
+        displayName: _displayNameController.text,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account details updated successfully')),
+          const SnackBar(
+            content: Text('Account details updated successfully'),
+            backgroundColor: AppTheme.successGreen,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save changes: $e')),
+          SnackBar(
+            content: Text('Failed to save changes: $e'),
+            backgroundColor: AppTheme.dangerRed,
+          ),
         );
       }
     } finally {

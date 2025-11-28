@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/api_constants.dart';
+import '../../../services/api_service.dart';
 
 class ConnectedDevicesScreen extends StatefulWidget {
   const ConnectedDevicesScreen({super.key});
@@ -9,6 +11,7 @@ class ConnectedDevicesScreen extends StatefulWidget {
 }
 
 class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
+  final _api = ApiService();
   bool _isLoading = true;
   List<Map<String, dynamic>> _devices = [];
 
@@ -22,32 +25,23 @@ class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      final response = await _api.get(ApiConstants.devices);
+      final List<dynamic> data = response.data as List<dynamic>;
 
       setState(() {
-        _devices = [
-          {
-            'id': '1',
-            'model': 'iPhone 13 Pro',
-            'os': 'iOS 17.2',
-            'lastUsed': '2 hours ago',
-            'location': 'London, UK',
-            'isCurrent': true,
-          },
-          {
-            'id': '2',
-            'model': 'MacBook Pro',
-            'os': 'macOS 14.1',
-            'lastUsed': '1 day ago',
-            'location': 'London, UK',
-            'isCurrent': false,
-          },
-        ];
+        _devices = data.map((device) => device as Map<String, dynamic>).toList();
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load devices: $e'),
+            backgroundColor: AppTheme.dangerRed,
+          ),
+        );
+      }
     }
   }
 
@@ -74,14 +68,28 @@ class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
     );
 
     if (confirm == true) {
-      // TODO: API call to revoke device
-      setState(() {
-        _devices.removeWhere((device) => device['id'] == deviceId);
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Device access revoked')),
-        );
+      try {
+        await _api.post(ApiConstants.deviceRevoke(deviceId));
+        setState(() {
+          _devices.removeWhere((device) => device['id'] == deviceId);
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Device access revoked'),
+              backgroundColor: AppTheme.successGreen,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to revoke device: $e'),
+              backgroundColor: AppTheme.dangerRed,
+            ),
+          );
+        }
       }
     }
   }

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/info_modal.dart';
+import '../../../core/constants/api_constants.dart';
+import '../../../services/api_service.dart';
 
 /// TrustScore visibility mode per Section 51.5
 enum TrustScoreVisibility {
@@ -24,6 +26,7 @@ class PrivacySettingsScreen extends StatefulWidget {
 }
 
 class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
+  final _api = ApiService();
   bool _isLoading = true;
 
   // TrustScore Visibility Mode (Section 51.5)
@@ -45,17 +48,46 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Load from API
-      await Future.delayed(const Duration(milliseconds: 500));
-      setState(() => _isLoading = false);
+      final response = await _api.get(ApiConstants.privacySettings);
+      final data = response.data as Map<String, dynamic>;
+
+      setState(() {
+        _trustScoreVisibility = _parseVisibility(data['trustScoreVisibility']);
+        _showTransactionCount = data['showTransactionCount'] ?? true;
+        _showPlatformList = data['showPlatformList'] ?? true;
+        _showAccountAge = data['showAccountAge'] ?? true;
+        _showMutualVerifications = data['showMutualVerifications'] ?? true;
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() => _isLoading = false);
     }
   }
 
+  TrustScoreVisibility _parseVisibility(String? value) {
+    switch (value) {
+      case 'badgeOnlyMode':
+        return TrustScoreVisibility.badgeOnlyMode;
+      case 'privateMode':
+        return TrustScoreVisibility.privateMode;
+      default:
+        return TrustScoreVisibility.publicMode;
+    }
+  }
+
   Future<void> _saveSetting(String key, bool value) async {
-    // TODO: Save to API
-    // await ApiService().patch('/users/me/privacy', {key: value});
+    try {
+      await _api.patch(ApiConstants.privacySettings, data: {key: value});
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save setting: $e'),
+            backgroundColor: AppTheme.dangerRed,
+          ),
+        );
+      }
+    }
   }
 
   void _onVisibilityModeChanged(TrustScoreVisibility mode) {
@@ -67,8 +99,20 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   }
 
   Future<void> _saveVisibilitySetting(TrustScoreVisibility mode) async {
-    // TODO: Save to API
-    // await ApiService().patch('/users/me/privacy', {'trustScoreVisibility': mode.name});
+    try {
+      await _api.patch(ApiConstants.privacySettings, data: {
+        'trustScoreVisibility': mode.name,
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save visibility: $e'),
+            backgroundColor: AppTheme.dangerRed,
+          ),
+        );
+      }
+    }
   }
 
   void _showVisibilityInfo(BuildContext context) {

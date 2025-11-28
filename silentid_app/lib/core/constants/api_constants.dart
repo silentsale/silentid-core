@@ -27,6 +27,42 @@ class ApiConstants {
   static String get trustScoreMe => '$apiBaseUrl/trustscore/me';
   static String get trustScoreBreakdown => '$apiBaseUrl/trustscore/me/breakdown';
 
+  // Referral endpoints (Section 50.6.1)
+  static String get referralMe => '$apiBaseUrl/referrals/me';
+  static String get referralList => '$apiBaseUrl/referrals/me/referrals';
+  static String referralValidate(String code) => '$apiBaseUrl/referrals/validate/$code';
+  static String get referralApply => '$apiBaseUrl/referrals/apply';
+
+  // Profile Link endpoints (Section 52)
+  static String get profileLinks => '$apiBaseUrl/evidence/profile-links';
+  static String profileLinkById(String id) => '$apiBaseUrl/evidence/profile-links/$id';
+  static String profileLinkVisibility(String id) => '$apiBaseUrl/evidence/profile-links/$id/visibility';
+  static String profileLinkGenerateToken(String id) => '$apiBaseUrl/evidence/profile-links/$id/generate-token';
+  static String profileLinkConfirmToken(String id) => '$apiBaseUrl/evidence/profile-links/$id/confirm-token';
+
+  // Evidence endpoints
+  static String get evidenceReceipts => '$apiBaseUrl/evidence/receipts';
+  static String get evidenceScreenshots => '$apiBaseUrl/evidence/screenshots';
+
+  // Subscription endpoints
+  static String get subscriptionMe => '$apiBaseUrl/subscriptions/me';
+  static String get subscriptionUpgrade => '$apiBaseUrl/subscriptions/upgrade';
+  static String get subscriptionCancel => '$apiBaseUrl/subscriptions/cancel';
+
+  // Privacy settings endpoints
+  static String get privacySettings => '$apiBaseUrl/users/me/privacy';
+
+  // Devices endpoints
+  static String get devices => '$apiBaseUrl/auth/devices';
+  static String deviceRevoke(String deviceId) => '$apiBaseUrl/auth/devices/$deviceId/revoke';
+
+  // Data export endpoints
+  static String get dataExportRequest => '$apiBaseUrl/users/me/data-export';
+  static String get dataExportStatus => '$apiBaseUrl/users/me/data-export/status';
+
+  // Account deletion endpoints
+  static String get accountDelete => '$apiBaseUrl/users/me';
+
   // Storage keys
   static const String accessTokenKey = 'access_token';
   static const String refreshTokenKey = 'refresh_token';

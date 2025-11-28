@@ -4,19 +4,102 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/widgets/info_point_helper.dart';
 import '../../../core/data/info_point_data.dart';
+import '../../../services/subscription_api_service.dart';
 
 /// Subscription Overview Screen
 ///
 /// Displays current subscription plan and management options
-class SubscriptionOverviewScreen extends StatelessWidget {
+/// Follows Section 53 UI Design Language
+class SubscriptionOverviewScreen extends StatefulWidget {
   const SubscriptionOverviewScreen({super.key});
 
   @override
+  State<SubscriptionOverviewScreen> createState() => _SubscriptionOverviewScreenState();
+}
+
+class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen> {
+  final _subscriptionApi = SubscriptionApiService();
+
+  bool _isLoading = true;
+  SubscriptionInfo? _subscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSubscription();
+  }
+
+  Future<void> _loadSubscription() async {
+    setState(() => _isLoading = true);
+    try {
+      final subscription = await _subscriptionApi.getSubscription();
+      setState(() {
+        _subscription = subscription;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load subscription: $e'),
+            backgroundColor: AppTheme.dangerRed,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _cancelSubscription() async {
+    setState(() => _isLoading = true);
+    try {
+      final subscription = await _subscriptionApi.cancelSubscription();
+      setState(() {
+        _subscription = subscription;
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Subscription cancelled. Access continues until end of billing period.'),
+            backgroundColor: AppTheme.successGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel: ${e.toString()}'),
+            backgroundColor: AppTheme.dangerRed,
+          ),
+        );
+      }
+    }
+  }
+
+  // Derived getters for backwards compatibility
+  String get currentPlan => _subscription?.tier ?? "Free";
+  String get renewalDate => _subscription?.formattedRenewalDate ?? "N/A";
+  double get monthlyPrice => _subscription?.monthlyPrice ?? 0.0;
+  List<String> get benefits => _subscription?.benefits ?? [];
+  bool get isPremium => _subscription?.isPremium ?? false;
+  bool get isCancelled => _subscription?.isCancelled ?? false;
+
+  @override
   Widget build(BuildContext context) {
-    // Mock data - replace with actual state management
-    final String currentPlan = "Premium";
-    final String renewalDate = "21 Dec 2025";
-    final double monthlyPrice = 4.99;
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Subscription',
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -106,17 +189,40 @@ class SubscriptionOverviewScreen extends StatelessWidget {
 
             const SizedBox(height: AppSpacing.md),
 
-            _buildBenefitItem('Unlimited evidence uploads'),
-            _buildBenefitItem('Advanced TrustScore breakdown'),
-            _buildBenefitItem('Trust Timeline & Analytics'),
-            _buildBenefitItem('Premium profile badge'),
-            _buildBenefitItem('100GB Evidence Vault'),
-            _buildBenefitItem('Priority evidence processing'),
+            // Dynamic benefits from subscription
+            ...benefits.map((benefit) => _buildBenefitItem(benefit)),
 
             const SizedBox(height: AppSpacing.lg),
 
+            // Show cancelled notice if applicable
+            if (isCancelled)
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppTheme.warningAmber.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.warningAmber),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: AppTheme.warningAmber),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        'Your subscription is cancelled. Access continues until ${_subscription?.cancelAt != null ? _subscription!.formattedRenewalDate : "end of period"}.',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppTheme.neutralGray700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             // Upgrade Option (if Premium, show Pro upgrade)
-            if (currentPlan == "Premium")
+            if (currentPlan.toLowerCase() == "premium" && !isCancelled)
               OutlinedButton(
                 onPressed: () {
                   Navigator.pushNamed(context, '/subscriptions/pro');
@@ -275,9 +381,9 @@ class SubscriptionOverviewScreen extends StatelessWidget {
             child: const Text('Keep Subscription'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              // TODO: Handle cancellation
+              await _cancelSubscription();
             },
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.dangerRed,

@@ -90,6 +90,18 @@ Earned by getting mutual confirmations from people you've traded with.''',
         learnMoreUrl: 'https://help.silentid.co.uk/mutual-verification',
       );
 
+  static InfoPointData get ursComponent => const InfoPointData(
+        title: 'Universal Reputation Score (URS)',
+        icon: Icons.public,
+        body: '''Worth up to 200 points.
+
+Based on verified star ratings and reviews from your connected marketplace profiles (eBay, Vinted, Depop, etc).
+
+Only Level 3 verified profiles contribute to your URS.''',
+        learnMoreText: 'Learn More',
+        learnMoreUrl: 'https://help.silentid.co.uk/urs',
+      );
+
   // ============================================================================
   // 2. RISKSCORE & SECURITY CENTER
   // ============================================================================
