@@ -1,7 +1,7 @@
 # ORCHESTRATOR REPORT
 
 **Generated:** 2025-11-28 (Updated)
-**Status:** Section 52 + Full Referral System (50.6.1) + API Integration Complete
+**Status:** Section 47.4 Email Receipt Forwarding + Section 52 + Full Referral System Complete
 
 ---
 
@@ -18,7 +18,98 @@
 | Passkey Signature Verification | Complete |
 | DbContext Registration | Done |
 | Database Migration | APPLIED |
-| Git Status | 8 commits today (e105f22 → 21ba0fc) |
+| Git Status | Latest: 4585867 |
+
+---
+
+## Section 47.4 - Email Receipt Forwarding (COMPLETED)
+
+**Expensify-inspired forwarding model - users forward receipts to unique email alias**
+
+### Backend Implementation
+
+**User Model (User.cs):**
+- Added `ReceiptForwardingAlias` field (string, max 50 chars)
+- Stores unique alias like `ab12cd.x9kf3m`
+
+**ForwardingAliasService (Services/ForwardingAliasService.cs):**
+- `GetOrCreateAliasAsync(userId)` - Generate/retrieve unique alias
+- `GetForwardingEmailAsync(userId)` - Returns full email: `{alias}@receipts.silentid.co.uk`
+- `ResolveAliasToUserIdAsync(alias)` - Lookup user by alias for webhook
+- Alias format: `{6 alphanumeric}.{6 alphanumeric}`
+
+**ReceiptParsingService (Services/ReceiptParsingService.cs):**
+- `ProcessInboundEmailAsync(payload)` - Main email processing entry point
+- Known sender validation (Vinted, eBay, Depop, Etsy, PayPal, Stripe, Facebook)
+- Metadata extraction: platform, amount, currency, order ID, item name, date
+- DKIM/SPF validation for integrity scoring
+- Confidence calculation based on extraction success
+- Creates `ReceiptEvidence` record in database
+
+**ReceiptParseController (Controllers/ReceiptParseController.cs):**
+- `POST /webhooks/sendgrid/inbound` - SendGrid Inbound Parse webhook
+- No authentication (webhook from SendGrid)
+- Receives multipart/form-data with email fields
+- Extracts: from, to, subject, text, html, dkim, spf
+
+**ReceiptsController (Controllers/ReceiptsController.cs):**
+- `GET /v1/receipts/forwarding-alias` - Get user's forwarding email + setup instructions
+- `GET /v1/receipts` - List all user receipts with metadata
+- `GET /v1/receipts/count` - Get valid receipt count
+- All endpoints require authentication
+
+### API Response Examples
+
+**GET /v1/receipts/forwarding-alias:**
+```json
+{
+  "forwardingEmail": "ab12cd.x9kf3m@receipts.silentid.co.uk",
+  "instructions": {
+    "gmail": ["1. Open Gmail Settings...", "2. Create filter...", ...],
+    "outlook": ["1. Open Outlook...", ...],
+    "manual": ["Forward any marketplace receipt to: ..."]
+  },
+  "supportedPlatforms": [
+    {"name": "Vinted", "domain": "vinted.co.uk", "icon": "vinted"},
+    {"name": "eBay", "domain": "ebay.co.uk", "icon": "ebay"},
+    ...
+  ]
+}
+```
+
+### Flutter Implementation
+
+**ReceiptApiService (lib/services/receipt_api_service.dart):**
+- Models: `ForwardingAliasInfo`, `SetupInstructions`, `SupportedPlatform`, `Receipt`, `ReceiptListResponse`
+- Methods: `getForwardingAlias()`, `getReceipts()`, `getReceiptCount()`
+
+**EmailReceiptsSetupScreen (lib/features/evidence/screens/email_receipts_setup_screen.dart):**
+- Purple gradient card with copy-to-clipboard forwarding email
+- Provider selector: Gmail, Outlook, Manual
+- Step-by-step setup instructions per provider
+- Supported platforms display with chips
+- Privacy notice explaining metadata-only extraction
+
+**ReceiptListScreen Updates:**
+- Added forwarding email banner at top of receipt list
+- "Settings" link to email setup screen
+- Shows forwarding email address
+
+**Router Updates (app_router.dart):**
+- Added route: `/evidence/receipts/email-setup` → `EmailReceiptsSetupScreen`
+
+### Database Migration
+- `AddReceiptForwardingAlias` - Adds `ReceiptForwardingAlias` column to Users table
+
+### External Configuration Required
+| Task | Status | Notes |
+|------|--------|-------|
+| DNS MX record for `receipts.silentid.co.uk` | PENDING | Point to SendGrid |
+| SendGrid Inbound Parse webhook | PENDING | Configure in SendGrid dashboard |
+
+### Build Status
+- API Build: **PASS** (0 errors, 0 warnings)
+- Flutter analyze: **PASS** (0 issues)
 
 ---
 
@@ -458,6 +549,12 @@ Updated `Services/PasskeyService.cs`:
 | `src/SilentID.Api/Services/ReferralService.cs` | Referral program logic |
 | `src/SilentID.Api/Controllers/ReferralController.cs` | Referral API endpoints |
 | `lib/services/referral_api_service.dart` | Flutter referral API service |
+| `src/SilentID.Api/Services/ForwardingAliasService.cs` | Email forwarding alias generation (47.4) |
+| `src/SilentID.Api/Services/ReceiptParsingService.cs` | Email receipt parsing/extraction (47.4) |
+| `src/SilentID.Api/Controllers/ReceiptParseController.cs` | SendGrid webhook endpoint (47.4) |
+| `src/SilentID.Api/Controllers/ReceiptsController.cs` | Receipts API endpoints (47.4) |
+| `lib/services/receipt_api_service.dart` | Flutter receipt API service (47.4) |
+| `lib/features/evidence/screens/email_receipts_setup_screen.dart` | Email forwarding setup screen (47.4) |
 
 ---
 
