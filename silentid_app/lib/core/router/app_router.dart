@@ -10,6 +10,7 @@ import '../../features/identity/screens/identity_status_screen.dart';
 import '../../features/evidence/screens/evidence_overview_screen.dart';
 import '../../features/evidence/screens/receipt_upload_screen.dart';
 import '../../features/evidence/screens/receipt_list_screen.dart';
+import '../../features/evidence/screens/email_receipts_setup_screen.dart';
 import '../../features/evidence/screens/screenshot_upload_screen.dart';
 import '../../features/evidence/screens/profile_link_screen.dart';
 import '../../features/trust/screens/trustscore_overview_screen.dart';
@@ -146,6 +147,11 @@ class AppRouter {
             path: '/evidence/receipts/upload',
             name: 'receipt-upload',
             builder: (context, state) => const ReceiptUploadScreen(),
+          ),
+          GoRoute(
+            path: '/evidence/receipts/email-setup',
+            name: 'email-receipts-setup',
+            builder: (context, state) => const EmailReceiptsSetupScreen(),
           ),
           GoRoute(
             path: '/evidence/screenshots',

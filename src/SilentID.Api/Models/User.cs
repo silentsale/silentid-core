@@ -56,6 +56,15 @@ public class User
     [StringLength(20)]
     public string? ReferredByCode { get; set; }
 
+    // Section 47.4 - Email Receipt Forwarding (Expensify Model)
+    /// <summary>
+    /// Unique receipt forwarding alias for this user.
+    /// Format: {shortId}.{randomString} (e.g., "ab12cd.x9kf3m")
+    /// Full email: {alias}@receipts.silentid.co.uk
+    /// </summary>
+    [StringLength(50)]
+    public string? ReceiptForwardingAlias { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

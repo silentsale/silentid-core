@@ -55,6 +55,8 @@ builder.Services.AddScoped<IPasskeyService, PasskeyService>();
 builder.Services.AddScoped<IPlatformConfigurationService, PlatformConfigurationService>();
 builder.Services.AddScoped<IExtractionService, ExtractionService>();
 builder.Services.AddScoped<IReferralService, ReferralService>();
+builder.Services.AddScoped<IForwardingAliasService, ForwardingAliasService>();
+builder.Services.AddScoped<IReceiptParsingService, ReceiptParsingService>();
 
 // Add HttpClient factory for OAuth services
 builder.Services.AddHttpClient();

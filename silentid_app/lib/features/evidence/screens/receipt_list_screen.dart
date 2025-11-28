@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../services/evidence_service.dart';
+import '../../../services/receipt_api_service.dart' hide Receipt;
 import '../../../models/evidence_models.dart';
 import 'package:intl/intl.dart';
 
@@ -15,14 +16,23 @@ class ReceiptListScreen extends StatefulWidget {
 
 class _ReceiptListScreenState extends State<ReceiptListScreen> {
   final _evidenceService = EvidenceService();
+  final _receiptApi = ReceiptApiService();
   List<Receipt> _receipts = [];
   bool _isLoading = true;
   String? _error;
+  String? _forwardingEmail;
 
   @override
   void initState() {
     super.initState();
-    _loadReceipts();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    await Future.wait([
+      _loadReceipts(),
+      _loadForwardingEmail(),
+    ]);
   }
 
   Future<void> _loadReceipts() async {
@@ -42,6 +52,17 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
         _error = e.toString();
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _loadForwardingEmail() async {
+    try {
+      final aliasInfo = await _receiptApi.getForwardingAlias();
+      setState(() {
+        _forwardingEmail = aliasInfo.forwardingEmail;
+      });
+    } catch (e) {
+      // Ignore - forwarding email is optional UI element
     }
   }
 
@@ -76,9 +97,12 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
                         onRefresh: _loadReceipts,
                         child: ListView.builder(
                           padding: const EdgeInsets.all(24.0),
-                          itemCount: _receipts.length,
+                          itemCount: _receipts.length + 1, // +1 for banner
                           itemBuilder: (context, index) {
-                            return _buildReceiptCard(_receipts[index]);
+                            if (index == 0) {
+                              return _buildForwardingEmailBanner();
+                            }
+                            return _buildReceiptCard(_receipts[index - 1]);
                           },
                         ),
                       ),
@@ -97,6 +121,66 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildForwardingEmailBanner() {
+    if (_forwardingEmail == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryPurple,
+            AppTheme.primaryPurple.withValues(alpha: 0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.email_outlined, color: AppTheme.pureWhite, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Email Forwarding Active',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.pureWhite,
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => context.push('/evidence/receipts/email-setup'),
+                child: Text(
+                  'Settings',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.pureWhite.withValues(alpha: 0.9),
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _forwardingEmail!,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: AppTheme.pureWhite.withValues(alpha: 0.85),
+            ),
+          ),
+        ],
       ),
     );
   }
