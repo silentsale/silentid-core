@@ -21,15 +21,18 @@ public class StripeIdentityService : IStripeIdentityService
     private readonly SilentIdDbContext _context;
     private readonly ILogger<StripeIdentityService> _logger;
     private readonly IConfiguration _configuration;
+    private readonly IReferralService _referralService;
 
     public StripeIdentityService(
         SilentIdDbContext context,
         ILogger<StripeIdentityService> logger,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IReferralService referralService)
     {
         _context = context;
         _logger = logger;
         _configuration = configuration;
+        _referralService = referralService;
 
         // Initialize Stripe API key
         var stripeSecretKey = _configuration["Stripe:SecretKey"];
@@ -147,6 +150,21 @@ public class StripeIdentityService : IStripeIdentityService
                     verification.Status = VerificationStatus.Verified;
                     verification.VerifiedAt = DateTime.UtcNow;
                     _logger.LogInformation("User {UserId} identity verified successfully", verification.UserId);
+
+                    // Section 50.6.1: Complete referral and award bonuses if user was referred
+                    try
+                    {
+                        var referralCompleted = await _referralService.CompleteReferralAsync(verification.UserId);
+                        if (referralCompleted)
+                        {
+                            _logger.LogInformation("Referral bonus awarded for user {UserId}", verification.UserId);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to complete referral for user {UserId}", verification.UserId);
+                        // Don't fail identity verification if referral fails
+                    }
                     break;
 
                 case "requires_input":

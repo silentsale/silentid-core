@@ -1,7 +1,7 @@
 # ORCHESTRATOR REPORT
 
 **Generated:** 2025-11-28 (Updated)
-**Status:** Section 52 Complete + Referral System API Integrated
+**Status:** Section 52 + Full Referral System (50.6.1) + API Integration Complete
 
 ---
 
@@ -457,6 +457,7 @@ Updated `Services/PasskeyService.cs`:
 | `src/SilentID.Api/Models/Referral.cs` | Referral tracking model (50.6.1) |
 | `src/SilentID.Api/Services/ReferralService.cs` | Referral program logic |
 | `src/SilentID.Api/Controllers/ReferralController.cs` | Referral API endpoints |
+| `lib/services/referral_api_service.dart` | Flutter referral API service |
 
 ---
 
@@ -612,6 +613,164 @@ First Login → /onboarding/tour (6-page tour)
 - Fixed flutter analyze error: `GoogleFonts.inter()` with invalid `fontFamily` parameter
 - Changed to `GoogleFonts.robotoMono()` for monospace URL display
 - All Section 52 files now pass `flutter analyze` with 0 errors
+
+---
+
+## Session Update (2025-11-28 08:45) - Complete Frontend API Wiring
+
+**Additional Screens Wired to API:**
+
+### Connected Profiles Screen Wired
+- Updated `lib/features/profiles/screens/connected_profiles_screen.dart`
+- Now uses `_service.getConnectedProfiles()` instead of mock data
+- All CRUD operations (toggle visibility, remove) use real API
+
+### Evidence Overview Screen Wired (NEW)
+- Updated `lib/features/evidence/screens/evidence_overview_screen.dart`
+- Converted from StatelessWidget to StatefulWidget
+- Fetches counts from Evidence API in parallel
+- Added loading indicators for counts
+- Pull-to-refresh support
+
+### Evidence API Service (NEW)
+- Created `lib/services/evidence_api_service.dart`
+- Fetches evidence summary with counts from multiple endpoints
+- Returns: `EvidenceSummary` with receiptsCount, screenshotsCount, profileLinksCount
+
+### Profile Screen Wired
+- Updated `lib/features/profile/screens/profile_screen.dart`
+- Now uses `UserApiService.getUserProfile()` for all user data
+- Backwards-compatible getters for displayName, username, trustScore, etc.
+
+### User API Service (NEW)
+- Created `lib/services/user_api_service.dart`
+- Combines data from `/v1/users/me`, TrustScore, and Evidence APIs
+- Models: `UserData`, `UserProfile` with helper properties
+- `getUserProfile()` - Full profile with trust and evidence data
+- `updateUserProfile()` - Update displayName/username
+
+### API Constants Updated
+- Added evidence endpoints: `evidenceReceipts`, `evidenceScreenshots`
+
+### Build Status
+- Flutter analyze: **PASS** (0 errors, 2 unused field warnings)
+- All API services and screens compile cleanly
+
+---
+
+## Session Update (2025-11-28 08:15) - TrustScore & Profile Linking API Integration
+
+**Frontend API Service Wiring Complete:**
+
+### TrustScore API Service (NEW)
+- Created `lib/services/trustscore_api_service.dart`
+- Response models:
+  - `TrustScoreSummary` - totalScore, label, component scores
+  - `TrustScoreBreakdownResponse` - detailed breakdown with all 5 components
+  - `ComponentBreakdown` - score, maxScore, items list
+  - `ScoreItemResponse` - description, points, status
+  - `TrustScoreHistoryResponse` - snapshots array with dates
+  - `TrustScoreSnapshot` - individual history entry
+- API methods:
+  - `getTrustScore()` - GET /v1/trustscore/me
+  - `getTrustScoreBreakdown()` - GET /v1/trustscore/me/breakdown
+  - `getTrustScoreHistory()` - GET /v1/trustscore/me/history
+  - `recalculateTrustScore()` - POST /v1/trustscore/me/recalculate
+- `toUiFormat()` method for easy breakdown screen integration
+
+### TrustScore Breakdown Screen Wired
+- Updated `lib/features/trust/screens/trustscore_breakdown_screen.dart`
+- Now fetches data via `TrustScoreApiService`
+- Parallel loading of breakdown + connected profiles
+- Added URS (Universal Reputation Score) component section
+- Status mapping: backend "completed"/"warning"/"missing" → UI "positive"/"negative"/"neutral"
+
+### TrustScore History Screen Wired
+- Updated `lib/features/trust/screens/trustscore_history_screen.dart`
+- Now fetches history via `TrustScoreApiService.getTrustScoreHistory()`
+- Local `_getTrustLabel()` function for score → label conversion
+- Calculates week-over-week change from snapshot data
+
+### URS Info Point Added
+- Updated `lib/core/data/info_point_data.dart`
+- New `ursComponent` info point:
+  - "Universal Reputation Score (URS)"
+  - "Worth up to 200 points"
+  - Explains Level 3 verified profile contribution
+
+### Profile Linking Service API Integration
+- Updated `lib/services/profile_linking_service.dart`
+- Now imports `ApiService` and `ApiConstants`
+- All methods now call real backend endpoints:
+  - `linkProfile()` → POST /v1/evidence/profile-links
+  - `getConnectedProfiles()` → GET /v1/evidence/profile-links
+  - `removeProfile()` → DELETE /v1/evidence/profile-links/{id}
+  - `togglePassportVisibility()` → PATCH /v1/evidence/profile-links/{id}/visibility
+  - `generateVerificationToken()` → POST /v1/evidence/profile-links/{id}/generate-token
+  - `confirmTokenVerification()` → POST /v1/evidence/profile-links/{id}/confirm-token
+- Added `_parseProfileLinkResponse()` for API → model conversion
+- Platform enum mapping: `_mapPlatformIdToEnum()` / `_mapPlatformEnumToId()`
+
+### API Constants Updated
+- Added Profile Link endpoints to `lib/core/constants/api_constants.dart`:
+  - `profileLinks` - GET/POST profile links
+  - `profileLinkById(id)` - GET/DELETE specific profile
+  - `profileLinkVisibility(id)` - PATCH visibility toggle
+  - `profileLinkGenerateToken(id)` - POST generate token
+  - `profileLinkConfirmToken(id)` - POST confirm verification
+
+### Build Status
+- Flutter analyze: **PASS** (0 errors, 1 unused field warning)
+- All API services compile cleanly
+- TrustScore screens fully wired to backend
+
+---
+
+## Session Update (2025-11-28 06:50) - Full Referral System Integration Complete
+
+**Section 50.6.1 - Complete Referral Flow (Frontend + Backend):**
+
+### Flutter API Service
+- Created `lib/services/referral_api_service.dart`
+- Response models: `ReferralSummaryResponse`, `ReferralItemResponse`, `ApplyReferralResponse`
+- API methods: `getReferralSummary()`, `getReferralList()`, `validateReferralCode()`, `applyReferralCode()`
+
+### API Constants Updated
+- Added referral endpoints to `lib/core/constants/api_constants.dart`
+- `/v1/referrals/me`, `/v1/referrals/me/referrals`, `/v1/referrals/validate/{code}`, `/v1/referrals/apply`
+
+### Referral Screen Wired to API
+- Updated `lib/features/referral/screens/referral_screen.dart`
+- Removed mock data, now fetches from backend API
+- Live referral code, link, and tracking
+
+### Sign-Up Flow Integration
+- Updated `lib/features/auth/screens/otp_screen.dart`
+- Added "Have a referral code?" expandable section
+- Real-time code validation with debounce
+- Visual feedback: loading spinner, valid/invalid indicators
+- Code applied after OTP verification, before navigation to home
+
+### Identity Verification → Referral Completion
+- Updated `src/SilentID.Api/Services/StripeIdentityService.cs`
+- Injected `IReferralService` dependency
+- Auto-calls `CompleteReferralAsync()` when identity verified
+- Both referrer and referee receive +50 TrustScore bonus
+
+### Complete Flow
+```
+1. User B enters referral code on OTP screen
+2. Code validated in real-time via API
+3. After OTP verification → applyReferralCode() called
+4. User B verifies identity via Stripe
+5. StripeIdentityService triggers CompleteReferralAsync()
+6. Both users receive +50 TrustScore bonus
+7. Referrer sees completed referral in referral_screen
+```
+
+### Build Status
+- API Build: **PASS** (0 errors, 0 warnings)
+- Flutter analyze: **PASS** (0 issues)
 
 ---
 
