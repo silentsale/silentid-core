@@ -7,7 +7,7 @@ import '../theme/app_theme.dart';
 /// Retention badges displayed on profile:
 /// - Verified Identity
 /// - Connected External Profile
-/// - First Mutual Verification
+/// - First Evidence Added
 /// - Trust Milestone (750+)
 /// - Multi-platform Verified
 /// - Community badges (50.6.3)
@@ -77,11 +77,11 @@ class BadgeDefinitions {
     category: BadgeCategory.achievement,
   );
 
-  static const firstVerification = AchievementBadge(
-    id: 'first_verification',
-    name: 'Trust Builder',
-    description: 'Completed first mutual verification',
-    icon: Icons.handshake,
+  static const firstEvidence = AchievementBadge(
+    id: 'first_evidence',
+    name: 'Evidence Pioneer',
+    description: 'Added first evidence to your vault',
+    icon: Icons.receipt_long,
     color: AppTheme.successGreen,
     category: BadgeCategory.achievement,
   );
@@ -130,16 +130,16 @@ class BadgeDefinitions {
   static const trustedCommunityMember = AchievementBadge(
     id: 'trusted_community',
     name: 'Trusted Community Member',
-    description: 'Active member with 10+ mutual verifications',
+    description: 'Active member with TrustScore 700+ for 3+ months',
     icon: Icons.groups,
     color: AppTheme.primaryPurple,
     category: BadgeCategory.community,
   );
 
-  static const topVerifier = AchievementBadge(
-    id: 'top_verifier',
-    name: 'Top Verifier',
-    description: 'Top 10% in mutual verifications this month',
+  static const evidenceCollector = AchievementBadge(
+    id: 'evidence_collector',
+    name: 'Evidence Collector',
+    description: 'Added 25+ pieces of evidence to your vault',
     icon: Icons.workspace_premium,
     color: Color(0xFFFFD700),
     category: BadgeCategory.community,
@@ -148,7 +148,7 @@ class BadgeDefinitions {
   static const networkLeader = AchievementBadge(
     id: 'network_leader',
     name: 'Network Leader',
-    description: 'Most verified in your network',
+    description: 'Referred 10+ verified users to SilentID',
     icon: Icons.hub,
     color: Color(0xFF9333EA),
     category: BadgeCategory.community,
@@ -167,13 +167,13 @@ class BadgeDefinitions {
   static List<AchievementBadge> get all => [
         verifiedIdentity,
         connectedProfile,
-        firstVerification,
+        firstEvidence,
         multiPlatform,
         trustMilestone500,
         trustMilestone750,
         trustMilestone900,
         trustedCommunityMember,
-        topVerifier,
+        evidenceCollector,
         networkLeader,
         referralChampion,
       ];

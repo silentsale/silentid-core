@@ -43,7 +43,7 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
   bool _showOnboardingChecklist = true;
   bool _identityVerified = false;
   bool _profileConnected = false;
-  bool _mutualVerificationComplete = false;
+  bool _firstEvidenceAdded = false;
 
   @override
   void initState() {
@@ -58,13 +58,13 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
     final dismissed = await _storage.read(key: 'onboarding_checklist_dismissed');
     final identity = await _storage.read(key: 'identity_verified');
     final profile = await _storage.read(key: 'profile_connected');
-    final mutual = await _storage.read(key: 'mutual_verification_complete');
+    final evidence = await _storage.read(key: 'first_evidence_added');
 
     setState(() {
       _showOnboardingChecklist = dismissed != 'true';
       _identityVerified = identity == 'true';
       _profileConnected = profile == 'true';
-      _mutualVerificationComplete = mutual == 'true';
+      _firstEvidenceAdded = evidence == 'true';
     });
   }
 
@@ -419,7 +419,7 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
     // Check if all onboarding steps complete
     final allStepsComplete = _identityVerified &&
         _profileConnected &&
-        _mutualVerificationComplete;
+        _firstEvidenceAdded;
 
     return RefreshIndicator(
       onRefresh: _refreshTab,
@@ -464,11 +464,10 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
                 child: OnboardingChecklist(
                   identityVerified: _identityVerified,
                   profileConnected: _profileConnected,
-                  mutualVerificationComplete: _mutualVerificationComplete,
+                  firstEvidenceAdded: _firstEvidenceAdded,
                   onVerifyIdentityTap: () => context.push('/identity/intro'),
                   onConnectProfileTap: () => context.push('/profiles/connect'),
-                  onMutualVerificationTap: () =>
-                      context.push('/mutual-verification'),
+                  onAddEvidenceTap: () => context.push('/evidence'),
                   onDismiss: allStepsComplete ? _dismissOnboardingChecklist : null,
                 ),
               ),

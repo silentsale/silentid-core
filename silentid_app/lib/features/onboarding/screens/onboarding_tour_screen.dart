@@ -74,11 +74,11 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen>
       color: AppTheme.warningAmber,
     ),
     OnboardingPage(
-      icon: Icons.people_outline,
-      title: 'Mutual Verification',
-      subtitle: 'Real People, Real Trust',
+      icon: Icons.receipt_long_outlined,
+      title: 'Evidence Vault',
+      subtitle: 'Prove Your Transactions',
       description:
-          'Get verified by people you\'ve traded with. Each confirmation strengthens your reputation.',
+          'Upload receipts and screenshots from your transactions. Each piece of evidence strengthens your reputation.',
       color: AppTheme.successGreen,
     ),
     OnboardingPage(

@@ -8,26 +8,26 @@ import '../theme/app_theme.dart';
 /// Progress bar checklist shown on Home Screen for new users:
 /// 1. Verify identity
 /// 2. Connect one external profile
-/// 3. Get first mutual verification
+/// 3. Add first evidence (receipt or screenshot)
 ///
 /// Each completed step triggers haptics, celebration, and visible TrustScore jump.
 class OnboardingChecklist extends StatefulWidget {
   final bool identityVerified;
   final bool profileConnected;
-  final bool mutualVerificationComplete;
+  final bool firstEvidenceAdded;
   final VoidCallback? onVerifyIdentityTap;
   final VoidCallback? onConnectProfileTap;
-  final VoidCallback? onMutualVerificationTap;
+  final VoidCallback? onAddEvidenceTap;
   final VoidCallback? onDismiss;
 
   const OnboardingChecklist({
     super.key,
     required this.identityVerified,
     required this.profileConnected,
-    required this.mutualVerificationComplete,
+    required this.firstEvidenceAdded,
     this.onVerifyIdentityTap,
     this.onConnectProfileTap,
-    this.onMutualVerificationTap,
+    this.onAddEvidenceTap,
     this.onDismiss,
   });
 
@@ -36,7 +36,7 @@ class OnboardingChecklist extends StatefulWidget {
     int count = 0;
     if (identityVerified) count++;
     if (profileConnected) count++;
-    if (mutualVerificationComplete) count++;
+    if (firstEvidenceAdded) count++;
     return count;
   }
 
@@ -190,13 +190,13 @@ class _OnboardingChecklistState extends State<OnboardingChecklist>
 
           _buildChecklistItem(
             step: 3,
-            title: 'Get verified',
-            subtitle: 'Complete a mutual verification',
-            isComplete: widget.mutualVerificationComplete,
-            icon: Icons.people_outline,
-            onTap: widget.mutualVerificationComplete
+            title: 'Add evidence',
+            subtitle: 'Upload a receipt or screenshot',
+            isComplete: widget.firstEvidenceAdded,
+            icon: Icons.receipt_long_outlined,
+            onTap: widget.firstEvidenceAdded
                 ? null
-                : widget.onMutualVerificationTap,
+                : widget.onAddEvidenceTap,
           ),
 
           const SizedBox(height: 16),

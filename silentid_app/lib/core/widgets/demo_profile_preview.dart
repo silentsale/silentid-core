@@ -7,7 +7,7 @@ import '../theme/app_theme.dart';
 /// Shows a sample premium profile for first-time users:
 /// - TrustScore example (650)
 /// - Sample connected accounts (Vinted, eBay)
-/// - Sample mutual verifications (8)
+/// - Sample evidence count (receipts)
 ///
 /// CTA: "This could be you in 7 days. Here's how you start."
 class DemoProfilePreview extends StatelessWidget {
@@ -235,9 +235,9 @@ class DemoProfilePreview extends StatelessWidget {
                     ),
                     _buildDivider(),
                     _buildStatItem(
-                      icon: Icons.people,
-                      value: '8',
-                      label: 'Verifications',
+                      icon: Icons.camera_alt,
+                      value: '12',
+                      label: 'Screenshots',
                     ),
                     _buildDivider(),
                     _buildStatItem(
