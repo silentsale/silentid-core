@@ -65,6 +65,9 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<IAppleAuthService, AppleAuthService>();
 builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 
+// Add Admin Panel authentication service
+builder.Services.AddScoped<IAdminAuthService, AdminAuthService>();
+
 // Add JWT authentication
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured");
@@ -113,22 +116,33 @@ builder.Services.AddAuthorization(options =>
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
                 return false;
 
-            // Check if user has Admin AccountType
-            var httpContext = context.Resource as Microsoft.AspNetCore.Http.HttpContext;
-            if (httpContext == null)
+            // Check for is_admin claim (set by AdminAuthService)
+            var isAdminClaim = context.User.FindFirst("is_admin")?.Value;
+            if (isAdminClaim == "true")
+            {
+                // Verify admin exists in AdminUsers table
+                var httpContext = context.Resource as Microsoft.AspNetCore.Http.HttpContext;
+                if (httpContext == null)
+                    return false;
+
+                var dbContext = httpContext.RequestServices.GetRequiredService<SilentID.Api.Data.SilentIdDbContext>();
+                var adminUser = dbContext.AdminUsers.FirstOrDefault(a => a.Id == userId && a.IsActive);
+                return adminUser != null;
+            }
+
+            // Fallback: Check if regular user has Admin AccountType
+            var httpCtx = context.Resource as Microsoft.AspNetCore.Http.HttpContext;
+            if (httpCtx == null)
                 return false;
 
-            // Get DbContext from request services
-            var dbContext = httpContext.RequestServices.GetRequiredService<SilentID.Api.Data.SilentIdDbContext>();
-
-            // Check user AccountType (synchronous check - consider caching in production)
-            var user = dbContext.Users.FirstOrDefault(u => u.Id == userId);
+            var dbCtx = httpCtx.RequestServices.GetRequiredService<SilentID.Api.Data.SilentIdDbContext>();
+            var user = dbCtx.Users.FirstOrDefault(u => u.Id == userId);
             return user != null && user.AccountType == SilentID.Api.Models.AccountType.Admin;
         })
     );
 });
 
-// Add CORS for Flutter development
+// Add CORS for Flutter development and Admin Panel
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FlutterDevelopment", policy =>
@@ -141,6 +155,21 @@ builder.Services.AddCors(options =>
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials();
+    });
+
+    // Admin Panel CORS policy (Next.js development server)
+    options.AddPolicy("AdminPanel", policy =>
+    {
+        policy.WithOrigins(
+            "http://localhost:3000",    // Next.js default
+            "http://localhost:3001",    // Admin panel port
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3001"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()
+        .WithExposedHeaders("Token-Expired"); // Expose custom headers
     });
 });
 
@@ -174,7 +203,29 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors("FlutterDevelopment");
+
+// Apply CORS - allow localhost origins for both Flutter and Admin Panel
+app.UseCors(builder =>
+{
+    builder.SetIsOriginAllowed(origin =>
+    {
+        try
+        {
+            var uri = new Uri(origin);
+            // Allow localhost for both Flutter (various ports) and Admin Panel (3000, 3001)
+            return uri.Host == "localhost" || uri.Host == "127.0.0.1";
+        }
+        catch
+        {
+            return false;
+        }
+    })
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .AllowCredentials()
+    .WithExposedHeaders("Token-Expired");
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

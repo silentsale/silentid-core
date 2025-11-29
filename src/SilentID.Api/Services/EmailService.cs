@@ -8,6 +8,7 @@ public interface IEmailService
     Task SendOtpEmailAsync(string toEmail, string otp, int expiryMinutes);
     Task SendWelcomeEmailAsync(string toEmail, string displayName);
     Task SendAccountSecurityAlertAsync(string toEmail, string alertMessage);
+    Task SendAdminOtpEmailAsync(string toEmail, string otp, int expiryMinutes);
 }
 
 /// <summary>
@@ -127,6 +128,88 @@ public class EmailService : IEmailService
         // TODO: In production, send actual security alert
 
         return Task.CompletedTask;
+    }
+
+    public async Task SendAdminOtpEmailAsync(string toEmail, string otp, int expiryMinutes)
+    {
+        // ALWAYS log OTP to console in development for testing purposes
+        _logger.LogInformation("🔐 ADMIN OTP CODE FOR {Email}: {Otp} (expires in {ExpiryMinutes} minutes)", toEmail, otp, expiryMinutes);
+
+        if (_isSendGridConfigured && _sendGridClient != null)
+        {
+            try
+            {
+                var from = new EmailAddress("admin-noreply@silentid.co.uk", "SilentID Admin");
+                var to = new EmailAddress(toEmail);
+                var subject = "SilentID Admin Panel - Verification Code";
+                var htmlContent = GenerateAdminOtpEmailHtml(otp, expiryMinutes);
+                var plainTextContent = $"Your SilentID Admin Panel verification code is: {otp}\n\nThis code expires in {expiryMinutes} minutes.\n\nIf you didn't request this code, please contact your security team immediately.";
+
+                var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
+                var response = await _sendGridClient.SendEmailAsync(msg);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Admin OTP email sent successfully to {Email}", toEmail);
+                }
+                else
+                {
+                    _logger.LogError("Failed to send admin OTP email to {Email}. Status: {Status}", toEmail, response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending admin OTP email to {Email}", toEmail);
+                throw;
+            }
+        }
+        else
+        {
+            // Development fallback - log to console
+            _logger.LogInformation("📧 ADMIN EMAIL: Sending OTP to {Email}", toEmail);
+            _logger.LogInformation("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            _logger.LogInformation("To: {Email}", toEmail);
+            _logger.LogInformation("Subject: SilentID Admin Panel - Verification Code");
+            _logger.LogInformation("");
+            _logger.LogInformation("Your admin verification code is:");
+            _logger.LogInformation("");
+            _logger.LogInformation("    {Otp}", otp);
+            _logger.LogInformation("");
+            _logger.LogInformation("This code expires in {ExpiryMinutes} minutes.", expiryMinutes);
+            _logger.LogInformation("");
+            _logger.LogInformation("If you didn't request this code, contact your security team.");
+            _logger.LogInformation("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        }
+    }
+
+    private string GenerateAdminOtpEmailHtml(string otp, int expiryMinutes)
+    {
+        return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=""UTF-8"">
+    <title>SilentID Admin Panel - Verification Code</title>
+</head>
+<body style=""font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #1a1a1a;"">
+    <div style=""text-align: center; padding: 40px 0;"">
+        <h1 style=""color: #5A3EB8; margin: 0;"">SilentID Admin</h1>
+        <p style=""color: #888888; margin-top: 10px;"">Admin Panel Authentication</p>
+    </div>
+
+    <div style=""background: #2a2a2a; border-radius: 12px; padding: 30px; text-align: center;"">
+        <p style=""color: #ffffff; font-size: 16px; margin: 0 0 20px 0;"">Your verification code is:</p>
+        <div style=""background: #1a1a1a; border: 2px solid #5A3EB8; border-radius: 8px; padding: 20px; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #5A3EB8;"">{otp}</div>
+        <p style=""color: #888888; font-size: 14px; margin-top: 20px;"">This code expires in {expiryMinutes} minutes.</p>
+    </div>
+
+    <div style=""text-align: center; padding: 30px 0; color: #666666; font-size: 12px;"">
+        <p style=""color: #ff4444;"">If you didn't request this code, contact your security team immediately.</p>
+        <p style=""margin-top: 20px;"">© 2025 SilentID Admin. Internal Use Only.</p>
+    </div>
+</body>
+</html>
+";
     }
 
     // TODO: Add HTML email templates

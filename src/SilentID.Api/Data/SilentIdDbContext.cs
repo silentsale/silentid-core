@@ -46,6 +46,11 @@ public class SilentIdDbContext : DbContext
     // Referral tables (Section 50.6.1)
     public DbSet<Referral> Referrals { get; set; } = null!;
 
+    // Admin Panel tables (Section 28)
+    public DbSet<AdminUser> AdminUsers { get; set; } = null!;
+    public DbSet<AdminSession> AdminSessions { get; set; } = null!;
+    public DbSet<AdminPasskeyCredential> AdminPasskeyCredentials { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -460,6 +465,90 @@ public class SilentIdDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.RefereeId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // AdminUser configuration (Section 28)
+        modelBuilder.Entity<AdminUser>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Email).IsUnique();
+
+            entity.Property(e => e.Email)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(e => e.DisplayName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(e => e.PermissionsJson)
+                .HasMaxLength(2000);
+
+            // Seed initial SuperAdmin user
+            entity.HasData(
+                new AdminUser
+                {
+                    Id = Guid.Parse("a0000000-0000-0000-0000-000000000001"),
+                    Email = "admin@silentid.co.uk",
+                    DisplayName = "System Administrator",
+                    Role = AdminRole.SuperAdmin,
+                    IsActive = true,
+                    IsPasskeyEnabled = false,
+                    CreatedBy = "System",
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
+        });
+
+        // AdminSession configuration
+        modelBuilder.Entity<AdminSession>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.AdminUserId);
+            entity.HasIndex(e => e.RefreshTokenHash);
+
+            entity.Property(e => e.RefreshTokenHash)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.Property(e => e.IPAddress)
+                .HasMaxLength(50);
+
+            entity.Property(e => e.UserAgent)
+                .HasMaxLength(500);
+
+            entity.HasOne(e => e.AdminUser)
+                .WithMany()
+                .HasForeignKey(e => e.AdminUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // AdminPasskeyCredential configuration
+        modelBuilder.Entity<AdminPasskeyCredential>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.AdminUserId);
+            entity.HasIndex(e => e.CredentialId).IsUnique();
+
+            entity.Property(e => e.CredentialId)
+                .IsRequired()
+                .HasMaxLength(1024);
+
+            entity.Property(e => e.PublicKey)
+                .IsRequired();
+
+            entity.Property(e => e.DeviceName)
+                .HasMaxLength(100);
+
+            entity.Property(e => e.CredentialType)
+                .HasMaxLength(50)
+                .HasDefaultValue("public-key");
+
+            entity.HasOne(e => e.AdminUser)
+                .WithMany()
+                .HasForeignKey(e => e.AdminUserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
