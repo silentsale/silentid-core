@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_spacing.dart';
@@ -225,7 +226,7 @@ class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen>
             if (currentPlan.toLowerCase() == "premium" && !isCancelled)
               OutlinedButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/subscriptions/pro');
+                  context.push('/subscriptions/pro');
                 },
                 child: const Text('Upgrade to Pro'),
               ),

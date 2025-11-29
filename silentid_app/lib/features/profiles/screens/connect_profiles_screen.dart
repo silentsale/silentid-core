@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/info_modal.dart';
 import '../../../services/profile_linking_service.dart';
-import 'add_profile_screen.dart';
 import 'connected_profiles_screen.dart';
 
 /// Connect Your Profiles Screen - Section 52.2
@@ -55,10 +55,7 @@ class _ConnectProfilesScreenState extends State<ConnectProfilesScreen> {
   }
 
   Future<void> _navigateToAddProfile() async {
-    final result = await Navigator.push<ConnectedProfile>(
-      context,
-      MaterialPageRoute(builder: (context) => const AddProfileScreen()),
-    );
+    final result = await context.push<ConnectedProfile>('/profiles/add');
 
     if (result != null) {
       setState(() {

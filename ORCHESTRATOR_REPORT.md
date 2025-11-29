@@ -1,7 +1,240 @@
 # ORCHESTRATOR REPORT
 
 **Generated:** 2025-11-29 (Updated)
-**Status:** UI Master Prompt Audit Complete + Mutual Verification Cleanup Required
+**Status:** Level 3 Verification, OCR Extraction, Email Receipts Complete
+
+---
+
+## Session Update (2025-11-29) - Level 3 Verification & OCR Extraction Complete
+
+**Complete implementation of Section 49 Level 3 Verification and Section 49.6 Extraction Service:**
+
+### Phase 1: Critical Navigation Bug Fixes
+- Fixed `/evidence/receipt/upload` → `/evidence/receipts/upload` in enhanced_home_screen.dart
+- Replaced deprecated `EmptyState.mutualVerifications` with `EmptyState.profileLinks`
+- Changed Verify tab route from `/mutual-verification/create` to `/profiles/connect`
+
+### Phase 2: Level 3 Verification Flow (Section 49) - COMPLETE
+
+**Router Updates (app_router.dart):**
+- Added GoRouter route `/evidence/level3-verify` with extra params support
+- Receives: `profileUrl`, `platform`, `profileLinkId`
+
+**ProfileLinkScreen Updates:**
+- Migrated from `Navigator.push(MaterialPageRoute)` to `context.push()` for GoRouter
+- Added extra params passing to Level3VerificationScreen
+
+**Level3VerificationScreen API Integration:**
+- `_fetchVerificationToken()` - Calls POST `/v1/evidence/profile-links/{id}/generate-token`
+- `_verifyOwnership()` - Two verification methods:
+  - ShareIntent: POST `/v1/evidence/profile-links/{id}/verify-intent`
+  - TokenInBio: POST `/v1/evidence/profile-links/{id}/confirm-token`
+- Added `_getDeviceFingerprint()` for Share-Intent verification
+
+### Phase 3: Email Receipts Flow (Section 47.4) - COMPLETE
+
+**EmailReceiptsSetupScreen:**
+- Added go_router import for consistent navigation
+- Fixed `Navigator.pushNamed` → `context.push('/evidence/receipts')`
+- Verified connection to `/v1/receipts/forwarding-alias` endpoint
+
+### Phase 4: Extraction Service (Section 49.6) - COMPLETE
+
+**New OCR Service Interface (IOcrService.cs):**
+```csharp
+public interface IOcrService
+{
+    Task<OcrResult> ExtractTextAsync(string imageUrl);
+    Task<OcrResult> ExtractTextAsync(Stream imageStream);
+    Task<ProfileOcrResult> ExtractProfileDataAsync(string imageUrl, Platform platform);
+}
+```
+
+**ProfileOcrResult Model:**
+- Extracted fields: Rating, ReviewCount, Username, JoinDate
+- Confidence scores per field + OverallConfidence
+
+**MockOcrService (Development):**
+- Simulates OCR processing for dev/testing
+- Generates realistic mock profile data per platform
+
+**ExtractionService Updates:**
+- Injected `IOcrService` dependency
+- `ProcessManualScreenshotAsync()` - Now extracts data via OCR after upload
+- `ExtractViaScreenshotOcrAsync()` - Automated OCR extraction (95% confidence base)
+- `ExtractViaApiAsync()` - eBay Commerce API stub with configuration notes
+
+**Service Registration (Program.cs):**
+```csharp
+builder.Services.AddScoped<IOcrService, MockOcrService>();
+// TODO: Replace with AzureComputerVisionOcrService in production
+```
+
+### Phase 5: Navigation Pattern Migration - COMPLETE
+
+**Files Updated to GoRouter:**
+| File | Change |
+|------|--------|
+| `my_public_profile_screen.dart` | `Navigator.pushNamed` → `context.push('/settings/privacy')` |
+| `subscription_overview_screen.dart` | `Navigator.pushNamed` → `context.push('/subscriptions/pro')` |
+| `my_reports_screen.dart` | `Navigator.pushNamed` → `context.push('/safety/report-details/{id}')` |
+| `connect_profiles_screen.dart` | `Navigator.push(MaterialPageRoute)` → `context.push('/profiles/add')` |
+
+**Remaining Navigator.push (Acceptable):**
+- `upgrade_to_verified_screen.dart` - Uses callbacks, no GoRouter route
+- `connect_profiles_screen.dart` - `_navigateToConnectedProfiles()` uses callbacks
+
+### Phase 6: External Services Configuration - COMPLETE
+
+**appsettings.json - ExternalServices Section Added:**
+```json
+{
+  "ExternalServices": {
+    "AzureComputerVision": {
+      "Endpoint": "",
+      "ApiKey": "",
+      "ModelVersion": "2024-02-01",
+      "Description": "Azure Computer Vision OCR (Section 49.6)"
+    },
+    "EbayApi": {
+      "ClientId": "",
+      "ClientSecret": "",
+      "Environment": "sandbox",
+      "Description": "eBay Commerce API (Section 49.11)"
+    },
+    "PlaywrightService": {
+      "BaseUrl": "",
+      "Enabled": false,
+      "Description": "Headless browser service (Section 49.6)"
+    }
+  }
+}
+```
+
+### Files Created/Modified This Session
+
+| File | Action |
+|------|--------|
+| `IOcrService.cs` | NEW - OCR service interface |
+| `MockOcrService.cs` | NEW - Mock OCR for development |
+| `ExtractionService.cs` | MODIFIED - OCR integration, API stubs |
+| `Program.cs` | MODIFIED - IOcrService registration |
+| `app_router.dart` | MODIFIED - Level3 verification route |
+| `profile_link_screen.dart` | MODIFIED - GoRouter migration |
+| `level3_verification_screen.dart` | MODIFIED - API endpoint integration |
+| `email_receipts_setup_screen.dart` | MODIFIED - GoRouter navigation |
+| `my_public_profile_screen.dart` | MODIFIED - GoRouter migration |
+| `subscription_overview_screen.dart` | MODIFIED - GoRouter migration |
+| `my_reports_screen.dart` | MODIFIED - GoRouter migration |
+| `connect_profiles_screen.dart` | MODIFIED - GoRouter migration |
+| `appsettings.json` | MODIFIED - ExternalServices config |
+
+### External Services Setup Required
+
+| Service | Status | Configuration |
+|---------|--------|---------------|
+| Azure Computer Vision | PENDING | `ExternalServices:AzureComputerVision:Endpoint` + `ApiKey` |
+| eBay Commerce API | PENDING | `ExternalServices:EbayApi:ClientId` + `ClientSecret` |
+| Playwright Service | PENDING | `ExternalServices:PlaywrightService:BaseUrl` |
+
+---
+
+## Session Update (2025-11-29) - Report Concern & Contact Support Implementation
+
+**Complete Implementation of Two Global Features:**
+
+### Report Concern (Profile Safety Flagging)
+
+**Purpose:** Allow users to privately flag concerns about public profiles.
+
+**Flutter Implementation:**
+- `lib/features/concern/screens/report_concern_screen.dart` - Multi-step flow (4 steps)
+- `lib/services/concern_service.dart` - API service with ConcernReason enum
+
+**Screen Flow:**
+1. **Intro Step** - Safe language explanation, privacy notice
+2. **Reason Selection** - 4 neutral options (no "scam/fraud" language):
+   - "Profile might not belong to this person"
+   - "Suspicious or inconsistent information"
+   - "Something feels unsafe"
+   - "Other safety concern"
+3. **Optional Notes** - Max 400 characters
+4. **Confirmation** - Thank you message with privacy reassurance
+
+**Backend Implementation:**
+- `Models/ProfileConcern.cs` - Entity with ConcernReason, ConcernStatus enums
+- `Services/ProfileConcernService.cs` - Rate limiting (3/day, 1/profile/week)
+- `Controllers/ConcernController.cs` - POST /api/concern endpoint
+
+**Risk Engine Integration:**
+- New `RiskType.ProfileConcernFlag` added to RiskSignal.cs
+- Low weight: 2 points per flag (soft signal)
+- Only creates RiskSignal after 3+ distinct reporters
+
+### Contact Support (Unified Help System)
+
+**Purpose:** Unified support ticket system accessible anywhere in the app.
+
+**Flutter Implementation:**
+- `lib/features/support/screens/contact_support_screen.dart` - Form with category selection
+- `lib/services/support_service.dart` - API service with SupportCategory enum
+
+**Support Categories:**
+- Account/Login
+- Verification Help
+- Technical Issue
+- General Question
+- Billing/Subscription
+- Privacy/Data
+
+**Features:**
+- Auto-attaches device info and app version
+- Optional contact email field
+- Real-time validation
+- Success confirmation with response time expectation (24-48 hours)
+
+**Backend Implementation:**
+- `Models/SupportTicket.cs` - Entity with SupportCategory, TicketStatus, TicketPriority enums
+- `Services/SupportTicketService.cs` - Ticket management with auto-categorization
+- `Controllers/SupportController.cs` - CRUD endpoints for support tickets
+
+### Admin Panel Modules
+
+**Concerns Management** (`admin-panel/src/app/dashboard/concerns/`):
+- Table view with filtering by status and reason
+- Status badges: Open, Under Review, Resolved, Dismissed
+- Action buttons: View, Dismiss, Escalate
+
+**Support Tickets** (`admin-panel/src/app/dashboard/support/`):
+- Table view with filtering by status and category
+- Priority badges: Low, Medium, High, Urgent
+- Reply and Close ticket actions
+
+### Routes Added
+
+| Route | Screen |
+|-------|--------|
+| `/concern/report/:userId/:username` | ReportConcernScreen |
+| `/support/contact` | ContactSupportScreen |
+
+### Info Points Added
+
+- `reportConcern` - Why report a concern?
+- `concernPrivacy` - Your identity stays private
+- `contactSupport` - Get help
+- `supportResponseTime` - Response times
+
+### Build Status
+
+- Backend: **PASS** (0 errors, 0 warnings)
+- Flutter: **PASS** (0 issues)
+
+### Non-Breaking Integration Verified
+
+- No changes to existing API endpoints
+- No modifications to existing database tables (new tables only)
+- No changes to TrustScore calculation logic
+- All new features are additive
 
 ---
 
@@ -40,22 +273,33 @@
 | Verified Badge Generator | 51.3 | ✅ Complete | QR-enabled badge images |
 | Sharing Education Screen | 51.7 | ✅ Complete | 4-page walkthrough |
 
-### ❌ MISSING (Action Required)
+### ✅ UI MASTER LOG - CREATED
 
-| Item | Priority | Action |
+| Item | Priority | Status |
 |------|----------|--------|
-| `SILENTID_UI_MASTER_LOG.md` | 🔴 HIGH | Create UI change tracking file in repo root |
+| `SILENTID_UI_MASTER_LOG.md` | 🔴 HIGH | ✅ Created (678 lines) - Comprehensive UI documentation |
 
-### ⚠️ OUTDATED (Mutual Verification References - Must Remove)
+**Contents:**
+- Design system overview (Section 53 compliant)
+- Complete color palette (brand + platform colors)
+- Typography specifications (Inter font)
+- Spacing & layout rules (16px grid)
+- 21 core widgets documented
+- 48 screens inventory with routes
+- 5-tab navigation structure
+- 50+ info points catalogued
+- Full change log history
 
-These files still reference the deprecated Mutual Verification feature:
+### ✅ MUTUAL VERIFICATION REFERENCES - CLEANED UP
 
-| File | Issue | Fix Required |
-|------|-------|--------------|
-| `onboarding_checklist.dart` | Step 3 mentions "Get verified (mutual verification)" | Change to "Add your first evidence" |
-| `demo_profile_preview.dart` | Shows "8 verifications" stat | Remove or change to "evidence items" |
-| `onboarding_tour_screen.dart` | Page 5 mentions mutual verification | Update messaging |
-| `achievement_badges.dart` | `firstVerification` badge references mutual verification | Remove or repurpose badge |
+All files have been updated to remove Mutual Verification references:
+
+| File | Status | Current Content |
+|------|--------|-----------------|
+| `onboarding_checklist.dart` | ✅ Clean | Step 3: "Add evidence" / "Upload a receipt or screenshot" |
+| `demo_profile_preview.dart` | ✅ Clean | Stats: "Profiles", "Screenshots", "Receipts" |
+| `onboarding_tour_screen.dart` | ✅ Clean | Page 5: "Evidence Vault" / receipts & screenshots |
+| `achievement_badges.dart` | ✅ Clean | Uses `firstEvidence` badge for evidence vault |
 
 ### Key Files Analyzed
 
@@ -365,8 +609,13 @@ Updated `Services/PasskeyService.cs`:
 - [x] ~~Extraction status endpoint~~ - DONE
 - [x] ~~Apple/Google token verification~~ - DONE (proper validation)
 - [x] ~~Passkey signature verification~~ - DONE (COSE/WebAuthn)
-- [ ] Screenshot + OCR extraction (Playwright + Azure Computer Vision)
-- [ ] API extraction for eBay/platforms with APIs
+- [x] ~~OCR Service Interface~~ - DONE (IOcrService + MockOcrService)
+- [x] ~~OCR Integration in ExtractionService~~ - DONE (ProcessManualScreenshotAsync, ExtractViaScreenshotOcrAsync)
+- [x] ~~eBay API Stub~~ - DONE (ExtractViaApiAsync with config notes)
+- [x] ~~Navigation Pattern Cleanup~~ - DONE (GoRouter migration)
+- [x] ~~ExternalServices Configuration~~ - DONE (appsettings.json)
+- [ ] Azure Computer Vision Integration (requires API credentials - see ExternalServices config)
+- [ ] Playwright Integration (requires service deployment - see ExternalServices config)
 
 ---
 

@@ -189,11 +189,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: () {
                 // Navigate based on user state
                 if (!isIdentityVerified) {
-                  Navigator.pushNamed(context, '/identity/intro');
+                  context.push('/identity/intro');
                 } else if (trustScore < 800) {
-                  Navigator.pushNamed(context, '/evidence');
+                  context.push('/evidence');
                 } else {
-                  Navigator.pushNamed(context, '/trust/overview');
+                  context.push('/trust/overview');
                 }
               },
               child: Text(
@@ -211,7 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Secondary CTA
           OutlinedButton(
             onPressed: () {
-              Navigator.pushNamed(context, '/profile/public');
+              context.push('/profile/public');
             },
             child: const Text("View public profile"),
           ),
@@ -283,7 +283,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 subtitle: isIdentityVerified ? "Verified via Stripe" : "Not verified",
                 iconColor: isIdentityVerified ? AppTheme.successGreen : AppTheme.neutralGray700,
                 onTap: () {
-                  Navigator.pushNamed(context, '/identity/status');
+                  context.push('/identity/status');
                 },
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -307,7 +307,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: "Public profile",
                 subtitle: "View and manage",
                 onTap: () {
-                  Navigator.pushNamed(context, '/profile/public');
+                  context.push('/profile/public');
                 },
               ),
 
@@ -318,7 +318,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: "Edit profile",
                 subtitle: "Display name, avatar",
                 onTap: () {
-                  Navigator.pushNamed(context, '/settings/account');
+                  context.push('/settings/account');
                 },
               ),
             ],
@@ -350,7 +350,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 subtitle: "$trustScore - $trustLevel",
                 iconColor: AppTheme.primaryPurple,
                 onTap: () {
-                  Navigator.pushNamed(context, '/trust/overview');
+                  context.push('/trust/overview');
                 },
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -374,7 +374,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: "Evidence Vault",
                 subtitle: "$evidenceCount items",
                 onTap: () {
-                  Navigator.pushNamed(context, '/evidence');
+                  context.push('/evidence');
                 },
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -444,7 +444,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: "Devices & sessions",
                 subtitle: "Manage trusted devices",
                 onTap: () {
-                  Navigator.pushNamed(context, '/settings/devices');
+                  context.push('/settings/devices');
                 },
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -513,7 +513,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 subtitle: accountType,
                 iconColor: accountType != "Free" ? AppTheme.primaryPurple : AppTheme.neutralGray700,
                 onTap: () {
-                  Navigator.pushNamed(context, '/subscriptions/overview');
+                  context.push('/subscriptions/overview');
                 },
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -538,7 +538,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   subtitle: "£4.99/month",
                   iconColor: AppTheme.primaryPurple,
                   onTap: () {
-                    Navigator.pushNamed(context, '/subscriptions/premium');
+                    context.push('/subscriptions/premium');
                   },
                 ),
               ],
@@ -551,7 +551,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   subtitle: "£14.99/month",
                   iconColor: AppTheme.primaryPurple,
                   onTap: () {
-                    Navigator.pushNamed(context, '/subscriptions/pro');
+                    context.push('/subscriptions/pro');
                   },
                 ),
               ],
@@ -562,7 +562,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   icon: Icons.settings_outlined,
                   title: "Manage subscription",
                   onTap: () {
-                    Navigator.pushNamed(context, '/subscriptions/overview');
+                    context.push('/subscriptions/overview');
                   },
                 ),
               ],
@@ -605,7 +605,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: "Download my data",
                 subtitle: "GDPR export",
                 onTap: () {
-                  Navigator.pushNamed(context, '/settings/export');
+                  context.push('/settings/export');
                 },
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -628,7 +628,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.privacy_tip_outlined,
                 title: "Privacy preferences",
                 onTap: () {
-                  Navigator.pushNamed(context, '/settings/privacy');
+                  context.push('/settings/privacy');
                 },
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -652,7 +652,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: "Delete my account",
                 iconColor: AppTheme.dangerRed,
                 onTap: () {
-                  Navigator.pushNamed(context, '/settings/delete');
+                  context.push('/settings/delete');
                 },
               ),
             ],
@@ -682,7 +682,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.help_outline,
                 title: "Help Center",
                 onTap: () {
-                  _launchUrl('https://help.silentid.co.uk');
+                  context.push('/help');
                 },
               ),
 
@@ -692,7 +692,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.chat_bubble_outline,
                 title: "Contact support",
                 onTap: () {
-                  _launchUrl('mailto:support@silentid.co.uk?subject=SilentID%20Support%20Request');
+                  context.push('/support/contact');
                 },
               ),
 
@@ -702,7 +702,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.flag_outlined,
                 title: "Report a safety concern",
                 onTap: () {
-                  Navigator.pushNamed(context, '/safety/report');
+                  context.push('/safety/report');
                 },
               ),
 
@@ -712,7 +712,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.list_alt_outlined,
                 title: "My reports",
                 onTap: () {
-                  Navigator.pushNamed(context, '/safety/my-reports');
+                  context.push('/safety/my-reports');
                 },
               ),
             ],

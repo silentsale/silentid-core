@@ -557,4 +557,68 @@ We use a live camera photo of your profile screen to confirm ownership.
 
 This is a fallback when token verification isn't possible.''',
       );
+
+  // ============================================================================
+  // 11. REPORT CONCERN & CONTACT SUPPORT
+  // ============================================================================
+
+  static InfoPointData get reportConcern => const InfoPointData(
+        title: 'What is Report a Concern?',
+        icon: Icons.flag_outlined,
+        body: '''Use this feature if something on a profile seems incorrect or unsafe.
+
+• Your identity stays private
+• Reports are reviewed confidentially
+• No automatic penalties - our team reviews each concern
+• Reports do not affect the user's TrustScore directly
+
+We use neutral, non-accusatory language. This is about safety, not punishment.''',
+        learnMoreText: 'Learn More',
+        learnMoreUrl: 'https://help.silentid.co.uk/report-concern',
+      );
+
+  static InfoPointData get concernPrivacy => const InfoPointData(
+        title: 'Your Privacy is Protected',
+        icon: Icons.lock_outlined,
+        body: '''When you report a concern:
+
+• The person reported will NOT know who filed the concern
+• Your identity is kept completely private
+• Only our review team sees the report
+• Reports are handled confidentially
+
+We store minimal metadata (IP, device) only for abuse prevention.''',
+      );
+
+  static InfoPointData get contactSupport => const InfoPointData(
+        title: 'Contact Support',
+        icon: Icons.support_agent,
+        body: '''Get help with any SilentID issue:
+
+• Account & login problems
+• Verification assistance
+• Technical issues
+• General questions
+• Billing inquiries
+• Privacy & data requests
+
+Our team typically responds within 24-48 hours.
+
+Your device info and app version are automatically attached to help us diagnose issues faster.''',
+        learnMoreText: 'Learn More',
+        learnMoreUrl: 'https://help.silentid.co.uk/support',
+      );
+
+  static InfoPointData get supportResponseTime => const InfoPointData(
+        title: 'Response Times',
+        icon: Icons.schedule,
+        body: '''We aim to respond to all support requests within 24-48 hours.
+
+Priority is given to:
+• Account access issues
+• Billing problems
+• Security concerns
+
+Please provide as much detail as possible to help us resolve your issue quickly.''',
+      );
 }

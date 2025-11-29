@@ -5,7 +5,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../services/api_service.dart';
-import 'level3_verification_screen.dart';
 
 class ProfileLinkScreen extends StatefulWidget {
   const ProfileLinkScreen({super.key});
@@ -87,15 +86,13 @@ class _ProfileLinkScreenState extends State<ProfileLinkScreen> {
         final platform = _detectedPlatform ?? 'Other';
 
         // Navigate to Level 3 Verification flow (Section 49)
-        final verified = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(
-            builder: (context) => Level3VerificationScreen(
-              profileUrl: profileUrl,
-              platform: platform,
-              profileLinkId: profileLinkId,
-            ),
-          ),
+        final verified = await context.push<bool>(
+          '/evidence/level3-verify',
+          extra: {
+            'profileUrl': profileUrl,
+            'platform': platform,
+            'profileLinkId': profileLinkId,
+          },
         );
 
         if (mounted) {

@@ -58,6 +58,9 @@ public class RiskEngineService : IRiskEngineService
                 RiskType.SuspiciousLogin => 5,
                 RiskType.RapidAccountCreation => 10,
                 RiskType.AbnormalActivity => 10,
+                // ProfileConcernFlag is internal-only soft signal, very low weight
+                // Does NOT directly affect TrustScore, only internal risk tracking
+                RiskType.ProfileConcernFlag => 2,
                 _ => signal.Severity
             };
 

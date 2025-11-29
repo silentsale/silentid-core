@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_spacing.dart';
@@ -80,7 +81,7 @@ class _EmailReceiptsSetupScreenState extends State<EmailReceiptsSetupScreen> {
           IconButton(
             icon: const Icon(Icons.list_alt),
             onPressed: () {
-              Navigator.pushNamed(context, '/evidence/receipts');
+              context.push('/evidence/receipts');
             },
             tooltip: 'View Receipts',
           ),

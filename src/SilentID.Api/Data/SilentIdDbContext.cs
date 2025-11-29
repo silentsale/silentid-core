@@ -51,6 +51,10 @@ public class SilentIdDbContext : DbContext
     public DbSet<AdminSession> AdminSessions { get; set; } = null!;
     public DbSet<AdminPasskeyCredential> AdminPasskeyCredentials { get; set; } = null!;
 
+    // Profile Concerns & Support Tickets
+    public DbSet<ProfileConcern> ProfileConcerns { get; set; } = null!;
+    public DbSet<SupportTicket> SupportTickets { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -549,6 +553,83 @@ public class SilentIdDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.AdminUserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ProfileConcern configuration
+        modelBuilder.Entity<ProfileConcern>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ReportedUserId);
+            entity.HasIndex(e => e.ReporterUserId);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.CreatedAt);
+
+            entity.Property(e => e.Notes)
+                .HasMaxLength(400);
+
+            entity.Property(e => e.AdminNotes)
+                .HasMaxLength(2000);
+
+            entity.Property(e => e.ReporterIpAddress)
+                .HasMaxLength(50);
+
+            entity.Property(e => e.ReporterDeviceInfo)
+                .HasMaxLength(500);
+
+            entity.HasOne(e => e.ReportedUser)
+                .WithMany()
+                .HasForeignKey(e => e.ReportedUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Reporter)
+                .WithMany()
+                .HasForeignKey(e => e.ReporterUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // SupportTicket configuration
+        modelBuilder.Entity<SupportTicket>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.Priority);
+            entity.HasIndex(e => e.Category);
+            entity.HasIndex(e => e.CreatedAt);
+
+            entity.Property(e => e.Subject)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.Property(e => e.Message)
+                .IsRequired()
+                .HasMaxLength(4000);
+
+            entity.Property(e => e.ContactEmail)
+                .HasMaxLength(255);
+
+            entity.Property(e => e.DeviceInfo)
+                .HasMaxLength(500);
+
+            entity.Property(e => e.AppVersion)
+                .HasMaxLength(50);
+
+            entity.Property(e => e.Platform)
+                .HasMaxLength(20);
+
+            entity.Property(e => e.IpAddress)
+                .HasMaxLength(50);
+
+            entity.Property(e => e.AdminNotes)
+                .HasMaxLength(4000);
+
+            entity.Property(e => e.ResolutionNotes)
+                .HasMaxLength(2000);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

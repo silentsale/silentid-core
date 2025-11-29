@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
@@ -95,13 +96,12 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen> {
           IconButton(
             icon: const Icon(Icons.flag_outlined),
             onPressed: () {
-              Navigator.pushNamed(
-                context,
-                '/safety/report',
-                arguments: widget.username,
-              );
+              // Navigate to Report Concern screen
+              if (_profile != null) {
+                context.push('/concern/report/${_profile!.userId}/${widget.username}');
+              }
             },
-            tooltip: 'Report',
+            tooltip: 'Report a concern',
           ),
         ],
       ),

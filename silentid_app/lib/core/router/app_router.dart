@@ -13,10 +13,12 @@ import '../../features/evidence/screens/receipt_list_screen.dart';
 import '../../features/evidence/screens/email_receipts_setup_screen.dart';
 import '../../features/evidence/screens/screenshot_upload_screen.dart';
 import '../../features/evidence/screens/profile_link_screen.dart';
+import '../../features/evidence/screens/level3_verification_screen.dart';
 import '../../features/trust/screens/trustscore_overview_screen.dart';
 import '../../features/trust/screens/trustscore_breakdown_screen.dart';
 import '../../features/trust/screens/trustscore_history_screen.dart';
 import '../../features/profile/screens/my_public_profile_screen.dart';
+import '../../features/profile/screens/profile_screen.dart';
 import '../../features/settings/screens/account_details_screen.dart';
 import '../../features/settings/screens/privacy_settings_screen.dart';
 import '../../features/settings/screens/connected_devices_screen.dart';
@@ -40,8 +42,14 @@ import '../../features/security/screens/security_center_screen.dart';
 import '../../features/security/screens/login_activity_screen.dart';
 import '../../features/security/screens/security_alerts_screen.dart';
 import '../../features/security/screens/security_risk_screen.dart';
+import '../../features/help/screens/help_center_screen.dart';
+import '../../features/help/screens/help_category_screen.dart';
+import '../../features/help/screens/help_article_screen.dart';
+import '../../features/concern/screens/report_concern_screen.dart';
+import '../../features/support/screens/contact_support_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/profile_linking_service.dart';
+import '../../services/support_service.dart';
 import '../widgets/main_shell.dart';
 
 class AppRouter {
@@ -163,6 +171,24 @@ class AppRouter {
             name: 'profile-link',
             builder: (context, state) => const ProfileLinkScreen(),
           ),
+          // Section 49 - Level 3 Verification route
+          GoRoute(
+            path: '/evidence/level3-verify',
+            name: 'level3-verify',
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>?;
+              if (extra == null) {
+                return const Scaffold(
+                  body: Center(child: Text('Verification data required')),
+                );
+              }
+              return Level3VerificationScreen(
+                profileUrl: extra['profileUrl'] as String,
+                platform: extra['platform'] as String,
+                profileLinkId: extra['profileLinkId'] as String?,
+              );
+            },
+          ),
           GoRoute(
             path: '/trust/overview',
             name: 'trust-overview',
@@ -182,6 +208,12 @@ class AppRouter {
             path: '/profile/public',
             name: 'public-profile',
             builder: (context, state) => const MyPublicProfileScreen(),
+          ),
+          // Settings hub - main settings screen
+          GoRoute(
+            path: '/settings',
+            name: 'settings',
+            builder: (context, state) => const ProfileScreen(),
           ),
           GoRoute(
             path: '/settings/account',
@@ -344,6 +376,65 @@ class AppRouter {
             path: '/security/risk',
             name: 'security-risk',
             builder: (context, state) => const SecurityRiskScreen(),
+          ),
+          // Help Center routes
+          GoRoute(
+            path: '/help',
+            name: 'help-center',
+            builder: (context, state) => const HelpCenterScreen(),
+          ),
+          GoRoute(
+            path: '/help/:category',
+            name: 'help-category',
+            builder: (context, state) {
+              final category = state.pathParameters['category'];
+              if (category == null) {
+                return const HelpCenterScreen();
+              }
+              return HelpCategoryScreen(categorySlug: category);
+            },
+          ),
+          GoRoute(
+            path: '/help/:category/:slug',
+            name: 'help-article',
+            builder: (context, state) {
+              final category = state.pathParameters['category'];
+              final slug = state.pathParameters['slug'];
+              if (category == null || slug == null) {
+                return const HelpCenterScreen();
+              }
+              return HelpArticleScreen(
+                categorySlug: category,
+                articleSlug: slug,
+              );
+            },
+          ),
+          // Report Concern routes
+          GoRoute(
+            path: '/concern/report/:userId/:username',
+            name: 'report-concern',
+            builder: (context, state) {
+              final userId = state.pathParameters['userId'];
+              final username = state.pathParameters['username'];
+              if (userId == null || username == null) {
+                return const Scaffold(
+                  body: Center(child: Text('User information required')),
+                );
+              }
+              return ReportConcernScreen(
+                reportedUserId: userId,
+                reportedUsername: username,
+              );
+            },
+          ),
+          // Contact Support routes
+          GoRoute(
+            path: '/support/contact',
+            name: 'contact-support',
+            builder: (context, state) {
+              final category = state.extra as SupportCategory?;
+              return ContactSupportScreen(initialCategory: category);
+            },
           ),
         ],
       ),

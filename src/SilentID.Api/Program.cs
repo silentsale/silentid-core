@@ -53,10 +53,15 @@ builder.Services.AddScoped<IRiskEngineService, RiskEngineService>();
 builder.Services.AddScoped<IPasskeyService, PasskeyService>();
 builder.Services.AddScoped<IPlatformConfigurationService, PlatformConfigurationService>();
 builder.Services.AddScoped<IExtractionService, ExtractionService>();
+builder.Services.AddScoped<IOcrService, MockOcrService>(); // TODO: Replace with AzureComputerVisionOcrService in production
 builder.Services.AddScoped<IReferralService, ReferralService>();
 builder.Services.AddScoped<IForwardingAliasService, ForwardingAliasService>();
 builder.Services.AddScoped<IReceiptParsingService, ReceiptParsingService>();
 builder.Services.AddScoped<ISecurityCenterService, SecurityCenterService>();
+
+// Add Profile Concern and Support Ticket services
+builder.Services.AddScoped<ProfileConcernService>();
+builder.Services.AddScoped<SupportTicketService>();
 
 // Add HttpClient factory for OAuth services
 builder.Services.AddHttpClient();

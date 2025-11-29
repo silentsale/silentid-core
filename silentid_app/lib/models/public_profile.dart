@@ -72,6 +72,7 @@ class PlatformRating {
 /// PRIVACY-SAFE: Never contains email, phone, address, ID documents.
 /// TrustScore visibility controlled by user privacy settings.
 class PublicProfile {
+  final String userId; // User ID for API operations (e.g., report concern)
   final String username; // @username format
   final String displayName; // "Sarah M."
   final int? trustScore; // 0-1000, NULL if user hides it
@@ -88,6 +89,7 @@ class PublicProfile {
   final List<PublicConnectedProfile> connectedProfiles; // Section 52.6: Linked/Verified external profiles
 
   const PublicProfile({
+    required this.userId,
     required this.username,
     required this.displayName,
     this.trustScore,
@@ -121,6 +123,7 @@ class PublicProfile {
         [];
 
     return PublicProfile(
+      userId: json['userId'] as String? ?? '',
       username: json['username'] as String,
       displayName: json['displayName'] as String,
       trustScore: json['trustScore'] as int?, // Now nullable
@@ -144,6 +147,7 @@ class PublicProfile {
   /// Convert to JSON (rarely needed, but useful for caching)
   Map<String, dynamic> toJson() {
     return {
+      'userId': userId,
       'username': username,
       'displayName': displayName,
       'trustScore': trustScore,

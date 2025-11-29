@@ -23,7 +23,7 @@ const footerLinks = {
     { label: 'Acceptable Use', href: '#' },
   ],
   support: [
-    { label: 'Help Center', href: '#' },
+    { label: 'Help Center', href: '/help' },
     { label: 'API Documentation', href: '#' },
     { label: 'Status', href: '#' },
     { label: 'Community', href: '#' },

@@ -56,5 +56,10 @@ public enum RiskType
     ProfileMismatch,
     SuspiciousLogin,
     RapidAccountCreation,
-    AbnormalActivity
+    AbnormalActivity,
+    /// <summary>
+    /// Soft signal from multiple profile concerns.
+    /// Very low weight, internal only, does not directly affect TrustScore.
+    /// </summary>
+    ProfileConcernFlag
 }

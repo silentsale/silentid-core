@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 
 /// MainShellScreen provides the persistent bottom navigation bar
-/// for the 4 main sections of SilentID as defined in Section 39.
+/// for the 5 main sections of SilentID.
 ///
-/// Tabs:
-/// 1. Home - TrustScore overview, quick actions, recent activity
+/// Tabs (per CLAUDE.md spec):
+/// 1. Home - TrustScore overview, quick actions, onboarding
 /// 2. Evidence - Receipts, screenshots, profile links
-/// 3. Verify - Mutual verifications, scan profiles, QR codes
-/// 4. Profile - Settings, account, security, help
+/// 3. Profile - Public Trust Passport, sharing
+/// 4. Security - Security center, login activity, risk
+/// 5. Settings - Account, privacy, help, subscriptions
 class MainShellScreen extends StatefulWidget {
   final Widget child;
   final int currentIndex;
@@ -63,19 +65,27 @@ class _MainShellScreenState extends State<MainShellScreen> {
                 ),
                 _buildNavItem(
                   context: context,
-                  icon: Icons.verified_outlined,
-                  activeIcon: Icons.verified,
-                  label: 'Verify',
-                  index: 2,
-                  route: '/mutual-verification',
-                ),
-                _buildNavItem(
-                  context: context,
                   icon: Icons.person_outline,
                   activeIcon: Icons.person,
                   label: 'Profile',
-                  index: 3,
+                  index: 2,
                   route: '/profile/public',
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.shield_outlined,
+                  activeIcon: Icons.shield,
+                  label: 'Security',
+                  index: 3,
+                  route: '/security',
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.settings_outlined,
+                  activeIcon: Icons.settings,
+                  label: 'Settings',
+                  index: 4,
+                  route: '/settings',
                 ),
               ],
             ),
@@ -99,7 +109,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
       child: InkWell(
         onTap: () {
           if (!isSelected) {
-            _navigateToTab(context, route);
+            context.go(route);
           }
         },
         borderRadius: BorderRadius.circular(12),
@@ -110,7 +120,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
             children: [
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppTheme.primaryPurple.withValues(alpha: 0.1)
@@ -129,7 +139,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: isSelected
                       ? AppTheme.primaryPurple
@@ -142,41 +152,41 @@ class _MainShellScreenState extends State<MainShellScreen> {
       ),
     );
   }
-
-  void _navigateToTab(BuildContext context, String route) {
-    // Use GoRouter for navigation
-    // This will be replaced with proper GoRouter navigation when integrated
-    Navigator.of(context).pushReplacementNamed(route);
-  }
 }
 
 /// Helper class to determine current tab index from route
 class ShellRouteHelper {
   static int getIndexFromRoute(String location) {
-    if (location.startsWith('/home')) {
+    // Tab 0: Home
+    if (location.startsWith('/home') ||
+        location.startsWith('/trust') ||
+        location.startsWith('/onboarding') ||
+        location.startsWith('/identity')) {
       return 0;
-    } else if (location.startsWith('/evidence')) {
+    }
+    // Tab 1: Evidence
+    if (location.startsWith('/evidence') ||
+        location.startsWith('/profiles')) {
       return 1;
-    } else if (location.startsWith('/profiles')) {
-      return 1; // Connected Profiles are part of Evidence (Section 52)
-    } else if (location.startsWith('/mutual-verification')) {
+    }
+    // Tab 2: Profile
+    if (location.startsWith('/profile')) {
       return 2;
-    } else if (location.startsWith('/profile')) {
+    }
+    // Tab 3: Security
+    if (location.startsWith('/security')) {
       return 3;
-    } else if (location.startsWith('/trust')) {
-      return 0; // Trust screens are part of Home
-    } else if (location.startsWith('/safety')) {
-      return 3; // Safety screens are part of Profile
-    } else if (location.startsWith('/settings')) {
-      return 3; // Settings screens are part of Profile
-    } else if (location.startsWith('/subscriptions')) {
-      return 3; // Subscription screens are part of Profile
-    } else if (location.startsWith('/onboarding')) {
-      return 0; // Onboarding is part of Home flow
-    } else if (location.startsWith('/referral')) {
-      return 3; // Referral is part of Profile
-    } else if (location.startsWith('/sharing')) {
-      return 3; // Sharing is part of Profile
+    }
+    // Tab 4: Settings
+    if (location.startsWith('/settings') ||
+        location.startsWith('/subscriptions') ||
+        location.startsWith('/safety') ||
+        location.startsWith('/referral') ||
+        location.startsWith('/sharing') ||
+        location.startsWith('/help') ||
+        location.startsWith('/support') ||
+        location.startsWith('/concern')) {
+      return 4;
     }
     return 0; // Default to Home
   }

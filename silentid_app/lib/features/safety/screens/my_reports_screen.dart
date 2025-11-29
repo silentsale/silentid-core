@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/skeleton_loader.dart';
 import '../../../models/safety_report.dart';
@@ -199,11 +200,7 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
       ),
       child: InkWell(
         onTap: () {
-          Navigator.pushNamed(
-            context,
-            '/safety/report-details',
-            arguments: report.id,
-          );
+          context.push('/safety/report-details/${report.id}');
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(

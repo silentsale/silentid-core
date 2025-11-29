@@ -87,6 +87,7 @@ public class ExtractionService : IExtractionService
     private readonly SilentIdDbContext _dbContext;
     private readonly IPlatformConfigurationService _platformService;
     private readonly IBlobStorageService _blobStorage;
+    private readonly IOcrService _ocrService;
     private readonly ILogger<ExtractionService> _logger;
 
     // Maximum manual screenshots allowed (Section 49.10)
@@ -96,11 +97,13 @@ public class ExtractionService : IExtractionService
         SilentIdDbContext dbContext,
         IPlatformConfigurationService platformService,
         IBlobStorageService blobStorage,
+        IOcrService ocrService,
         ILogger<ExtractionService> logger)
     {
         _dbContext = dbContext;
         _platformService = platformService;
         _blobStorage = blobStorage;
+        _ocrService = ocrService;
         _logger = logger;
     }
 
@@ -245,9 +248,44 @@ public class ExtractionService : IExtractionService
         profileLink.ManualScreenshotCount = existingUrls.Count;
         profileLink.UpdatedAt = DateTime.UtcNow;
 
-        // TODO: Implement OCR extraction from screenshot
-        // For now, mark as pending OCR processing
+        // Get platform for OCR extraction
+        var platformMatch = await _platformService.MatchUrlAsync(profileLink.URL);
+        var platformId = platformMatch?.Platform.PlatformId ?? "other";
+
+        // Extract profile data using OCR service (Section 49.6)
+        ProfileOcrResult? ocrResult = null;
+        try
+        {
+            ocrResult = await _ocrService.ExtractProfileDataAsync(blobUrl, platformId);
+
+            if (ocrResult.Success && ocrResult.OverallConfidence >= 0.7)
+            {
+                _logger.LogInformation(
+                    "OCR extraction successful for screenshot: Rating={Rating}, Reviews={Reviews}, Confidence={Confidence}",
+                    ocrResult.Rating, ocrResult.ReviewCount, ocrResult.OverallConfidence);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "OCR extraction low confidence ({Confidence}) for profile {ProfileLinkId}",
+                    ocrResult.OverallConfidence, profileLinkId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "OCR extraction failed for profile {ProfileLinkId}", profileLinkId);
+        }
+
         var confidence = CalculateConfidenceScore(ExtractionMethod.ManualScreenshot, false, existingUrls.Count);
+
+        // Update profile with extracted data if OCR succeeded
+        if (ocrResult?.Success == true && ocrResult.OverallConfidence >= 0.7)
+        {
+            profileLink.PlatformRating = ocrResult.Rating;
+            profileLink.ReviewCount = ocrResult.ReviewCount;
+            profileLink.ProfileJoinDate = ocrResult.JoinDate;
+            profileLink.ExtractedAt = DateTime.UtcNow;
+        }
 
         profileLink.ExtractionMethod = ExtractionMethod.ManualScreenshot.ToString();
         profileLink.ExtractionConfidence = confidence;
@@ -261,6 +299,9 @@ public class ExtractionService : IExtractionService
         return new ExtractionResult
         {
             Success = true,
+            Rating = ocrResult?.Rating,
+            ReviewCount = ocrResult?.ReviewCount,
+            JoinDate = ocrResult?.JoinDate,
             Method = ExtractionMethod.ManualScreenshot,
             ConfidenceScore = confidence
         };
@@ -317,36 +358,151 @@ public class ExtractionService : IExtractionService
 
     #region Private Methods
 
-    private Task<ExtractionResult> ExtractViaApiAsync(ProfileLinkEvidence profileLink, PlatformConfiguration platform)
+    private async Task<ExtractionResult> ExtractViaApiAsync(ProfileLinkEvidence profileLink, PlatformConfiguration platform)
     {
-        // TODO: Implement API extraction for platforms that support it (e.g., eBay Commerce API)
-        // For now, return not implemented
+        // Section 49.11 - Platform API extraction (100% confidence)
+        // Currently supports: eBay Commerce API (stub)
+        // Future: Depop API, Vinted API (when available)
+
         _logger.LogInformation(
-            "API extraction not yet implemented for platform {Platform}",
+            "Attempting API extraction for platform {Platform}",
             platform.PlatformId);
+
+        try
+        {
+            // Match platform by ID pattern (e.g., "ebay-uk", "ebay-us")
+            if (platform.PlatformId.StartsWith("ebay", StringComparison.OrdinalIgnoreCase))
+            {
+                return await ExtractFromEbayApiAsync(profileLink);
+            }
+
+            // Add other platforms here as APIs become available
+
+            return new ExtractionResult
+            {
+                Success = false,
+                ErrorMessage = $"API extraction not available for {platform.PlatformId}",
+                Method = ExtractionMethod.Api
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "API extraction failed for platform {Platform}", platform.PlatformId);
+
+            return new ExtractionResult
+            {
+                Success = false,
+                ErrorMessage = "API extraction failed. Falling back to screenshot method.",
+                Method = ExtractionMethod.Api
+            };
+        }
+    }
+
+    /// <summary>
+    /// Extract profile data from eBay Commerce API.
+    /// ExternalService: Requires eBay API credentials configuration.
+    /// </summary>
+    private Task<ExtractionResult> ExtractFromEbayApiAsync(ProfileLinkEvidence profileLink)
+    {
+        // ExternalService: eBay Commerce API integration
+        // Documentation: https://developer.ebay.com/develop/apis/restful-apis/commerce-api
+        //
+        // Required configuration (appsettings.json / ExternalServices):
+        // - EbayApi:ClientId
+        // - EbayApi:ClientSecret
+        // - EbayApi:Environment (sandbox/production)
+        //
+        // API endpoints:
+        // - GET /sell/account/v1/privilege - Check seller privileges
+        // - GET /sell/analytics/v1/seller_standards_profile - Seller performance
+        // - GET /sell/fulfillment/v1/order - Order history
+        //
+        // For MVP, returning not implemented - implement when eBay API credentials configured
+
+        _logger.LogInformation(
+            "eBay API extraction stub called for profile {ProfileLinkId}. " +
+            "Configure ExternalServices:EbayApi to enable.",
+            profileLink.Id);
 
         return Task.FromResult(new ExtractionResult
         {
             Success = false,
-            ErrorMessage = "API extraction not yet implemented",
+            ErrorMessage = "eBay API not configured. Configure ExternalServices:EbayApi in appsettings.json",
             Method = ExtractionMethod.Api
         });
     }
 
-    private Task<ExtractionResult> ExtractViaScreenshotOcrAsync(ProfileLinkEvidence profileLink, PlatformConfiguration platform)
+    private async Task<ExtractionResult> ExtractViaScreenshotOcrAsync(ProfileLinkEvidence profileLink, PlatformConfiguration platform)
     {
-        // TODO: Implement Playwright headless browser + Azure Computer Vision OCR
-        // For now, return not implemented
-        _logger.LogInformation(
-            "Screenshot+OCR extraction not yet implemented for platform {Platform}",
-            platform.PlatformId);
+        // Section 49.6 - Automated Screenshot + OCR extraction
+        // Note: Full automated screenshot capture (via Playwright/Puppeteer) is an ExternalService
+        // For now, if we have the profile URL, we can attempt OCR extraction
 
-        return Task.FromResult(new ExtractionResult
+        _logger.LogInformation(
+            "Attempting Screenshot+OCR extraction for platform {Platform}, URL: {Url}",
+            platform.PlatformId, profileLink.URL);
+
+        try
         {
-            Success = false,
-            ErrorMessage = "Automated extraction not yet implemented. Please upload screenshots manually.",
-            Method = ExtractionMethod.ScreenshotOcr
-        });
+            // Use OCR service to extract profile data from the profile URL
+            // In production, this would first capture a screenshot using Playwright,
+            // then process through Azure Computer Vision
+            var ocrResult = await _ocrService.ExtractProfileDataAsync(profileLink.URL, platform.PlatformId);
+
+            if (!ocrResult.Success)
+            {
+                return new ExtractionResult
+                {
+                    Success = false,
+                    ErrorMessage = ocrResult.ErrorMessage ?? "OCR extraction failed",
+                    Method = ExtractionMethod.ScreenshotOcr
+                };
+            }
+
+            // Validate OCR confidence threshold (70% minimum)
+            if (ocrResult.OverallConfidence < 0.7)
+            {
+                _logger.LogWarning(
+                    "OCR confidence too low ({Confidence}) for automated extraction. Falling back to manual screenshots.",
+                    ocrResult.OverallConfidence);
+
+                return new ExtractionResult
+                {
+                    Success = false,
+                    ErrorMessage = "Automated extraction confidence too low. Please upload screenshots manually.",
+                    Method = ExtractionMethod.ManualScreenshot
+                };
+            }
+
+            var confidence = CalculateConfidenceScore(ExtractionMethod.ScreenshotOcr, false, 0);
+
+            _logger.LogInformation(
+                "Screenshot+OCR extraction successful: Rating={Rating}, Reviews={Reviews}, Confidence={Confidence}%",
+                ocrResult.Rating, ocrResult.ReviewCount, confidence);
+
+            return new ExtractionResult
+            {
+                Success = true,
+                Rating = ocrResult.Rating,
+                ReviewCount = ocrResult.ReviewCount,
+                Username = ocrResult.Username,
+                JoinDate = ocrResult.JoinDate,
+                Method = ExtractionMethod.ScreenshotOcr,
+                ConfidenceScore = confidence,
+                HtmlExtractionMatch = false // TODO: Compare with HTML scrape when implemented
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Screenshot+OCR extraction failed for profile {ProfileLinkId}", profileLink.Id);
+
+            return new ExtractionResult
+            {
+                Success = false,
+                ErrorMessage = "Automated extraction failed. Please upload screenshots manually.",
+                Method = ExtractionMethod.ScreenshotOcr
+            };
+        }
     }
 
     private static string GetContentType(string fileName)

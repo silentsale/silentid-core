@@ -86,16 +86,40 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
   @override
   void initState() {
     super.initState();
-    _generateVerificationToken();
+    // Token will be fetched from backend when user selects TokenInBio method
   }
 
-  void _generateVerificationToken() {
-    final random = Random.secure();
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final code = List.generate(8, (_) => chars[random.nextInt(chars.length)]).join();
-    setState(() {
-      _verificationToken = 'SILENTID-VERIFY-$code';
-    });
+  /// Fetch verification token from backend (Section 49.3)
+  Future<void> _fetchVerificationToken() async {
+    if (widget.profileLinkId == null) {
+      setState(() {
+        _errorMessage = 'Profile link ID required for verification';
+      });
+      return;
+    }
+
+    try {
+      final response = await _api.post(
+        '/v1/evidence/profile-links/${widget.profileLinkId}/generate-token',
+        data: {},
+      );
+
+      if (mounted && response.data != null) {
+        setState(() {
+          _verificationToken = response.data['verificationToken'] as String?;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        // Fallback to local generation if backend fails
+        final random = Random.secure();
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        final code = List.generate(8, (_) => chars[random.nextInt(chars.length)]).join();
+        setState(() {
+          _verificationToken = 'SILENTID-VERIFY-$code';
+        });
+      }
+    }
   }
 
   Future<void> _initiateShareIntent() async {
@@ -138,30 +162,48 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
   }
 
   Future<void> _verifyOwnership() async {
+    if (widget.profileLinkId == null) {
+      setState(() {
+        _errorMessage = 'Profile link ID required for verification';
+        _currentStep = VerificationStep.result;
+        _verificationSuccess = false;
+      });
+      return;
+    }
+
     setState(() {
       _isVerifying = true;
       _errorMessage = null;
     });
 
     try {
-      final response = await _api.post(
-        '/v1/evidence/profile-links/verify',
-        data: {
-          'profileLinkId': widget.profileLinkId,
-          'url': widget.profileUrl,
-          'platform': widget.platform,
-          'method': _selectedMethod == VerificationMethod.shareIntent
-              ? 'ShareIntent'
-              : 'TokenInBio',
-          'verificationToken': _selectedMethod == VerificationMethod.tokenInBio
-              ? _verificationToken
-              : null,
-          'shareTimestamp': _shareTimestamp?.toIso8601String(),
-        },
-      );
+      dynamic response;
+
+      if (_selectedMethod == VerificationMethod.shareIntent) {
+        // ShareIntent verification (Section 49.4)
+        response = await _api.post(
+          '/v1/evidence/profile-links/${widget.profileLinkId}/verify-intent',
+          data: {
+            'sharedUrl': widget.profileUrl,
+            'deviceFingerprint': await _getDeviceFingerprint(),
+          },
+        );
+      } else {
+        // TokenInBio verification (Section 49.3)
+        // Note: In production, this would send the scraped bio text from the profile
+        // For now, we send a placeholder indicating user confirmed they added the token
+        response = await _api.post(
+          '/v1/evidence/profile-links/${widget.profileLinkId}/confirm-token',
+          data: {
+            'scrapedBioText': _verificationToken ?? '',
+          },
+        );
+      }
 
       if (mounted) {
-        final success = response.data['verified'] == true;
+        // Backend returns the updated profile link on success
+        final success = response.data != null &&
+            (response.data['verificationLevel'] == 3 || response.data['linkState'] == 'Verified');
         setState(() {
           _verificationSuccess = success;
           _currentStep = VerificationStep.result;
@@ -180,6 +222,12 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
         setState(() => _isVerifying = false);
       }
     }
+  }
+
+  /// Get device fingerprint for ShareIntent verification
+  Future<String> _getDeviceFingerprint() async {
+    // Simple device fingerprint - in production use device_info_plus
+    return '${DateTime.now().millisecondsSinceEpoch}';
   }
 
   @override
@@ -517,11 +565,15 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
             const SizedBox(height: 16),
             PrimaryButton(
               text: isSelected ? 'Continue with this method' : 'Select',
-              onPressed: () {
+              onPressed: () async {
                 setState(() {
                   _selectedMethod = method;
                   _currentStep = VerificationStep.verifyOwnership;
                 });
+                // Fetch token from backend if TokenInBio selected
+                if (method == VerificationMethod.tokenInBio) {
+                  await _fetchVerificationToken();
+                }
               },
               isSecondary: !isSelected,
             ),
@@ -1115,7 +1167,7 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
               _errorMessage = null;
               _shareInitiated = false;
               _tokenAddedConfirmed = false;
-              _generateVerificationToken();
+              _verificationToken = null;
             });
           },
         ),

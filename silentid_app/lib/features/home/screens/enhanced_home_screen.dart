@@ -658,7 +658,7 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
         child: SizedBox(
           height: MediaQuery.of(context).size.height - 200,
           child: EmptyState.evidence(
-            onAction: () => context.push('/evidence/receipt/upload'),
+            onAction: () => context.push('/evidence/receipts/upload'),
           ),
         ),
       ),
@@ -673,8 +673,8 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         child: SizedBox(
           height: MediaQuery.of(context).size.height - 200,
-          child: EmptyState.mutualVerifications(
-            onAction: () => context.push('/mutual-verification/create'),
+          child: EmptyState.profileLinks(
+            onAction: () => context.push('/profiles/connect'),
           ),
         ),
       ),
