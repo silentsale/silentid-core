@@ -101,6 +101,26 @@ SilentID uses a locked, premium Apple-style UI based on unified spacing (16px gr
 
 **100% passwordless authentication** with intelligent method selection: Passkey → Apple/Google → Email OTP (fallback only). New or suspicious devices trigger step-up authentication using stronger methods. High-risk patterns may temporarily restrict OTP access. Sessions are short-lived, device-bound (fingerprint + app version), and renew silently only on trusted devices. Login events feed into TrustScore (stable logins boost score) and RiskScore (suspicious patterns flagged). **Full rules in Section 54 of CLAUDE_FULL.md.**
 
+### 9. SHARE TARGET INTEGRATION
+
+SilentID is a **native share target** on both iOS and Android. Users can share profile links from any app (Safari, Chrome, Vinted, eBay, Instagram, etc.) directly to SilentID.
+
+**How it works:**
+1. User taps "Share" on any profile link in another app
+2. Selects "Import to SilentID" from share sheet
+3. SilentID detects the platform (Vinted, eBay, Instagram, etc.)
+4. Shows "Profile Link Detected" modal with Connect option
+5. Routes to Connect Profile flow with pre-filled data
+
+**Technical Implementation:**
+- **Android:** intent-filter for ACTION_SEND in AndroidManifest.xml + receive_sharing_intent package
+- **iOS:** Share Extension with URL scheme bridge (silentid://import?url=ENCODED_URL)
+- **Flutter:** SharedLinkController service listens for incoming intents
+
+**Supported Platforms:** All platforms in ProfileLinkingService (marketplaces, social, professional, gaming, community)
+
+**Security:** URL validation, localhost/internal IP blocking, rate limiting via existing abuse detection
+
 ---
 
 ## GLOBAL RULES (MANDATORY)

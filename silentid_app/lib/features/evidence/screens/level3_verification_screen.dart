@@ -50,7 +50,7 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
 
   // Share-Intent state
   bool _shareInitiated = false;
-  DateTime? _shareTimestamp;
+  
 
   // Loading state
   bool _isVerifying = false;
@@ -125,7 +125,7 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
   Future<void> _initiateShareIntent() async {
     setState(() {
       _shareInitiated = true;
-      _shareTimestamp = DateTime.now();
+      
     });
 
     // Open share dialog with instructions

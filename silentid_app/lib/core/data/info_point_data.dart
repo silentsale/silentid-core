@@ -621,4 +621,72 @@ Priority is given to:
 
 Please provide as much detail as possible to help us resolve your issue quickly.''',
       );
+
+  // ============================================================================
+  // 11. SHARE TARGET / SHARE IMPORT (Section 55)
+  // ============================================================================
+
+  static InfoPointData get shareImportDetected => const InfoPointData(
+        title: 'Profile Link Detected',
+        icon: Icons.link_rounded,
+        body: '''We detected a profile link from another app!
+
+Connecting profiles helps prove your online presence and builds your trust score.
+
+Tap "Connect Profile" to add it to your SilentID.''',
+      );
+
+  static InfoPointData get shareImportBenefit => const InfoPointData(
+        title: 'Why Connect Profiles?',
+        icon: Icons.verified_user_outlined,
+        body: '''Connecting your profiles from other platforms:
+
+• Proves your online identity is consistent
+• Helps build your trust score
+• Makes it easier for others to trust you
+• You control what's shown publicly
+
+Start with Linked status, then verify for maximum trust points.''',
+        learnMoreText: 'Learn More',
+        learnMoreUrl: 'https://help.silentid.co.uk/profiles',
+      );
+
+  static InfoPointData get shareImportHowTo => const InfoPointData(
+        title: 'How to Import Profiles',
+        icon: Icons.share_rounded,
+        body: '''You can share profile links directly to SilentID:
+
+1. Open any app (Safari, Vinted, eBay, etc.)
+2. Find the profile you want to connect
+3. Tap "Share" and select "Import to SilentID"
+4. Confirm the detected profile
+
+Works with marketplaces, social media, professional platforms and more!''',
+      );
+
+  static InfoPointData get shareImportUnknownPlatform => const InfoPointData(
+        title: 'Unknown Platform',
+        icon: Icons.help_outline_rounded,
+        body: '''We couldn't automatically detect the platform for this link.
+
+This may be because:
+• The URL format is unusual
+• The platform isn't in our system yet
+• The link isn't a profile page
+
+You can still add profiles manually using the "Add Profile" screen.''',
+      );
+
+  static InfoPointData get shareImportSecurity => const InfoPointData(
+        title: 'Safe Import',
+        icon: Icons.security_rounded,
+        body: '''Your security matters:
+
+• We only process links you explicitly share
+• URLs are validated before processing
+• We never access your accounts
+• Your profile data stays private
+
+You always control which profiles appear on your public passport.''',
+      );
 }

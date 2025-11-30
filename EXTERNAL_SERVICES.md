@@ -1,7 +1,7 @@
 # EXTERNAL SERVICES SETUP GUIDE
 
 **SilentID External Service Dependencies**
-**Last Updated:** 2025-11-26
+**Last Updated:** 2025-11-30
 
 This document lists all external services required for full SilentID functionality. Services are categorized by priority and current implementation status.
 
@@ -22,6 +22,7 @@ This document lists all external services required for full SilentID functionali
 | Playwright | LOW | Not implemented | Screenshot automation |
 | Azure Computer Vision | LOW | Not implemented | OCR extraction |
 | Platform APIs (eBay) | LOW | Not implemented | API extraction |
+| iOS Share Extension | MEDIUM | Manual Xcode setup | Share Target (iOS) |
 
 ---
 
@@ -523,6 +524,77 @@ export SendGrid__ApiKey="SG...."
 export OAuth__Apple__ClientId="com.silentsale.silentid"
 export OAuth__Google__ClientId="....apps.googleusercontent.com"
 ```
+
+---
+
+## 12. iOS SHARE EXTENSION (Manual Xcode Setup)
+
+**Status:** Files created, requires manual Xcode setup
+**Priority:** MEDIUM
+**Required For:** Share Target functionality on iOS (Section 55)
+
+### Files Location
+```
+silentid_app/ios/ShareExtension/
+├── ShareViewController.swift
+└── Info.plist
+```
+
+### Manual Setup Steps
+
+The iOS Share Extension files exist but need to be **added to the Xcode project manually**:
+
+1. **Open Xcode project:**
+   ```bash
+   open silentid_app/ios/Runner.xcworkspace
+   ```
+
+2. **Add Share Extension target:**
+   - File → New → Target
+   - Select "Share Extension"
+   - Product Name: `ShareExtension`
+   - Language: Swift
+   - Click Finish
+
+3. **Replace generated files:**
+   - Delete the auto-generated `ShareViewController.swift`
+   - Copy existing `ShareExtension/ShareViewController.swift` into the target
+   - Replace auto-generated `Info.plist` with existing one
+
+4. **Configure App Groups (if needed for data sharing):**
+   - Select Runner target → Signing & Capabilities
+   - Add "App Groups" capability
+   - Create group: `group.com.silentsale.silentid`
+   - Repeat for ShareExtension target
+
+5. **Verify URL Scheme:**
+   - Runner target → Info → URL Types
+   - Ensure `silentid` scheme is listed (already in Info.plist)
+
+6. **Build and test:**
+   - Select ShareExtension scheme
+   - Build to verify no errors
+   - Test by sharing a URL from Safari to SilentID
+
+### What the Extension Does
+- Captures URLs shared from other apps (Safari, Vinted, eBay, etc.)
+- Extracts the URL from shared content
+- Opens main app via `silentid://import?url=ENCODED_URL`
+- Main app shows import modal with detected platform
+
+### Important Notes
+- Extension runs in separate process with limited memory
+- Cannot access main app's data directly (use App Groups if needed)
+- Must complete quickly or iOS will terminate it
+- Share Extension bundle ID must be `$(PRODUCT_BUNDLE_IDENTIFIER).ShareExtension`
+
+### Troubleshooting
+| Issue | Solution |
+|-------|----------|
+| Extension not appearing in share sheet | Rebuild app, restart device |
+| URL not opening main app | Check URL scheme in Info.plist |
+| Extension crashes | Check memory usage, simplify code |
+| Can't find shared content | Verify NSExtensionActivationRule in Info.plist |
 
 ---
 

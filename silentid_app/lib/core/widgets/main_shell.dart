@@ -8,7 +8,7 @@ import '../theme/app_theme.dart';
 /// Tabs (per CLAUDE.md spec):
 /// 1. Home - TrustScore overview, quick actions, onboarding
 /// 2. Evidence - Receipts, screenshots, profile links
-/// 3. Profile - Public Trust Passport, sharing
+/// 3. Passport - Public Trust Passport, sharing (renamed from Profile)
 /// 4. Security - Security center, login activity, risk
 /// 5. Settings - Account, privacy, help, subscriptions
 class MainShellScreen extends StatefulWidget {
@@ -65,9 +65,9 @@ class _MainShellScreenState extends State<MainShellScreen> {
                 ),
                 _buildNavItem(
                   context: context,
-                  icon: Icons.person_outline,
-                  activeIcon: Icons.person,
-                  label: 'Profile',
+                  icon: Icons.badge_outlined,
+                  activeIcon: Icons.badge,
+                  label: 'Passport',
                   index: 2,
                   route: '/profile/public',
                 ),

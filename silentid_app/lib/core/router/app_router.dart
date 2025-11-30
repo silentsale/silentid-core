@@ -309,7 +309,14 @@ class AppRouter {
           GoRoute(
             path: '/profiles/add',
             name: 'add-profile',
-            builder: (context, state) => const AddProfileScreen(),
+            builder: (context, state) {
+              // Section 55 - Handle share import data
+              final extra = state.extra as Map<String, dynamic>?;
+              return AddProfileScreen(
+                initialUrl: extra?['url'] as String?,
+                fromShare: extra?['fromShare'] as bool? ?? false,
+              );
+            },
           ),
           GoRoute(
             path: '/profiles/connected',

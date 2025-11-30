@@ -8,8 +8,19 @@ import '../../../services/profile_linking_service.dart';
 
 /// Add Profile Screen - Section 52.3 Flow A
 /// Share/Paste link to create a Linked profile
+/// Supports pre-filled data from Share Target (Section 55)
 class AddProfileScreen extends StatefulWidget {
-  const AddProfileScreen({super.key});
+  /// Optional initial URL (from share import or deep link)
+  final String? initialUrl;
+
+  /// Whether this screen was opened from share import
+  final bool fromShare;
+
+  const AddProfileScreen({
+    super.key,
+    this.initialUrl,
+    this.fromShare = false,
+  });
 
   @override
   State<AddProfileScreen> createState() => _AddProfileScreenState();
@@ -23,6 +34,18 @@ class _AddProfileScreenState extends State<AddProfileScreen> {
   bool _isLoading = false;
   ProfileDetectionResult? _detectionResult;
   PlatformConfig? _detectedPlatform;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill URL if provided from share import (Section 55)
+    if (widget.initialUrl != null && widget.initialUrl!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _urlController.text = widget.initialUrl!;
+        _onUrlChanged(widget.initialUrl!);
+      });
+    }
+  }
 
   @override
   void dispose() {

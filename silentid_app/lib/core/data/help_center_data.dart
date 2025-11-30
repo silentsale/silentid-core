@@ -1307,6 +1307,64 @@ A: See our troubleshooting guide for common issues.
 A: Token verification is stronger, but screenshot works when token isn't possible.''',
       ),
       HelpArticle(
+        id: '4.8',
+        slug: 'share-import',
+        title: 'Importing Profiles via Share',
+        category: 'Profile Linking & Verification',
+        categorySlug: 'profile-linking',
+        summary: 'How to quickly add profiles by sharing from other apps.',
+        infoPointKey: 'shareImport',
+        screenPath: 'Any App -> Share -> Import to SilentID',
+        content: """You can quickly add profiles to SilentID by sharing links directly from other apps.
+
+## How it works
+
+1. **Open any app** (Safari, Chrome, Vinted, eBay, Instagram, etc.)
+2. **Navigate to a profile** you want to connect
+3. **Tap the Share button** (usually an arrow or three dots)
+4. **Select 'Import to SilentID'** from the share sheet
+5. **SilentID detects the platform** automatically
+6. **Confirm the connection** in the modal that appears
+
+## Supported platforms
+
+Share import works with all platforms SilentID supports:
+- Marketplaces: Vinted, eBay, Depop, Etsy, Poshmark
+- Social: Instagram, TikTok, Twitter/X, YouTube
+- Professional: LinkedIn, GitHub
+- Gaming: Discord, Twitch, Steam
+- Community: Reddit
+
+## Tips for success
+
+- Make sure you're on the profile page, not a product listing
+- The URL should contain your username or profile ID
+- SilentID will extract your username automatically
+
+## What happens next
+
+- The profile is added as 'Linked'
+- You can upgrade to 'Verified' anytime
+- It contributes to your TrustScore immediately
+
+## Security
+
+- Only URLs from recognised platforms are accepted
+- Internal/localhost URLs are blocked
+- All imports go through standard validation
+
+## FAQs
+
+**Q: Do I have to use share import?**
+A: No, you can still paste URLs manually. Share import is just faster.
+
+**Q: What if the platform isn't detected?**
+A: Make sure you're sharing from a supported platform's profile page.
+
+**Q: Can I share multiple profiles at once?**
+A: Share one at a time for best results.""",
+      ),
+      HelpArticle(
         id: '4.7',
         slug: 'managing-profiles',
         title: 'Managing Connected Profiles',

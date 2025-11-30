@@ -147,7 +147,15 @@ export function AnalyticsContent() {
                   <td className="text-status-success">+14.7%</td>
                 </tr>
                 <tr>
-                  <td className="font-medium">Risk Alerts Generated</td>
+                                  <tr>
+                  <td className="font-medium">Share Imports</td>
+                  <td>67</td>
+                  <td>54</td>
+                  <td>412</td>
+                  <td>1,823</td>
+                  <td className="text-status-success">+24.0%</td>
+                </tr>
+                <td className="font-medium">Risk Alerts Generated</td>
                   <td>23</td>
                   <td>31</td>
                   <td>178</td>

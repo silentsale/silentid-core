@@ -933,10 +933,7 @@ CREATE TABLE ExternalRatings (
 
 ### Email Receipt Model Update (v1.8.0 - Expensify Model)
 
-**Previous Model (v1.7.0):**
-- User connects full inbox via OAuth/IMAP
-- SilentID scans entire inbox for receipts
-- Privacy concern: access to all emails
+**s
 
 **New Model (v1.8.0):**
 **Inspired by Expensify's receipt forwarding system**
@@ -990,21 +987,7 @@ EmailMetadataJson JSONB, -- Extracted metadata (NOT full email)
 RawEmailDeleted BOOLEAN DEFAULT TRUE -- Confirms raw email removed
 ```
 
-### Mutual Transaction Verification
-**Flow:**
-1. User A logs transaction
-2. SilentID notifies User B
-3. User B confirms: role, item name, value, date, optional proof
-
-**If both confirm:**
-- High weight added to TrustScore
-- Displayed publicly: "Mutually Verified Transaction"
-- Immutable internal record
-
-**Abuse Prevention:**
-- Blocks: same account parties, over-verification, fake circular confirmation, "mutual boosting rings"
-- Anti-collusion logic in risk engine
-
+##
 ### Safety Features
 **Warnings/Risk Flags:**
 - "Safety concern flagged — multiple user reports."
@@ -15839,6 +15822,733 @@ class LoginService {
 **END OF SECTION 54**
 
 ---
+
+## SECTION 55 — Share Target Integration (Native Share Import)
+
+### 55.1 Purpose
+
+SilentID is a **native share target** on both iOS and Android. Users can share profile links from any app (Safari, Chrome, Vinted, eBay, Instagram, etc.) directly to SilentID. This creates a seamless profile linking experience where users don't need to manually copy and paste URLs.
+
+**User Value:**
+- Faster profile linking - one tap from any app
+- Fewer errors - no manual URL copying
+- Better discovery - share sheet reminds users of SilentID
+- Seamless integration into existing user habits
+
+**Business Value:**
+- Higher conversion rates for profile linking
+- Increased engagement with platform linking feature
+- Viral growth potential through share sheet visibility
+- Reduced friction in core user journey
+
+---
+
+### 55.2 User Flow
+
+**Standard Share Import Flow:**
+
+```
+1. User browses external app (Safari, Vinted, eBay app, etc.)
+2. User finds a profile they want to link
+3. User taps "Share" button in the external app
+4. System share sheet appears
+5. User selects "Import to SilentID" option
+6. SilentID opens (or comes to foreground)
+7. SilentID detects platform from URL (e.g., "vinted.co.uk" → Vinted)
+8. Modal appears: "Profile Link Detected" with platform logo and extracted username
+9. User taps "Connect Profile" to proceed
+10. User is routed to Connect Profile flow with pre-filled URL
+11. Standard profile linking/verification flow continues
+```
+
+**Alternative Scenarios:**
+
+- **SilentID not installed:** Share option won't appear in share sheet
+- **User not logged in:** After opening, show login screen first, then modal
+- **Invalid URL:** Modal shows "Couldn't detect platform. Enter manually?"
+- **Unsupported platform:** Modal shows "Unknown platform" with option to continue anyway
+- **Rate limited:** If user has hit abuse limits, show "Please wait before importing more links"
+
+---
+
+### 55.3 Android Implementation
+
+**AndroidManifest.xml Configuration:**
+
+```xml
+<activity
+    android:name=".MainActivity"
+    android:exported="true"
+    android:launchMode="singleTask"
+    android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|layoutDirection|fontScale|screenLayout|density">
+
+    <!-- Standard Flutter intent-filter -->
+    <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+    </intent-filter>
+
+    <!-- Share Target: Receive shared text/URLs from other apps -->
+    <intent-filter>
+        <action android:name="android.intent.action.SEND"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <data android:mimeType="text/plain"/>
+    </intent-filter>
+
+    <!-- Deep Link handler for silentid:// scheme -->
+    <intent-filter>
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="silentid"/>
+    </intent-filter>
+</activity>
+```
+
+**Required Flutter Package:**
+
+```yaml
+# pubspec.yaml
+dependencies:
+  receive_sharing_intent: ^1.8.1
+```
+
+**Intent Handling:**
+
+The `receive_sharing_intent` package captures:
+- `ACTION_SEND` with `text/plain` MIME type
+- Shared text containing URLs
+- Multiple share events if user shares repeatedly
+
+---
+
+### 55.4 iOS Implementation
+
+**Share Extension Structure:**
+
+```
+ios/
+├── Runner/
+│   ├── Info.plist          # Updated with CFBundleURLTypes
+│   └── ...
+└── ShareExtension/
+    ├── ShareViewController.swift
+    └── Info.plist
+```
+
+**ShareViewController.swift:**
+
+```swift
+import UIKit
+import UniformTypeIdentifiers
+
+class ShareViewController: UIViewController {
+    private let appGroupIdentifier = "group.com.silentsale.silentid"
+    private let urlScheme = "silentid"
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        handleSharedContent()
+    }
+
+    private func handleSharedContent() {
+        guard let extensionItem = extensionContext?.inputItems.first as? NSExtensionItem,
+              let attachments = extensionItem.attachments else {
+            completeRequest()
+            return
+        }
+
+        for attachment in attachments {
+            if attachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
+                attachment.loadItem(forTypeIdentifier: UTType.url.identifier) { [weak self] (item, error) in
+                    if let url = item as? URL {
+                        self?.openMainApp(with: url.absoluteString)
+                    }
+                }
+            } else if attachment.hasItemConformingToTypeIdentifier(UTType.text.identifier) {
+                attachment.loadItem(forTypeIdentifier: UTType.text.identifier) { [weak self] (item, error) in
+                    if let text = item as? String, let url = self?.extractUrl(from: text) {
+                        self?.openMainApp(with: url)
+                    }
+                }
+            }
+        }
+    }
+
+    private func extractUrl(from text: String) -> String? {
+        let urlPattern = #"https?://[^\s]+"#
+        if let match = text.range(of: urlPattern, options: .regularExpression) {
+            return String(text[match])
+        }
+        return nil
+    }
+
+    private func openMainApp(with url: String) {
+        guard let encodedUrl = url.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let appUrl = URL(string: "\(urlScheme)://import?url=\(encodedUrl)") else {
+            completeRequest()
+            return
+        }
+
+        var responder: UIResponder? = self
+        while responder != nil {
+            if let application = responder as? UIApplication {
+                application.open(appUrl, options: [:], completionHandler: nil)
+                break
+            }
+            responder = responder?.next
+        }
+
+        completeRequest()
+    }
+
+    private func completeRequest() {
+        extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+    }
+}
+```
+
+**ShareExtension/Info.plist:**
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDisplayName</key>
+    <string>Import to SilentID</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>NSExtension</key>
+    <dict>
+        <key>NSExtensionPointIdentifier</key>
+        <string>com.apple.share-services</string>
+        <key>NSExtensionPrincipalClass</key>
+        <string>$(PRODUCT_MODULE_NAME).ShareViewController</string>
+        <key>NSExtensionActivationRule</key>
+        <dict>
+            <key>NSExtensionActivationSupportsWebURLWithMaxCount</key>
+            <integer>1</integer>
+            <key>NSExtensionActivationSupportsText</key>
+            <true/>
+        </dict>
+    </dict>
+</dict>
+</plist>
+```
+
+**Runner/Info.plist (URL Scheme Handler):**
+
+Add to existing Info.plist:
+
+```xml
+<key>CFBundleURLTypes</key>
+<array>
+    <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+            <string>silentid</string>
+        </array>
+        <key>CFBundleURLName</key>
+        <string>com.silentsale.silentid</string>
+    </dict>
+</array>
+```
+
+---
+
+### 55.5 Flutter Implementation
+
+**SharedLinkController Service:**
+
+```dart
+// lib/services/shared_link_controller.dart
+import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+
+class SharedLinkState {
+  final String? pendingUrl;
+  final String? detectedPlatform;
+  final String? extractedUsername;
+  final bool isProcessing;
+
+  const SharedLinkState({
+    this.pendingUrl,
+    this.detectedPlatform,
+    this.extractedUsername,
+    this.isProcessing = false,
+  });
+
+  SharedLinkState copyWith({
+    String? pendingUrl,
+    String? detectedPlatform,
+    String? extractedUsername,
+    bool? isProcessing,
+  }) {
+    return SharedLinkState(
+      pendingUrl: pendingUrl ?? this.pendingUrl,
+      detectedPlatform: detectedPlatform ?? this.detectedPlatform,
+      extractedUsername: extractedUsername ?? this.extractedUsername,
+      isProcessing: isProcessing ?? this.isProcessing,
+    );
+  }
+
+  bool get hasPendingLink => pendingUrl != null && !isProcessing;
+}
+
+class SharedLinkController extends StateNotifier<SharedLinkState> {
+  StreamSubscription? _intentSubscription;
+
+  SharedLinkController() : super(const SharedLinkState()) {
+    _initListeners();
+  }
+
+  void _initListeners() {
+    // Listen for incoming shares while app is running
+    _intentSubscription = ReceiveSharingIntent.instance
+        .getMediaStream()
+        .listen((List<SharedMediaFile> files) {
+      for (final file in files) {
+        if (file.type == SharedMediaType.text || file.type == SharedMediaType.url) {
+          _processSharedText(file.path, 'share_sheet');
+          break;
+        }
+      }
+    });
+
+    // Check for shares that opened the app
+    ReceiveSharingIntent.instance.getInitialMedia().then((List<SharedMediaFile> files) {
+      for (final file in files) {
+        if (file.type == SharedMediaType.text || file.type == SharedMediaType.url) {
+          _processSharedText(file.path, 'share_sheet_launch');
+          break;
+        }
+      }
+      ReceiveSharingIntent.instance.reset();
+    });
+  }
+
+  void handleDeepLink(Uri uri) {
+    if (uri.scheme == 'silentid' && uri.host == 'import') {
+      final url = uri.queryParameters['url'];
+      if (url != null) {
+        final decodedUrl = Uri.decodeComponent(url);
+        _processSharedText(decodedUrl, 'deep_link');
+      }
+    }
+  }
+
+  void _processSharedText(String text, String source) {
+    final url = _extractUrlFromText(text);
+    if (url == null || !_isUrlSafe(url)) {
+      return;
+    }
+
+    final platform = _detectPlatform(url);
+    final username = _extractUsername(url);
+
+    state = SharedLinkState(
+      pendingUrl: url,
+      detectedPlatform: platform,
+      extractedUsername: username,
+      isProcessing: false,
+    );
+  }
+
+  String? _extractUrlFromText(String text) {
+    final urlRegex = RegExp(r'https?://[^\s]+');
+    final match = urlRegex.firstMatch(text);
+    return match?.group(0);
+  }
+
+  bool _isUrlSafe(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return false;
+
+    // Block localhost and internal IPs
+    final host = uri.host.toLowerCase();
+    if (host == 'localhost' ||
+        host == '127.0.0.1' ||
+        host.startsWith('192.168.') ||
+        host.startsWith('10.') ||
+        host.startsWith('172.')) {
+      return false;
+    }
+
+    // Require HTTPS (except for silentid:// scheme)
+    if (uri.scheme != 'https' && uri.scheme != 'silentid') {
+      return false;
+    }
+
+    return true;
+  }
+
+  String? _detectPlatform(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return null;
+
+    final host = uri.host.toLowerCase();
+
+    // Marketplaces
+    if (host.contains('vinted.')) return 'Vinted';
+    if (host.contains('ebay.')) return 'eBay';
+    if (host.contains('depop.com')) return 'Depop';
+    if (host.contains('etsy.com')) return 'Etsy';
+    if (host.contains('amazon.')) return 'Amazon';
+
+    // Social Media
+    if (host.contains('instagram.com')) return 'Instagram';
+    if (host.contains('tiktok.com')) return 'TikTok';
+    if (host.contains('youtube.com') || host.contains('youtu.be')) return 'YouTube';
+    if (host.contains('twitter.com') || host.contains('x.com')) return 'X';
+    if (host.contains('facebook.com') || host.contains('fb.com')) return 'Facebook';
+
+    // Professional
+    if (host.contains('linkedin.com')) return 'LinkedIn';
+    if (host.contains('github.com')) return 'GitHub';
+
+    // Gaming
+    if (host.contains('steamcommunity.com')) return 'Steam';
+
+    // Community
+    if (host.contains('discord.')) return 'Discord';
+    if (host.contains('reddit.com')) return 'Reddit';
+    if (host.contains('twitch.tv')) return 'Twitch';
+
+    return null;
+  }
+
+  String? _extractUsername(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return null;
+
+    final pathSegments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+    if (pathSegments.isEmpty) return null;
+
+    final host = uri.host.toLowerCase();
+
+    // Vinted: /member/{username}
+    if (host.contains('vinted.') && pathSegments.length >= 2 && pathSegments[0] == 'member') {
+      return pathSegments[1];
+    }
+
+    // eBay: /usr/{username}
+    if (host.contains('ebay.') && pathSegments.length >= 2 && pathSegments[0] == 'usr') {
+      return pathSegments[1];
+    }
+
+    // Instagram/TikTok: /{username}
+    if ((host.contains('instagram.com') || host.contains('tiktok.com')) && pathSegments.isNotEmpty) {
+      final username = pathSegments[0];
+      if (!['p', 'reel', 'stories', 'explore', 'video'].contains(username)) {
+        return username.replaceAll('@', '');
+      }
+    }
+
+    // LinkedIn: /in/{username}
+    if (host.contains('linkedin.com') && pathSegments.length >= 2 && pathSegments[0] == 'in') {
+      return pathSegments[1];
+    }
+
+    // GitHub: /{username}
+    if (host.contains('github.com') && pathSegments.isNotEmpty) {
+      final username = pathSegments[0];
+      if (!['orgs', 'settings', 'pulls', 'issues', 'marketplace'].contains(username)) {
+        return username;
+      }
+    }
+
+    return null;
+  }
+
+  void clearPendingLink() {
+    state = const SharedLinkState();
+  }
+
+  void markAsProcessing() {
+    state = state.copyWith(isProcessing: true);
+  }
+
+  @override
+  void dispose() {
+    _intentSubscription?.cancel();
+    super.dispose();
+  }
+}
+
+final sharedLinkControllerProvider = StateNotifierProvider<SharedLinkController, SharedLinkState>(
+  (ref) => SharedLinkController(),
+);
+```
+
+**Share Import Modal UI:**
+
+```dart
+// lib/features/profiles/widgets/share_import_modal.dart
+class ShareImportModal extends StatelessWidget {
+  final String? platform;
+  final String? username;
+  final String url;
+  final VoidCallback onConnect;
+  final VoidCallback onDismiss;
+
+  // Shows bottom sheet with:
+  // - Platform logo/icon
+  // - "Profile Link Detected" header
+  // - Platform name + username (if extracted)
+  // - "Connect Profile" primary button
+  // - "Not Now" secondary button
+}
+```
+
+**ShareListenerWrapper Integration:**
+
+```dart
+// lib/core/widgets/share_listener_wrapper.dart
+class ShareListenerWrapper extends ConsumerStatefulWidget {
+  final Widget child;
+
+  // Uses ref.listen to watch sharedLinkControllerProvider
+  // When hasPendingLink becomes true, shows ShareImportModal
+  // After user action, clears pending link
+}
+
+// Integration in main.dart:
+builder: (context, child) {
+  return ShareListenerWrapper(child: child ?? const SizedBox.shrink());
+}
+```
+
+---
+
+### 55.6 Platform Detection
+
+**Supported Platforms (from ProfileLinkingService):**
+
+| Category | Platforms |
+|----------|-----------|
+| **Marketplaces** | Vinted, eBay, Depop, Etsy, Amazon |
+| **Social Media** | Instagram, TikTok, YouTube, Twitter/X, Facebook |
+| **Professional** | LinkedIn, GitHub, Behance, Dribbble |
+| **Gaming** | Steam, Xbox, PlayStation |
+| **Dating** | Tinder, Bumble, Hinge |
+| **Community** | Discord, Reddit, Twitch |
+| **Finance** | PayPal, Revolut |
+
+**Detection Logic:**
+
+```dart
+String? detectPlatform(String url) {
+  final uri = Uri.tryParse(url);
+  if (uri == null) return null;
+
+  final host = uri.host.toLowerCase();
+
+  if (host.contains('vinted.')) return 'Vinted';
+  if (host.contains('ebay.')) return 'eBay';
+  if (host.contains('depop.com')) return 'Depop';
+  if (host.contains('instagram.com')) return 'Instagram';
+  if (host.contains('linkedin.com')) return 'LinkedIn';
+  // ... etc
+
+  return null;
+}
+```
+
+**Username Extraction:**
+
+- Vinted: `/member/{username}` → username
+- eBay: `/usr/{username}` → username
+- Instagram: `/{username}` → username
+- LinkedIn: `/in/{username}` → username
+
+---
+
+### 55.7 Security Validation
+
+**URL Safety Checks:**
+
+All incoming URLs MUST pass these checks before processing:
+
+```dart
+bool _isUrlSafe(String url) {
+  final uri = Uri.tryParse(url);
+  if (uri == null) return false;
+
+  // 1. Block localhost and loopback
+  if (uri.host == 'localhost' || uri.host == '127.0.0.1') return false;
+
+  // 2. Block internal/private IPs
+  if (_isPrivateIp(uri.host)) return false;
+
+  // 3. Require HTTPS (except internal schemes)
+  if (uri.scheme != 'https' && uri.scheme != 'silentid') return false;
+
+  // 4. Block file:// and javascript:// schemes
+  if (uri.scheme == 'file' || uri.scheme == 'javascript') return false;
+
+  // 5. URL length limit (prevent DoS)
+  if (url.length > 2048) return false;
+
+  return true;
+}
+```
+
+**Rate Limiting:**
+
+- Max 10 share imports per minute per user
+- Max 50 share imports per hour per user
+- Exceeding limits shows: "Please wait before importing more links"
+- Rate limits tracked via existing abuse detection system
+
+**Malicious URL Protection:**
+
+- URLs are validated but NOT automatically visited
+- User must explicitly confirm connection before any scraping
+- Platform detection is domain-based only (no network calls)
+- All profile scraping follows existing Level 3 verification rules
+
+---
+
+### 55.8 Backend Integration
+
+**ProfileLinkEvidence Model Update:**
+
+```csharp
+// Models/ProfileLinkEvidence.cs
+
+/// <summary>
+/// How the profile link was added: "Manual" (paste/type), "ShareImport" (via share sheet).
+/// </summary>
+[MaxLength(20)]
+public string SourceType { get; set; } = "Manual";
+```
+
+**API Changes:**
+
+When creating profile link via share import:
+- Set `SourceType = "ShareImport"`
+- Include `source` in request body
+
+```json
+POST /api/profiles/links
+{
+  "url": "https://vinted.co.uk/member/username123",
+  "sourceType": "ShareImport"
+}
+```
+
+---
+
+### 55.9 Admin Panel Analytics
+
+**Analytics Dashboard (AnalyticsContent.tsx):**
+
+Add to Recent Activity Summary table:
+
+| Metric | Today | Yesterday | This Week | This Month | Trend |
+|--------|-------|-----------|-----------|------------|-------|
+| Share Imports | 67 | 54 | 412 | 1,823 | +24.0% |
+
+**Admin Tracking:**
+
+- Total share imports per day/week/month
+- Share imports by platform (Vinted, eBay, etc.)
+- Conversion rate: share import → verified profile
+- Most common source apps (Safari, Chrome, Vinted app, etc.)
+
+---
+
+### 55.10 Help Center Documentation
+
+**Article 4.8: Importing Profiles via Share**
+
+```markdown
+# Importing Profiles via Share
+
+You can quickly import profile links from any app using your phone's share feature.
+
+## How to Import via Share
+
+1. Open any app (Safari, Vinted, eBay, Instagram, etc.)
+2. Navigate to the profile you want to link
+3. Tap the "Share" button
+4. Select "Import to SilentID"
+5. Confirm the detected profile in SilentID
+
+## Supported Platforms
+
+Share import works with any supported platform including:
+- Marketplaces: Vinted, eBay, Depop, Etsy
+- Social Media: Instagram, TikTok, YouTube
+- Professional: LinkedIn, GitHub
+- And many more!
+
+## Tips
+
+- Make sure you're logged into SilentID before sharing
+- The shared link should be a profile page, not a product or post
+- If a platform isn't detected, you can still continue manually
+
+## Troubleshooting
+
+**"Import to SilentID" not appearing?**
+- Ensure SilentID is installed on your device
+- Try sharing a text link instead of using the app's share
+
+**"Unknown platform" message?**
+- SilentID will still let you add the link manually
+- Some less common platforms may not be auto-detected
+```
+
+---
+
+### 55.11 Testing Checklist
+
+**Before deploying share target integration:**
+
+- [ ] Android share intent received correctly from Safari/Chrome
+- [ ] Android share intent received correctly from Vinted/eBay apps
+- [ ] iOS Share Extension captures URLs correctly
+- [ ] iOS URL scheme (silentid://import) opens app correctly
+- [ ] Platform detection works for all supported platforms
+- [ ] Username extraction works for major platforms
+- [ ] Security validation blocks localhost/internal IPs
+- [ ] Security validation blocks non-HTTPS URLs
+- [ ] Rate limiting prevents abuse (10/min, 50/hour)
+- [ ] Modal displays correctly with platform info
+- [ ] "Connect Profile" routes to correct flow with pre-filled data
+- [ ] "Not Now" dismisses modal and clears state
+- [ ] Share while logged out prompts login first
+- [ ] Multiple rapid shares handled correctly (debounced)
+- [ ] App already open receives shares correctly
+- [ ] App launched by share shows modal after load
+- [ ] Analytics tracking captures share imports
+- [ ] SourceType="ShareImport" saved to database correctly
+
+---
+
+### 55.12 Integration with Existing Sections
+
+**Section 55 integrates with:**
+
+- **Section 5 (Core Features):** Share import as profile linking enhancement
+- **Section 7 (Anti-Fraud Engine):** Rate limiting via abuse detection
+- **Section 8 (Database Schema):** SourceType field on ProfileLinkEvidence
+- **Section 14 (Admin Dashboard):** Analytics for share imports
+- **Section 19 (Help Center):** Article 4.8 documentation
+- **Section 39 (App UI):** Modal and routing integration
+- **Section 47 (Trust Passport):** Shared links contribute to profile evidence
+- **Section 52 (Profile Linking):** Share import feeds into existing linking flow
+- **Section 53 (UI Design Language):** Modal follows design system
+
+---
+
+**END OF SECTION 55**
+
+
+---
 ## END OF MASTER SPECIFICATION
 
 This document contains the complete, authoritative specification for SilentID.
@@ -15884,11 +16594,13 @@ This document contains the complete, authoritative specification for SilentID.
 - **Section 51:** Public Trust Passport Sharing, Verified Badge System & TrustScore Visibility Control — NEW
 - **Section 52:** Unified Profile Linking & Platform Verification (Level 2, All Platforms) — NEW
 - **Section 53:** SilentID UI Design Language & Style Rules (Locked Design System) — NEW
+- **Section 54:** Login, Devices & Session Security (Passwordless Rules) — NEW
+- **Section 55:** Share Target Integration (Native Share Import) — NEW
 
 
 
-**Document Version:** 1.9.0
-**Last Updated:** 2025-11-27
+**Document Version:** 2.0.0
+**Last Updated:** 2025-11-30
 **Created:** 2025-11-21
 **Purpose:** Master reference for SilentID development
 - For all future SilentID and SilentSale work, only read specific sections of CLAUDE.md on demand. Never load the entire file.
