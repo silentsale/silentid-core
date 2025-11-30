@@ -59,18 +59,3 @@ public class PushNotificationToken
     public User User { get; set; } = null!;
 }
 
-/// <summary>
-/// Notification types for categorization
-/// </summary>
-public enum NotificationType
-{
-    TrustScoreUpdate,       // Weekly TrustScore regeneration
-    EvidenceVerified,       // Evidence was verified
-    NewLoginDetected,       // Login from new device
-    SecurityAlert,          // Security-related notification
-    AchievementUnlocked,    // Gamification milestone
-    ReferralBonus,          // Referral completed
-    SubscriptionReminder,   // Subscription expiring
-    ProfileViewed,          // Someone viewed your Trust Passport
-    SystemAnnouncement      // General announcements
-}

@@ -65,7 +65,7 @@ public class DetectedAnomaly
 public class AnomalyDetectionService : IAnomalyDetectionService
 {
     private readonly SilentIdDbContext _db;
-    private readonly IPushNotificationService _pushService;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<AnomalyDetectionService> _logger;
 
     // Thresholds
@@ -76,11 +76,11 @@ public class AnomalyDetectionService : IAnomalyDetectionService
 
     public AnomalyDetectionService(
         SilentIdDbContext db,
-        IPushNotificationService pushService,
+        INotificationService pushService,
         ILogger<AnomalyDetectionService> logger)
     {
         _db = db;
-        _pushService = pushService;
+        _notificationService = pushService;
         _logger = logger;
     }
 
@@ -340,12 +340,11 @@ public class AnomalyDetectionService : IAnomalyDetectionService
         // Notify user of high-severity anomalies
         if (severity >= 7)
         {
-            await _pushService.SendToUserAsync(
+            await _notificationService.NotifyAsync(
                 userId,
                 NotificationType.SecurityAlert,
                 "Security Alert",
-                $"Unusual activity detected on your account: {details}",
-                new Dictionary<string, string> { ["action"] = "security_review" });
+                $"Unusual activity detected on your account: {details}", true);
         }
     }
 

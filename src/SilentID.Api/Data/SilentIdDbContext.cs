@@ -58,6 +58,7 @@ public class SilentIdDbContext : DbContext
     // Login Audit tables (Section 54.4)
     public DbSet<LoginAttempt> LoginAttempts { get; set; } = null!;
     public DbSet<PushNotificationToken> PushNotificationTokens { get; set; } = null!;
+    public DbSet<InAppNotification> InAppNotifications { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -699,5 +700,31 @@ public class SilentIdDbContext : DbContext
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+        // InAppNotification configuration
+        modelBuilder.Entity<InAppNotification>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.IsRead);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => new { e.UserId, e.IsRead });
+
+            entity.Property(e => e.Title)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.Property(e => e.Body)
+                .IsRequired()
+                .HasMaxLength(1000);
+
+            entity.Property(e => e.ActionUrl)
+                .HasMaxLength(500);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         }
 }

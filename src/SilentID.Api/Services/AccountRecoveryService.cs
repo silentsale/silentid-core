@@ -66,7 +66,7 @@ public class AccountRecoveryService : IAccountRecoveryService
     private readonly IOtpService _otpService;
     private readonly IEmailService _emailService;
     private readonly ITokenService _tokenService;
-    private readonly IPushNotificationService _pushService;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<AccountRecoveryService> _logger;
 
     // Recovery rate limiting
@@ -78,14 +78,14 @@ public class AccountRecoveryService : IAccountRecoveryService
         IOtpService otpService,
         IEmailService emailService,
         ITokenService tokenService,
-        IPushNotificationService pushService,
+        INotificationService pushService,
         ILogger<AccountRecoveryService> logger)
     {
         _db = db;
         _otpService = otpService;
         _emailService = emailService;
         _tokenService = tokenService;
-        _pushService = pushService;
+        _notificationService = pushService;
         _logger = logger;
     }
 
@@ -147,12 +147,11 @@ public class AccountRecoveryService : IAccountRecoveryService
         await _db.SaveChangesAsync();
 
         // Notify existing devices about recovery attempt
-        await _pushService.SendToUserAsync(
+        await _notificationService.NotifyAsync(
             user.Id,
             NotificationType.SecurityAlert,
             "Account Recovery Initiated",
-            $"Someone is trying to recover your account from {ipAddress}. If this wasn't you, secure your account immediately.",
-            new Dictionary<string, string> { ["action"] = "security_check" });
+            $"Someone is trying to recover your account from {ipAddress}. If this wasn't you, secure your account immediately.", true);
 
         _logger.LogInformation("Recovery initiated for user {UserId} from IP {IP}", user.Id, ipAddress);
 
@@ -260,12 +259,11 @@ public class AccountRecoveryService : IAccountRecoveryService
         await _db.SaveChangesAsync();
 
         // Notify user of new passkey
-        await _pushService.SendToUserAsync(
+        await _notificationService.NotifyAsync(
             userId,
             NotificationType.SecurityAlert,
             "New Passkey Added",
-            $"A new passkey was added to your account: {deviceName}",
-            new Dictionary<string, string> { ["action"] = "passkey_added" });
+            $"A new passkey was added to your account: {deviceName}", true);
 
         _logger.LogInformation("Recovery completed with new passkey for user {UserId}", userId);
 

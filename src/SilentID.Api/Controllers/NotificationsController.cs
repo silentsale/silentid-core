@@ -6,79 +6,126 @@ using System.Security.Claims;
 namespace SilentID.Api.Controllers;
 
 /// <summary>
-/// Push notification management endpoints per Section 50.2
+/// In-app notification management endpoints
+/// SilentID uses email + in-app notifications only (no FCM/APNS)
 /// </summary>
 [ApiController]
 [Route("api/v1/notifications")]
 [Authorize]
 public class NotificationsController : ControllerBase
 {
-    private readonly IPushNotificationService _pushService;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<NotificationsController> _logger;
 
     public NotificationsController(
-        IPushNotificationService pushService,
+        INotificationService notificationService,
         ILogger<NotificationsController> logger)
     {
-        _pushService = pushService;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
     /// <summary>
-    /// Register a device for push notifications
+    /// Get all notifications for current user (paginated)
     /// </summary>
-    [HttpPost("register")]
-    public async Task<IActionResult> RegisterToken([FromBody] RegisterTokenRequest request)
+    [HttpGet]
+    public async Task<IActionResult> GetNotifications([FromQuery] int skip = 0, [FromQuery] int take = 20)
     {
         var userId = GetUserId();
         if (userId == null)
             return Unauthorized();
 
-        if (string.IsNullOrEmpty(request.Token) || string.IsNullOrEmpty(request.Platform) || string.IsNullOrEmpty(request.DeviceId))
-        {
-            return BadRequest(new { error = "Token, platform, and deviceId are required" });
-        }
-
-        var platform = request.Platform.ToLower();
-        if (platform != "ios" && platform != "android")
-        {
-            return BadRequest(new { error = "Platform must be 'ios' or 'android'" });
-        }
-
-        var token = await _pushService.RegisterTokenAsync(userId.Value, request.Token, platform, request.DeviceId);
-
-        _logger.LogInformation("Push token registered for user {UserId} on {Platform}", userId, platform);
+        var notifications = await _notificationService.GetAllAsync(userId.Value, skip, take);
 
         return Ok(new
         {
-            success = true,
-            message = "Push notification token registered successfully",
-            tokenId = token.Id
+            notifications = notifications.Select(n => new
+            {
+                n.Id,
+                type = n.Type.ToString(),
+                n.Title,
+                n.Body,
+                n.ActionUrl,
+                n.IsRead,
+                n.ReadAt,
+                n.CreatedAt
+            }),
+            hasMore = notifications.Count == take
         });
     }
 
     /// <summary>
-    /// Unregister a device from push notifications
+    /// Get unread notifications for current user
     /// </summary>
-    [HttpDelete("unregister")]
-    public async Task<IActionResult> UnregisterToken([FromBody] UnregisterTokenRequest request)
+    [HttpGet("unread")]
+    public async Task<IActionResult> GetUnreadNotifications()
     {
         var userId = GetUserId();
         if (userId == null)
             return Unauthorized();
 
-        if (string.IsNullOrEmpty(request.DeviceId))
-        {
-            return BadRequest(new { error = "DeviceId is required" });
-        }
-
-        await _pushService.UnregisterTokenAsync(userId.Value, request.DeviceId);
+        var notifications = await _notificationService.GetUnreadAsync(userId.Value);
 
         return Ok(new
         {
-            success = true,
-            message = "Push notification token unregistered successfully"
+            notifications = notifications.Select(n => new
+            {
+                n.Id,
+                type = n.Type.ToString(),
+                n.Title,
+                n.Body,
+                n.ActionUrl,
+                n.CreatedAt
+            }),
+            count = notifications.Count
         });
+    }
+
+    /// <summary>
+    /// Get unread notification count for current user
+    /// </summary>
+    [HttpGet("count")]
+    public async Task<IActionResult> GetUnreadCount()
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized();
+
+        var count = await _notificationService.GetUnreadCountAsync(userId.Value);
+
+        return Ok(new { unreadCount = count });
+    }
+
+    /// <summary>
+    /// Mark a specific notification as read
+    /// </summary>
+    [HttpPost("{notificationId:guid}/read")]
+    public async Task<IActionResult> MarkAsRead(Guid notificationId)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized();
+
+        await _notificationService.MarkAsReadAsync(notificationId);
+
+        return Ok(new { success = true });
+    }
+
+    /// <summary>
+    /// Mark all notifications as read for current user
+    /// </summary>
+    [HttpPost("read-all")]
+    public async Task<IActionResult> MarkAllAsRead()
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized();
+
+        await _notificationService.MarkAllAsReadAsync(userId.Value);
+
+        _logger.LogInformation("All notifications marked as read for user {UserId}", userId);
+
+        return Ok(new { success = true });
     }
 
     private Guid? GetUserId()
@@ -90,16 +137,4 @@ public class NotificationsController : ControllerBase
         }
         return userId;
     }
-}
-
-public class RegisterTokenRequest
-{
-    public string Token { get; set; } = string.Empty;
-    public string Platform { get; set; } = string.Empty;
-    public string DeviceId { get; set; } = string.Empty;
-}
-
-public class UnregisterTokenRequest
-{
-    public string DeviceId { get; set; } = string.Empty;
 }

@@ -59,7 +59,7 @@ builder.Services.AddScoped<IForwardingAliasService, ForwardingAliasService>();
 builder.Services.AddScoped<IReceiptParsingService, ReceiptParsingService>();
 builder.Services.AddScoped<ISecurityCenterService, SecurityCenterService>();
 builder.Services.AddScoped<IStepUpAuthService, StepUpAuthService>();
-builder.Services.AddScoped<IPushNotificationService, PushNotificationService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPaywallService, PaywallService>();
 builder.Services.AddScoped<ISoftLimitsService, SoftLimitsService>();
 builder.Services.AddScoped<IQrBadgeService, QrBadgeService>();
