@@ -73,7 +73,7 @@ public class SecurityCenterService : ISecurityCenterService
                 session.DeviceModel = device.DeviceModel;
                 session.OS = device.OS;
                 session.Browser = device.Browser;
-                session.IsTrusted = device.IsTrusted;
+                session.IsTrusted = device.TrustLevel == DeviceTrustLevel.Trusted;
             }
         }
 

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../enums/button_variant.dart';
+import '../constants/app_spacing.dart';
+import '../utils/haptics.dart';
 
 class PrimaryButton extends StatelessWidget {
   final String text;
@@ -11,6 +13,7 @@ class PrimaryButton extends StatelessWidget {
   final bool isDanger;
   final ButtonVariant? variant;
   final IconData? icon;
+  final bool enableHaptic;
 
   const PrimaryButton({
     super.key,
@@ -21,7 +24,15 @@ class PrimaryButton extends StatelessWidget {
     this.isDanger = false,
     this.variant,
     this.icon,
+    this.enableHaptic = true,
   });
+
+  void _handlePress() {
+    if (enableHaptic) {
+      AppHaptics.medium();
+    }
+    onPressed?.call();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,11 +44,11 @@ class PrimaryButton extends StatelessWidget {
 
     if (effectiveVariant == ButtonVariant.secondary) {
       return OutlinedButton(
-        onPressed: isLoading ? null : onPressed,
+        onPressed: isLoading ? null : _handlePress,
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(double.infinity, 56),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: AppSpacing.buttonRadius,
           ),
           side: BorderSide(
             color: isLoading ? AppTheme.neutralGray300 : AppTheme.primaryPurple,
@@ -76,7 +87,7 @@ class PrimaryButton extends StatelessWidget {
     }
 
     return ElevatedButton(
-      onPressed: isLoading ? null : onPressed,
+      onPressed: isLoading ? null : _handlePress,
       style: ElevatedButton.styleFrom(
         backgroundColor: effectiveVariant == ButtonVariant.danger
             ? AppTheme.dangerRed
@@ -85,7 +96,7 @@ class PrimaryButton extends StatelessWidget {
         disabledBackgroundColor: AppTheme.neutralGray300,
         minimumSize: const Size(double.infinity, 56),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: AppSpacing.buttonRadius,
         ),
         elevation: 0,
         shadowColor: Colors.transparent,

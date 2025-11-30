@@ -55,6 +55,10 @@ public class SilentIdDbContext : DbContext
     public DbSet<ProfileConcern> ProfileConcerns { get; set; } = null!;
     public DbSet<SupportTicket> SupportTickets { get; set; } = null!;
 
+    // Login Audit tables (Section 54.4)
+    public DbSet<LoginAttempt> LoginAttempts { get; set; } = null!;
+    public DbSet<PushNotificationToken> PushNotificationTokens { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -631,5 +635,69 @@ public class SilentIdDbContext : DbContext
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
-    }
+        // LoginAttempt configuration (Section 54.4)
+        modelBuilder.Entity<LoginAttempt>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.DeviceId);
+            entity.HasIndex(e => e.AttemptedAt);
+            entity.HasIndex(e => e.Success);
+            entity.HasIndex(e => e.IpAddress);
+
+            entity.Property(e => e.DeviceId)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.Property(e => e.AuthMethod)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(e => e.IpAddress)
+                .HasMaxLength(45);
+
+            entity.Property(e => e.UserAgent)
+                .HasMaxLength(500);
+
+            entity.Property(e => e.CountryCode)
+                .HasMaxLength(2);
+
+            entity.Property(e => e.City)
+                .HasMaxLength(100);
+
+            entity.Property(e => e.FailureReason)
+                .HasMaxLength(500);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // PushNotificationToken configuration (Section 50.4)
+        modelBuilder.Entity<PushNotificationToken>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.DeviceId);
+            entity.HasIndex(e => new { e.UserId, e.DeviceId }).IsUnique();
+
+            entity.Property(e => e.Token)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.Property(e => e.Platform)
+                .IsRequired()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.DeviceId)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        }
 }

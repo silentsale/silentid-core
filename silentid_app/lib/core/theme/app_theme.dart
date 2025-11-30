@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../constants/app_spacing.dart';
 
 class AppTheme {
   // Brand Colors
@@ -45,7 +46,7 @@ class AppTheme {
           foregroundColor: pureWhite,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppSpacing.buttonRadius,
           ),
           textStyle: GoogleFonts.inter(
             fontSize: 16,
@@ -59,7 +60,7 @@ class AppTheme {
           foregroundColor: primaryPurple,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppSpacing.buttonRadius,
           ),
           side: const BorderSide(
             color: primaryPurple,
@@ -79,23 +80,23 @@ class AppTheme {
           vertical: 16,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppSpacing.inputRadius,
           borderSide: const BorderSide(color: neutralGray300),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppSpacing.inputRadius,
           borderSide: const BorderSide(color: neutralGray300),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppSpacing.inputRadius,
           borderSide: const BorderSide(color: primaryPurple, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppSpacing.inputRadius,
           borderSide: const BorderSide(color: dangerRed),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppSpacing.inputRadius,
           borderSide: const BorderSide(color: dangerRed, width: 2),
         ),
         labelStyle: GoogleFonts.inter(
@@ -110,6 +111,25 @@ class AppTheme {
           color: dangerRed,
           fontSize: 12,
         ),
+      ),
+      cardTheme: CardThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.cardRadius,
+        ),
+        elevation: 0,
+        color: pureWhite,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.sheetTopRadius,
+        ),
+        backgroundColor: pureWhite,
+      ),
+      dialogTheme: DialogThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.modalRadius,
+        ),
+        backgroundColor: pureWhite,
       ),
     );
   }
@@ -137,6 +157,25 @@ class AppTheme {
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
+      ),
+      cardTheme: CardThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.cardRadius,
+        ),
+        elevation: 0,
+        color: neutralGray900,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.sheetTopRadius,
+        ),
+        backgroundColor: neutralGray900,
+      ),
+      dialogTheme: DialogThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.modalRadius,
+        ),
+        backgroundColor: neutralGray900,
       ),
     );
   }

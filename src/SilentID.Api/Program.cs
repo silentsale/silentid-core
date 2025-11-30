@@ -58,6 +58,13 @@ builder.Services.AddScoped<IReferralService, ReferralService>();
 builder.Services.AddScoped<IForwardingAliasService, ForwardingAliasService>();
 builder.Services.AddScoped<IReceiptParsingService, ReceiptParsingService>();
 builder.Services.AddScoped<ISecurityCenterService, SecurityCenterService>();
+builder.Services.AddScoped<IStepUpAuthService, StepUpAuthService>();
+builder.Services.AddScoped<IPushNotificationService, PushNotificationService>();
+builder.Services.AddScoped<IPaywallService, PaywallService>();
+builder.Services.AddScoped<ISoftLimitsService, SoftLimitsService>();
+builder.Services.AddScoped<IQrBadgeService, QrBadgeService>();
+builder.Services.AddScoped<IAccountRecoveryService, AccountRecoveryService>();
+builder.Services.AddScoped<IAnomalyDetectionService, AnomalyDetectionService>();
 
 // Add Profile Concern and Support Ticket services
 builder.Services.AddScoped<ProfileConcernService>();
@@ -72,6 +79,9 @@ builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 
 // Add Admin Panel authentication service
 builder.Services.AddScoped<IAdminAuthService, AdminAuthService>();
+
+// Add Background Services
+builder.Services.AddHostedService<TrustScoreRegenerationService>();
 
 // Add JWT authentication
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");

@@ -855,7 +855,7 @@ public class AuthController : ControllerBase
                 DeviceModel = deviceModel,
                 OS = os,
                 Browser = browser,
-                IsTrusted = false,
+                TrustLevel = DeviceTrustLevel.New,
                 LastUsedAt = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow
             };
