@@ -104,20 +104,6 @@ class EmptyState extends StatelessWidget {
     );
   }
 
-  /// Empty mutual verifications state
-  factory EmptyState.mutualVerifications({
-    VoidCallback? onAction,
-  }) {
-    return EmptyState(
-      icon: Icons.verified_user_outlined,
-      title: 'No Verifications Yet',
-      message: 'Request verification from someone you\'ve traded with to boost your TrustScore.',
-      actionText: 'Request Verification',
-      onAction: onAction,
-      iconColor: AppTheme.primaryPurple,
-    );
-  }
-
   /// Empty reports state
   factory EmptyState.reports() {
     return const EmptyState(

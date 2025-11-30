@@ -93,7 +93,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
             _buildDataItem('Identity verification status'),
             _buildDataItem('Evidence & receipts'),
             _buildDataItem('TrustScore history'),
-            _buildDataItem('Mutual verifications'),
+            _buildDataItem('Connected profiles'),
             _buildDataItem('Activity logs'),
 
             const SizedBox(height: 32),

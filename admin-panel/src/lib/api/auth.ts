@@ -97,7 +97,7 @@ export const authApi = {
    * Check if an email belongs to a valid admin and if they have a passkey
    */
   checkAdmin: (email: string): Promise<ApiResponse<CheckAdminResponse>> => {
-    return fetchWithCredentials<CheckAdminResponse>('/admin/auth/check', {
+    return fetchWithCredentials<CheckAdminResponse>('/v1/admin/auth/check', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
@@ -107,7 +107,7 @@ export const authApi = {
    * Get passkey challenge for authentication
    */
   getPasskeyChallenge: (email: string): Promise<ApiResponse<PasskeyChallengeResponse>> => {
-    return fetchWithCredentials<PasskeyChallengeResponse>('/admin/auth/passkey/challenge', {
+    return fetchWithCredentials<PasskeyChallengeResponse>('/v1/admin/auth/passkey/challenge', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
@@ -117,7 +117,7 @@ export const authApi = {
    * Verify passkey response
    */
   verifyPasskey: (request: PasskeyVerifyRequest): Promise<ApiResponse<AuthResponse>> => {
-    return fetchWithCredentials<AuthResponse>('/admin/auth/passkey/verify', {
+    return fetchWithCredentials<AuthResponse>('/v1/admin/auth/passkey/verify', {
       method: 'POST',
       body: JSON.stringify(request),
     });
@@ -127,7 +127,7 @@ export const authApi = {
    * Request OTP to be sent to email
    */
   requestOtp: (email: string): Promise<ApiResponse<void>> => {
-    return fetchWithCredentials<void>('/admin/auth/otp/request', {
+    return fetchWithCredentials<void>('/v1/admin/auth/otp/request', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
@@ -137,7 +137,7 @@ export const authApi = {
    * Verify OTP and authenticate
    */
   verifyOtp: (email: string, otp: string): Promise<ApiResponse<AuthResponse>> => {
-    return fetchWithCredentials<AuthResponse>('/admin/auth/otp/verify', {
+    return fetchWithCredentials<AuthResponse>('/v1/admin/auth/otp/verify', {
       method: 'POST',
       body: JSON.stringify({ email, otp }),
     });
@@ -147,7 +147,7 @@ export const authApi = {
    * Get current session (check if already authenticated)
    */
   getSession: (): Promise<ApiResponse<SessionResponse>> => {
-    return fetchWithCredentials<SessionResponse>('/admin/auth/session', {
+    return fetchWithCredentials<SessionResponse>('/v1/admin/auth/session', {
       method: 'GET',
     });
   },
@@ -156,7 +156,7 @@ export const authApi = {
    * Refresh session token
    */
   refreshSession: (): Promise<ApiResponse<SessionResponse>> => {
-    return fetchWithCredentials<SessionResponse>('/admin/auth/session/refresh', {
+    return fetchWithCredentials<SessionResponse>('/v1/admin/auth/session/refresh', {
       method: 'POST',
     });
   },
@@ -165,7 +165,7 @@ export const authApi = {
    * Logout and invalidate session
    */
   logout: (): Promise<ApiResponse<void>> => {
-    return fetchWithCredentials<void>('/admin/auth/logout', {
+    return fetchWithCredentials<void>('/v1/admin/auth/logout', {
       method: 'POST',
     });
   },

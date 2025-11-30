@@ -36,7 +36,6 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   bool _showTransactionCount = true;
   bool _showPlatformList = true;
   bool _showAccountAge = true;
-  bool _showMutualVerifications = true;
 
   @override
   void initState() {
@@ -56,7 +55,6 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         _showTransactionCount = data['showTransactionCount'] ?? true;
         _showPlatformList = data['showPlatformList'] ?? true;
         _showAccountAge = data['showAccountAge'] ?? true;
-        _showMutualVerifications = data['showMutualVerifications'] ?? true;
         _isLoading = false;
       });
     } catch (e) {
@@ -241,17 +239,6 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                   (value) {
                     setState(() => _showAccountAge = value);
                     _saveSetting('showAccountAge', value);
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                _buildToggle(
-                  'Show mutual verification count',
-                  'Display number of mutual verifications with other users',
-                  _showMutualVerifications,
-                  (value) {
-                    setState(() => _showMutualVerifications = value);
-                    _saveSetting('showMutualVerifications', value);
                   },
                 ),
 

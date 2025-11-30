@@ -360,12 +360,14 @@ public class TrustScoreService : ITrustScoreService
 
     private string GetTrustLabel(int score)
     {
+        // Labels per CLAUDE_FULL.md specification (Section 3)
         return score switch
         {
-            >= 801 => "Very High Trust",
-            >= 601 => "High Trust",
-            >= 401 => "Moderate Trust",
-            >= 201 => "Low Trust",
+            >= 850 => "Exceptional Trust",
+            >= 700 => "Very High Trust",
+            >= 550 => "High Trust",
+            >= 400 => "Moderate Trust",
+            >= 250 => "Low Trust",
             _ => "High Risk"
         };
     }

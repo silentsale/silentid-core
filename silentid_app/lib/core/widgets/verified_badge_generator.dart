@@ -26,7 +26,7 @@ class _BadgeColors {
 /// - User initials / username
 /// - TrustScore (if public)
 /// - Verification tier
-/// - Mutual verification count
+/// - Connected platforms count
 /// - QR code leading to public passport
 /// - Dark/light mode variants
 
@@ -40,7 +40,6 @@ class VerifiedBadgeData {
   final int? trustScore; // null if private
   final String trustScoreLabel;
   final bool isIdentityVerified;
-  final int mutualVerificationCount;
   final String publicPassportUrl;
   final List<String> connectedPlatforms;
 
@@ -50,7 +49,6 @@ class VerifiedBadgeData {
     this.trustScore,
     required this.trustScoreLabel,
     required this.isIdentityVerified,
-    required this.mutualVerificationCount,
     required this.publicPassportUrl,
     this.connectedPlatforms = const [],
   });
@@ -548,25 +546,27 @@ class _BadgeCard extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _StatItem(
-          icon: Icons.people_rounded,
-          value: '${data.mutualVerificationCount}',
-          label: 'Verifications',
-          textColor: _textColor,
-          subtitleColor: _subtitleColor,
-        ),
-        Container(
-          width: 1,
-          height: 30,
-          color: _cardBorderColor,
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-        ),
-        _StatItem(
           icon: Icons.link_rounded,
           value: '${data.connectedPlatforms.length}',
           label: 'Platforms',
           textColor: _textColor,
           subtitleColor: _subtitleColor,
         ),
+        if (data.isIdentityVerified) ...[
+          Container(
+            width: 1,
+            height: 30,
+            color: _cardBorderColor,
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+          ),
+          _StatItem(
+            icon: Icons.verified_user_rounded,
+            value: '✓',
+            label: 'ID Verified',
+            textColor: _textColor,
+            subtitleColor: _subtitleColor,
+          ),
+        ],
       ],
     );
   }

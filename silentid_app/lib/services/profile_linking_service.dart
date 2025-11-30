@@ -584,49 +584,4 @@ class ProfileLinkingService {
     };
     return platformMap[platformValue] ?? 'unknown';
   }
-
-  /// Get mock connected profiles for demo/standalone screens
-  List<ConnectedProfile> getMockConnectedProfiles() {
-    final now = DateTime.now();
-    return [
-      ConnectedProfile(
-        id: 'mock-1',
-        platformId: 'instagram',
-        username: '@johndoe',
-        profileUrl: 'https://instagram.com/johndoe',
-        state: ProfileLinkState.verifiedToken,
-        connectedAt: now.subtract(const Duration(days: 30)),
-        verifiedAt: now.subtract(const Duration(days: 28)),
-        isPublicOnPassport: true,
-      ),
-      ConnectedProfile(
-        id: 'mock-2',
-        platformId: 'vinted',
-        username: 'johndoe_vinted',
-        profileUrl: 'https://www.vinted.co.uk/member/12345',
-        state: ProfileLinkState.verifiedScreenshot,
-        connectedAt: now.subtract(const Duration(days: 20)),
-        verifiedAt: now.subtract(const Duration(days: 18)),
-        isPublicOnPassport: true,
-      ),
-      ConnectedProfile(
-        id: 'mock-3',
-        platformId: 'linkedin',
-        username: 'john-doe-123',
-        profileUrl: 'https://linkedin.com/in/john-doe-123',
-        state: ProfileLinkState.linked,
-        connectedAt: now.subtract(const Duration(days: 10)),
-        isPublicOnPassport: true,
-      ),
-      ConnectedProfile(
-        id: 'mock-4',
-        platformId: 'depop',
-        username: '@johndepop',
-        profileUrl: 'https://depop.com/johndepop',
-        state: ProfileLinkState.linked,
-        connectedAt: now.subtract(const Duration(days: 5)),
-        isPublicOnPassport: false,
-      ),
-    ];
-  }
 }

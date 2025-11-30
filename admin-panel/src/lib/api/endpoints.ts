@@ -24,30 +24,30 @@ export const usersApi = {
     status?: string;
     level?: string;
     search?: string;
-  }) => apiClient.get<PaginatedResponse<User>>('/admin/users', params),
+  }) => apiClient.get<PaginatedResponse<User>>('/v1/admin/users', params),
 
-  getById: (id: string) => apiClient.get<UserDetail>(`/admin/users/${id}`),
+  getById: (id: string) => apiClient.get<UserDetail>(`/v1/admin/users/${id}`),
 
   suspend: (id: string, justification: string) =>
-    apiClient.post(`/admin/users/${id}/suspend`, { justification }),
+    apiClient.post(`/v1/admin/users/${id}/action`, { action: 'Freeze', reason: justification }),
 
   unsuspend: (id: string, justification: string) =>
-    apiClient.post(`/admin/users/${id}/unsuspend`, { justification }),
+    apiClient.post(`/v1/admin/users/${id}/action`, { action: 'Unfreeze', reason: justification }),
 
   markUnderReview: (id: string, justification: string) =>
-    apiClient.post(`/admin/users/${id}/mark-review`, { justification }),
+    apiClient.post(`/v1/admin/users/${id}/action`, { action: 'Limit', reason: justification }),
 
   clearReview: (id: string, justification: string) =>
-    apiClient.post(`/admin/users/${id}/clear-review`, { justification }),
+    apiClient.post(`/v1/admin/users/${id}/action`, { action: 'Unfreeze', reason: justification }),
 
   recalculateTrustScore: (id: string) =>
-    apiClient.post(`/admin/users/${id}/recalculate-trust-score`),
+    apiClient.post(`/v1/admin/users/${id}/recalculate-trust-score`),
 
   addNote: (id: string, content: string) =>
-    apiClient.post(`/admin/users/${id}/notes`, { content }),
+    apiClient.post(`/v1/admin/users/${id}/notes`, { content }),
 
   getLoginHistory: (id: string, params?: { page?: number; pageSize?: number }) =>
-    apiClient.get(`/admin/users/${id}/login-history`, params),
+    apiClient.get(`/v1/admin/users/${id}/login-history`, params),
 };
 
 // ============================================
@@ -61,24 +61,24 @@ export const evidenceApi = {
     type?: string;
     status?: string;
     userId?: string;
-  }) => apiClient.get<PaginatedResponse<Evidence>>('/admin/evidence', params),
+  }) => apiClient.get<PaginatedResponse<Evidence>>('/v1/admin/evidence', params),
 
-  getById: (id: string) => apiClient.get<Evidence>(`/admin/evidence/${id}`),
+  getById: (id: string) => apiClient.get<Evidence>(`/v1/admin/evidence/${id}`),
 
   approve: (id: string, justification: string) =>
-    apiClient.post(`/admin/evidence/${id}/approve`, { justification }),
+    apiClient.post(`/v1/admin/evidence/${id}/approve`, { justification }),
 
   reject: (id: string, justification: string) =>
-    apiClient.post(`/admin/evidence/${id}/reject`, { justification }),
+    apiClient.post(`/v1/admin/evidence/${id}/reject`, { justification }),
 
   markSuspicious: (id: string, justification: string) =>
-    apiClient.post(`/admin/evidence/${id}/mark-suspicious`, { justification }),
+    apiClient.post(`/v1/admin/evidence/${id}/mark-suspicious`, { justification }),
 
   delete: (id: string, justification: string) =>
-    apiClient.delete(`/admin/evidence/${id}?justification=${encodeURIComponent(justification)}`),
+    apiClient.delete(`/v1/admin/evidence/${id}?justification=${encodeURIComponent(justification)}`),
 
   requestReExtraction: (id: string) =>
-    apiClient.post(`/admin/evidence/${id}/re-extract`),
+    apiClient.post(`/v1/admin/evidence/${id}/re-extract`),
 };
 
 // ============================================
@@ -86,48 +86,48 @@ export const evidenceApi = {
 // ============================================
 
 export const platformsApi = {
-  list: () => apiClient.get<Platform[]>('/admin/platforms'),
+  list: () => apiClient.get<Platform[]>('/v1/admin/platforms'),
 
-  getById: (id: string) => apiClient.get<Platform>(`/admin/platforms/${id}`),
+  getById: (id: string) => apiClient.get<Platform>(`/v1/admin/platforms/${id}`),
 
   // Version Management
   getVersions: (platformId: string) =>
-    apiClient.get<PlatformConfigVersion[]>(`/admin/platforms/${platformId}/versions`),
+    apiClient.get<PlatformConfigVersion[]>(`/v1/admin/platforms/${platformId}/versions`),
 
   getVersion: (platformId: string, versionId: string) =>
-    apiClient.get<PlatformConfigVersion>(`/admin/platforms/${platformId}/versions/${versionId}`),
+    apiClient.get<PlatformConfigVersion>(`/v1/admin/platforms/${platformId}/versions/${versionId}`),
 
   createDraftVersion: (platformId: string) =>
-    apiClient.post<PlatformConfigVersion>(`/admin/platforms/${platformId}/versions/draft`),
+    apiClient.post<PlatformConfigVersion>(`/v1/admin/platforms/${platformId}/versions/draft`),
 
   updateDraftVersion: (platformId: string, versionId: string, data: Partial<PlatformConfigVersion>) =>
-    apiClient.put<PlatformConfigVersion>(`/admin/platforms/${platformId}/versions/${versionId}`, data),
+    apiClient.put<PlatformConfigVersion>(`/v1/admin/platforms/${platformId}/versions/${versionId}`, data),
 
   promoteDraftToActive: (platformId: string, versionId: string, justification: string) =>
-    apiClient.post(`/admin/platforms/${platformId}/versions/${versionId}/promote`, { justification }),
+    apiClient.post(`/v1/admin/platforms/${platformId}/versions/${versionId}/promote`, { justification }),
 
   discardDraft: (platformId: string, versionId: string) =>
-    apiClient.delete(`/admin/platforms/${platformId}/versions/${versionId}`),
+    apiClient.delete(`/v1/admin/platforms/${platformId}/versions/${versionId}`),
 
   rollbackToVersion: (platformId: string, versionId: string, justification: string) =>
-    apiClient.post(`/admin/platforms/${platformId}/versions/${versionId}/rollback`, { justification }),
+    apiClient.post(`/v1/admin/platforms/${platformId}/versions/${versionId}/rollback`, { justification }),
 
   // Shadow Testing
   runShadowTest: (platformId: string, sampleUrls: string[]) =>
-    apiClient.post<ShadowTestResult[]>(`/admin/platforms/${platformId}/shadow-test`, { sampleUrls }),
+    apiClient.post<ShadowTestResult[]>(`/v1/admin/platforms/${platformId}/shadow-test`, { sampleUrls }),
 
   getSampleUrls: (platformId: string) =>
-    apiClient.get<string[]>(`/admin/platforms/${platformId}/sample-urls`),
+    apiClient.get<string[]>(`/v1/admin/platforms/${platformId}/sample-urls`),
 
   addSampleUrl: (platformId: string, url: string) =>
-    apiClient.post(`/admin/platforms/${platformId}/sample-urls`, { url }),
+    apiClient.post(`/v1/admin/platforms/${platformId}/sample-urls`, { url }),
 
   removeSampleUrl: (platformId: string, url: string) =>
-    apiClient.delete(`/admin/platforms/${platformId}/sample-urls?url=${encodeURIComponent(url)}`),
+    apiClient.delete(`/v1/admin/platforms/${platformId}/sample-urls?url=${encodeURIComponent(url)}`),
 
   // Selectors
   validateSelector: (expression: string, type: string) =>
-    apiClient.post<{ valid: boolean; error?: string }>('/admin/platforms/validate-selector', {
+    apiClient.post<{ valid: boolean; error?: string }>('/v1/admin/platforms/validate-selector', {
       expression,
       type,
     }),
@@ -144,24 +144,24 @@ export const securityApi = {
     severity?: string;
     category?: string;
     status?: 'open' | 'resolved';
-  }) => apiClient.get<PaginatedResponse<RiskAlert>>('/admin/security/alerts', params),
+  }) => apiClient.get<PaginatedResponse<RiskAlert>>('/v1/admin/security/alerts', params),
 
-  getAlert: (id: string) => apiClient.get<RiskAlert>(`/admin/security/alerts/${id}`),
+  getAlert: (id: string) => apiClient.get<RiskAlert>(`/v1/admin/security/alerts/${id}`),
 
   resolveAlert: (id: string, justification: string) =>
-    apiClient.post(`/admin/security/alerts/${id}/resolve`, { justification }),
+    apiClient.post(`/v1/admin/security/alerts/${id}/resolve`, { justification }),
 
   escalateAlert: (id: string, justification: string) =>
-    apiClient.post(`/admin/security/alerts/${id}/escalate`, { justification }),
+    apiClient.post(`/v1/admin/security/alerts/${id}/escalate`, { justification }),
 
   lockUser: (userId: string, justification: string) =>
-    apiClient.post(`/admin/security/users/${userId}/lock`, { justification }),
+    apiClient.post(`/v1/admin/security/users/${userId}/lock`, { justification }),
 
   forceStepUpVerification: (userId: string, justification: string) =>
-    apiClient.post(`/admin/security/users/${userId}/force-step-up`, { justification }),
+    apiClient.post(`/v1/admin/security/users/${userId}/force-step-up`, { justification }),
 
   clearRiskFlags: (userId: string, justification: string) =>
-    apiClient.post(`/admin/security/users/${userId}/clear-risk-flags`, { justification }),
+    apiClient.post(`/v1/admin/security/users/${userId}/clear-risk-flags`, { justification }),
 };
 
 // ============================================
@@ -169,19 +169,19 @@ export const securityApi = {
 // ============================================
 
 export const adminApi = {
-  list: () => apiClient.get<AdminUser[]>('/admin/admins'),
+  list: () => apiClient.get<AdminUser[]>('/v1/admin/admins'),
 
-  getById: (id: string) => apiClient.get<AdminUser>(`/admin/admins/${id}`),
+  getById: (id: string) => apiClient.get<AdminUser>(`/v1/admin/admins/${id}`),
 
   invite: (email: string, role: string) =>
-    apiClient.post('/admin/admins/invite', { email, role }),
+    apiClient.post('/v1/admin/admins/invite', { email, role }),
 
   updateRole: (id: string, role: string) =>
-    apiClient.patch(`/admin/admins/${id}`, { role }),
+    apiClient.patch(`/v1/admin/admins/${id}`, { role }),
 
-  deactivate: (id: string) => apiClient.post(`/admin/admins/${id}/deactivate`),
+  deactivate: (id: string) => apiClient.post(`/v1/admin/admins/${id}/deactivate`),
 
-  reactivate: (id: string) => apiClient.post(`/admin/admins/${id}/reactivate`),
+  reactivate: (id: string) => apiClient.post(`/v1/admin/admins/${id}/reactivate`),
 };
 
 // ============================================
@@ -197,9 +197,9 @@ export const auditApi = {
     targetId?: string;
     startDate?: string;
     endDate?: string;
-  }) => apiClient.get<PaginatedResponse<AuditLogEntry>>('/admin/audit-logs', params),
+  }) => apiClient.get<PaginatedResponse<AuditLogEntry>>('/v1/admin/audit-logs', params),
 
-  getById: (id: string) => apiClient.get<AuditLogEntry>(`/admin/audit-logs/${id}`),
+  getById: (id: string) => apiClient.get<AuditLogEntry>(`/v1/admin/audit-logs/${id}`),
 };
 
 // ============================================
@@ -207,20 +207,20 @@ export const auditApi = {
 // ============================================
 
 export const dashboardApi = {
-  getStats: () => apiClient.get<DashboardStats>('/admin/dashboard/stats'),
+  getStats: () => apiClient.get<DashboardStats>('/v1/admin/dashboard/stats'),
 
   getTrustDistribution: () =>
     apiClient.get<{ label: string; count: number; percentage: number }[]>(
-      '/admin/dashboard/trust-distribution'
+      '/v1/admin/dashboard/trust-distribution'
     ),
 
   getUserGrowth: (period: 'day' | 'week' | 'month') =>
-    apiClient.get<{ date: string; value: number }[]>('/admin/dashboard/user-growth', { period }),
+    apiClient.get<{ date: string; value: number }[]>('/v1/admin/dashboard/user-growth', { period }),
 
   getRecentActivity: () =>
     apiClient.get<{
       recentUsers: User[];
       recentAlerts: RiskAlert[];
       platformHealth: { name: string; health: number; status: string }[];
-    }>('/admin/dashboard/recent-activity'),
+    }>('/v1/admin/dashboard/recent-activity'),
 };

@@ -203,33 +203,104 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "SilentID API v1");
-        c.RoutePrefix = string.Empty; // Serve Swagger UI at root
+        c.RoutePrefix = "api-docs"; // Moved off root for security
     });
 }
 
 app.UseHttpsRedirection();
 
-// Apply CORS - allow localhost origins for both Flutter and Admin Panel
-app.UseCors(builder =>
+// Security Headers Middleware
+app.Use(async (context, next) =>
 {
-    builder.SetIsOriginAllowed(origin =>
+    // Prevent MIME-type sniffing
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+
+    // Prevent clickjacking
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+
+    // Enable XSS filter in browsers
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+
+    // Control referrer information
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+
+    // Restrict browser features
+    context.Response.Headers.Append("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+
+    // Production-only headers
+    if (!app.Environment.IsDevelopment())
     {
-        try
-        {
-            var uri = new Uri(origin);
-            // Allow localhost for both Flutter (various ports) and Admin Panel (3000, 3001)
-            return uri.Host == "localhost" || uri.Host == "127.0.0.1";
-        }
-        catch
-        {
-            return false;
-        }
-    })
-    .AllowAnyHeader()
-    .AllowAnyMethod()
-    .AllowCredentials()
-    .WithExposedHeaders("Token-Expired");
+        // Force HTTPS with HSTS
+        context.Response.Headers.Append("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+
+        // Content Security Policy
+        context.Response.Headers.Append("Content-Security-Policy",
+            "default-src 'self'; " +
+            "script-src 'self'; " +
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+            "font-src 'self' https://fonts.gstatic.com; " +
+            "img-src 'self' data: https:; " +
+            "connect-src 'self' https://api.stripe.com https://js.stripe.com; " +
+            "frame-ancestors 'none';");
+    }
+
+    await next();
 });
+
+// Apply CORS with environment-specific configuration
+if (app.Environment.IsDevelopment())
+{
+    // Development: Allow specific localhost ports
+    app.UseCors(builder =>
+    {
+        builder.WithOrigins(
+                "http://localhost:3000",   // Admin Panel (Next.js)
+                "http://localhost:3001",   // Admin Panel (alternate)
+                "http://localhost:5173",   // Landing Page (Vite)
+                "http://localhost:5174",   // Landing Page (alternate)
+                "http://localhost:8080",   // Flutter Web
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:5173",
+                "http://127.0.0.1:8080"
+            )
+            .WithHeaders(
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "X-CSRF-Token",
+                "Accept",
+                "Origin"
+            )
+            .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+            .AllowCredentials()
+            .WithExposedHeaders("Token-Expired");
+    });
+}
+else
+{
+    // Production: Only allow explicit SilentID domains
+    app.UseCors(builder =>
+    {
+        builder.WithOrigins(
+                "https://silentid.co.uk",
+                "https://www.silentid.co.uk",
+                "https://app.silentid.co.uk",
+                "https://admin.silentid.co.uk",
+                "https://api.silentid.co.uk"
+            )
+            .WithHeaders(
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "X-CSRF-Token",
+                "Accept",
+                "Origin"
+            )
+            .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+            .AllowCredentials()
+            .WithExposedHeaders("Token-Expired");
+    });
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

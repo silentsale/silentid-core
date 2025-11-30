@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SilentID.Api.Data;
 using SilentID.Api.Models;
+using SilentID.Api.Services;
 
 namespace SilentID.Api.Controllers;
 
@@ -15,6 +16,7 @@ public class PublicController : ControllerBase
 {
     private readonly ILogger<PublicController> _logger;
     private readonly SilentIdDbContext _context;
+    private readonly ITrustScoreService _trustScoreService;
 
     public class LandingStatsDto
     {
@@ -48,10 +50,13 @@ public class PublicController : ControllerBase
     {
         public string Username { get; set; } = string.Empty;
         public string DisplayName { get; set; } = string.Empty;
+        public int TrustScore { get; set; }
+        public string TrustScoreLabel { get; set; } = string.Empty;
         public bool IdentityVerified { get; set; }
         public string AccountAge { get; set; } = string.Empty;
         public List<string> VerifiedPlatforms { get; set; } = new();
         public int VerifiedTransactionCount { get; set; }
+        public int MutualVerificationCount { get; set; }
         public List<string> Badges { get; set; } = new();
         public string? RiskWarning { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -65,10 +70,14 @@ public class PublicController : ControllerBase
         public List<string> Suggestions { get; set; } = new();
     }
 
-    public PublicController(ILogger<PublicController> logger, SilentIdDbContext context)
+    public PublicController(
+        ILogger<PublicController> logger,
+        SilentIdDbContext context,
+        ITrustScoreService trustScoreService)
     {
         _logger = logger;
         _context = context;
+        _trustScoreService = trustScoreService;
     }
 
     /// <summary>
@@ -151,6 +160,11 @@ public class PublicController : ControllerBase
             _logger.LogInformation("Username not found: {Username}", cleanUsername);
             return NotFound(new { error = "username_not_found", message = "This username does not exist." });
         }
+
+        // Get TrustScore from service
+        var trustSnapshot = await _trustScoreService.GetCurrentTrustScoreAsync(user.Id);
+        var trustScore = trustSnapshot.Score;
+        var trustScoreLabel = GetTrustScoreLabel(trustScore);
 
         // Get identity verification status
         var identityVerification = await _context.IdentityVerifications
@@ -251,10 +265,13 @@ public class PublicController : ControllerBase
         {
             Username = $"@{user.Username}",
             DisplayName = user.DisplayName,
+            TrustScore = trustScore,
+            TrustScoreLabel = trustScoreLabel,
             IdentityVerified = identityVerified,
             AccountAge = accountAge,
             VerifiedPlatforms = verifiedPlatforms,
             VerifiedTransactionCount = verifiedTransactionCount,
+            MutualVerificationCount = 0,
             Badges = badges,
             RiskWarning = riskWarning,
             CreatedAt = user.CreatedAt,

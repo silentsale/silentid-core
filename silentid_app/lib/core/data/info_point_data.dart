@@ -398,10 +398,10 @@ Friends must enter your code when signing up to link the referral.''',
 
 🛡️ Verified Identity - Complete ID verification
 🔗 Profile Connected - Link a marketplace account
-✅ First Verification - Get your first mutual verification
+✅ First Evidence - Upload your first receipt or screenshot
 ⭐ TrustScore 500+ - Reach milestone scores
 👥 Community Member - Active for 6+ months
-🏆 Top Verifier - Complete 25+ verifications
+🏆 Evidence Master - Upload 25+ pieces of evidence
 
 Badges appear on your public profile!''',
         learnMoreText: 'Learn More',
