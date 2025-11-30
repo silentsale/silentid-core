@@ -468,7 +468,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: "Login methods",
                 subtitle: "Passkey, Apple, Google, Email",
                 onTap: () {
-                  _showLoginMethodsComingSoon();
+                  context.push('/settings/login-methods');
                 },
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -821,114 +821,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     }
-  }
-
-  // Placeholder for Login Methods screen (Coming Soon)
-  void _showLoginMethodsComingSoon() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Icon(
-              Icons.vpn_key_outlined,
-              color: AppTheme.primaryPurple,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              'Login Methods',
-              style: GoogleFonts.inter(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Manage your passwordless login methods here.',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppTheme.neutralGray700,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            _buildLoginMethodRow(Icons.fingerprint, 'Passkey', 'Coming soon'),
-            _buildLoginMethodRow(Icons.apple, 'Apple Sign-In', 'Connected'),
-            _buildLoginMethodRow(Icons.g_mobiledata_rounded, 'Google Sign-In', 'Available'),
-            _buildLoginMethodRow(Icons.email_outlined, 'Email OTP', 'Available'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Close',
-              style: GoogleFonts.inter(
-                color: AppTheme.primaryPurple,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoginMethodRow(IconData icon, String title, String status) {
-    final bool isConnected = status == 'Connected';
-    final bool isComingSoon = status == 'Coming soon';
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 20,
-            color: isConnected ? AppTheme.successGreen : AppTheme.neutralGray700,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: isConnected
-                  ? AppTheme.successGreen.withValues(alpha: 0.1)
-                  : isComingSoon
-                      ? AppTheme.warningAmber.withValues(alpha: 0.1)
-                      : AppTheme.neutralGray300.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              status,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: isConnected
-                    ? AppTheme.successGreen
-                    : isComingSoon
-                        ? AppTheme.warningAmber
-                        : AppTheme.neutralGray700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   // Placeholder for Connected Services screen (Coming Soon)

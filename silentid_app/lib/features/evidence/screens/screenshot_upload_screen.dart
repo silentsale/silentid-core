@@ -24,6 +24,7 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
   String _platform = 'Vinted';
   XFile? _selectedImage;
   bool _isLoading = false;
+  String _uploadStep = '';
 
   final List<String> _platforms = [
     'Vinted',
@@ -34,10 +35,18 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
     'Other',
   ];
 
-  Future<void> _pickImage() async {
+  Future<void> _pickFromGallery() async {
+    await _pickImage(ImageSource.gallery);
+  }
+
+  Future<void> _captureWithCamera() async {
+    await _pickImage(ImageSource.camera);
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
     try {
       final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
         imageQuality: 85,
       );
 
@@ -50,12 +59,27 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to pick image: ${e.toString()}'),
+            content: Text(_getFriendlyErrorMessage(e)),
             backgroundColor: AppTheme.dangerRed,
           ),
         );
       }
     }
+  }
+
+
+  String _getFriendlyErrorMessage(dynamic error) {
+    final errorStr = error.toString().toLowerCase();
+    if (errorStr.contains('socket') || errorStr.contains('network') || errorStr.contains('connection')) {
+      return 'Check your internet connection and try again';
+    } else if (errorStr.contains('timeout')) {
+      return 'Upload took too long. Please try again';
+    } else if (errorStr.contains('permission')) {
+      return 'Permission denied. Please allow camera/gallery access';
+    } else if (errorStr.contains('size') || errorStr.contains('large')) {
+      return 'Image is too large. Try a smaller image';
+    }
+    return 'Something went wrong. Please try again';
   }
 
   Future<void> _uploadScreenshot() async {
@@ -69,10 +93,14 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _uploadStep = 'Preparing upload...';
+    });
 
     try {
       // Step 1: Get upload URL from backend
+      setState(() => _uploadStep = 'Step 1 of 3: Preparing...');
       final uploadUrlResponse = await _api.post(
         '/v1/evidence/screenshots/upload-url',
         data: {
@@ -85,6 +113,7 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
       final fileUrl = uploadUrlResponse.data['fileUrl'];
 
       // Step 2: Upload file to Azure Blob Storage
+      setState(() => _uploadStep = 'Step 2 of 3: Uploading...');
       final file = File(_selectedImage!.path);
       final fileBytes = await file.readAsBytes();
 
@@ -102,6 +131,7 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
       );
 
       // Step 3: Submit metadata to backend
+      setState(() => _uploadStep = 'Step 3 of 3: Saving...');
       await _api.post(
         '/v1/evidence/screenshots',
         data: {
@@ -123,14 +153,17 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to upload screenshot: ${e.toString()}'),
+            content: Text(_getFriendlyErrorMessage(e)),
             backgroundColor: AppTheme.dangerRed,
           ),
         );
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _uploadStep = '';
+        });
       }
     }
   }
@@ -139,6 +172,8 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
         title: Text(
           'Upload Screenshot',
           style: GoogleFonts.inter(
@@ -166,6 +201,138 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
                   height: 1.5,
                 ),
               ),
+
+              const SizedBox(height: 24),
+
+              // Image picker options (gallery + camera)
+              if (_selectedImage == null)
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: _pickFromGallery,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          height: 160,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: AppTheme.primaryPurple,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.photo_library_outlined,
+                                size: 48,
+                                color: AppTheme.primaryPurple,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Gallery',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.primaryPurple,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Choose existing',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: AppTheme.neutralGray700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: InkWell(
+                        onTap: _captureWithCamera,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          height: 160,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: AppTheme.primaryPurple,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.camera_alt_outlined,
+                                size: 48,
+                                color: AppTheme.primaryPurple,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Camera',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.primaryPurple,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Take photo now',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: AppTheme.neutralGray700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Column(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.file(
+                        File(_selectedImage!.path),
+                        height: 300,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton.icon(
+                          onPressed: _pickFromGallery,
+                          icon: const Icon(Icons.photo_library_outlined),
+                          label: const Text('Gallery'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppTheme.primaryPurple,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        TextButton.icon(
+                          onPressed: _captureWithCamera,
+                          icon: const Icon(Icons.camera_alt_outlined),
+                          label: const Text('Camera'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppTheme.primaryPurple,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
 
               const SizedBox(height: 24),
 
@@ -201,68 +368,7 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
                 },
               ),
 
-              const SizedBox(height: 32),
-
-              // Image preview or picker button
-              if (_selectedImage == null)
-                InkWell(
-                  onTap: _pickImage,
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    height: 200,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: AppTheme.primaryPurple,
-                        width: 2,
-                        style: BorderStyle.solid,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.add_photo_alternate,
-                          size: 64,
-                          color: AppTheme.primaryPurple,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Tap to choose screenshot',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.primaryPurple,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                Column(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.file(
-                        File(_selectedImage!.path),
-                        height: 300,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextButton.icon(
-                      onPressed: _pickImage,
-                      icon: const Icon(Icons.change_circle),
-                      label: const Text('Change Screenshot'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppTheme.primaryPurple,
-                      ),
-                    ),
-                  ],
-                ),
-
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
               // Warning box with Info Point (Section 40.4)
               Container(
@@ -295,7 +401,60 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
                 ),
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+
+              // Privacy reassurance
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.softLilac.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.lock_outline,
+                      color: AppTheme.primaryPurple,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Your screenshot is stored securely. Only you and our verification team can view it.',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppTheme.neutralGray700,
+                        ),
+                      ),
+                    ),
+                    InfoPointHelper(data: InfoPoints.evidenceStorage),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Upload progress indicator
+              if (_isLoading && _uploadStep.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Column(
+                    children: [
+                      LinearProgressIndicator(
+                        backgroundColor: AppTheme.neutralGray300,
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryPurple),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _uploadStep,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppTheme.neutralGray700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
               // Upload button
               PrimaryButton(

@@ -24,6 +24,7 @@ import '../../features/settings/screens/privacy_settings_screen.dart';
 import '../../features/settings/screens/connected_devices_screen.dart';
 import '../../features/settings/screens/data_export_screen.dart';
 import '../../features/settings/screens/delete_account_screen.dart';
+import '../../features/settings/screens/login_methods_screen.dart';
 import '../../features/safety/screens/report_user_screen.dart';
 import '../../features/safety/screens/my_reports_screen.dart';
 import '../../features/safety/screens/report_details_screen.dart';
@@ -239,6 +240,11 @@ class AppRouter {
             path: '/settings/delete',
             name: 'delete-account',
             builder: (context, state) => const DeleteAccountScreen(),
+          ),
+          GoRoute(
+            path: '/settings/login-methods',
+            name: 'login-methods',
+            builder: (context, state) => const LoginMethodsScreen(),
           ),
           GoRoute(
             path: '/safety/report',
