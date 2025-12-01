@@ -3,10 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/security_api_service.dart';
 
 /// Security Risk Status screen (Section 15.2)
 /// Shows user's risk score and active risk signals
+/// Level 7 Gamification + Level 7 Interactivity
 class SecurityRiskScreen extends StatefulWidget {
   const SecurityRiskScreen({super.key});
 
@@ -14,8 +16,13 @@ class SecurityRiskScreen extends StatefulWidget {
   State<SecurityRiskScreen> createState() => _SecurityRiskScreenState();
 }
 
-class _SecurityRiskScreenState extends State<SecurityRiskScreen> {
+class _SecurityRiskScreenState extends State<SecurityRiskScreen>
+    with SingleTickerProviderStateMixin {
   final _securityApi = SecurityApiService();
+
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
 
   RiskStatusResponse? _riskStatus;
   bool _isLoading = true;
@@ -24,7 +31,22 @@ class _SecurityRiskScreenState extends State<SecurityRiskScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _loadRiskStatus();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadRiskStatus() async {
@@ -39,6 +61,8 @@ class _SecurityRiskScreenState extends State<SecurityRiskScreen> {
         _riskStatus = response;
         _isLoading = false;
       });
+      // Level 7: Start animations after data loads
+      _animController.forward();
     } catch (e) {
       setState(() {
         _error = 'Failed to load risk status';
@@ -56,7 +80,10 @@ class _SecurityRiskScreenState extends State<SecurityRiskScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppTheme.neutralGray900),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            AppHaptics.light();
+            context.pop();
+          },
         ),
         title: Text(
           'Risk Status',
@@ -68,33 +95,36 @@ class _SecurityRiskScreenState extends State<SecurityRiskScreen> {
         ),
         centerTitle: true,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryPurple))
-          : _error != null
-              ? _buildErrorState()
-              : RefreshIndicator(
-                  onRefresh: _loadRiskStatus,
-                  color: AppTheme.primaryPurple,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildRiskScoreCard(),
-                        const SizedBox(height: 24),
-                        _buildRiskInfoCard(),
-                        const SizedBox(height: 24),
-                        if (_riskStatus?.activeSignals.isNotEmpty == true) ...[
-                          _buildActiveSignals(),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryPurple))
+            : _error != null
+                ? _buildErrorState()
+                : RefreshIndicator(
+                    onRefresh: _loadRiskStatus,
+                    color: AppTheme.primaryPurple,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildRiskScoreCard(),
                           const SizedBox(height: 24),
+                          _buildRiskInfoCard(),
+                          const SizedBox(height: 24),
+                          if (_riskStatus?.activeSignals.isNotEmpty == true) ...[
+                            _buildActiveSignals(),
+                            const SizedBox(height: 24),
+                          ],
+                          _buildWhatAffectsRisk(),
+                          const SizedBox(height: 32),
                         ],
-                        _buildWhatAffectsRisk(),
-                        const SizedBox(height: 32),
-                      ],
+                      ),
                     ),
                   ),
-                ),
+      ),
     );
   }
 
@@ -206,8 +236,25 @@ class _SecurityRiskScreenState extends State<SecurityRiskScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        ...signals.map((signal) => _buildSignalCard(signal)),
+        // Level 7: Staggered animation for signal cards
+        ...signals.asMap().entries.map((entry) => _buildAnimatedSignalCard(entry.key, entry.value)),
       ],
+    );
+  }
+
+  // Level 7: Animated signal card with staggered entrance
+  Widget _buildAnimatedSignalCard(int index, RiskSignal signal) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 100)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(30 * (1 - value), 0),
+          child: Opacity(opacity: value, child: child),
+        );
+      },
+      child: _buildSignalCard(signal),
     );
   }
 

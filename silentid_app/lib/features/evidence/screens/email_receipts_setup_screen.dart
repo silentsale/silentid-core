@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/widgets/info_point_helper.dart';
 import '../../../core/data/info_point_data.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/receipt_api_service.dart';
 
 /// Email Receipts Setup Screen
@@ -18,7 +19,10 @@ class EmailReceiptsSetupScreen extends StatefulWidget {
   State<EmailReceiptsSetupScreen> createState() => _EmailReceiptsSetupScreenState();
 }
 
-class _EmailReceiptsSetupScreenState extends State<EmailReceiptsSetupScreen> {
+class _EmailReceiptsSetupScreenState extends State<EmailReceiptsSetupScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
   final _receiptApi = ReceiptApiService();
 
   bool _isLoading = true;
@@ -28,7 +32,20 @@ class _EmailReceiptsSetupScreenState extends State<EmailReceiptsSetupScreen> {
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
+    );
     _loadForwardingAlias();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadForwardingAlias() async {
@@ -39,6 +56,7 @@ class _EmailReceiptsSetupScreenState extends State<EmailReceiptsSetupScreen> {
         _aliasInfo = info;
         _isLoading = false;
       });
+      _animController.forward();
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -56,7 +74,7 @@ class _EmailReceiptsSetupScreenState extends State<EmailReceiptsSetupScreen> {
     if (_aliasInfo == null) return;
 
     Clipboard.setData(ClipboardData(text: _aliasInfo!.forwardingEmail));
-    HapticFeedback.mediumImpact();
+    AppHaptics.medium();
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -88,10 +106,12 @@ class _EmailReceiptsSetupScreenState extends State<EmailReceiptsSetupScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryPurple))
+          : FadeTransition(
+              opacity: _fadeAnimation,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Header with info point
@@ -147,6 +167,7 @@ class _EmailReceiptsSetupScreenState extends State<EmailReceiptsSetupScreen> {
                   // Privacy Notice
                   _buildPrivacyNotice(),
                 ],
+              ),
               ),
             ),
     );
@@ -265,7 +286,7 @@ class _EmailReceiptsSetupScreenState extends State<EmailReceiptsSetupScreen> {
     final isSelected = _selectedProvider == id;
     return GestureDetector(
       onTap: () {
-        HapticFeedback.selectionClick();
+        AppHaptics.selection();
         setState(() => _selectedProvider = id);
       },
       child: AnimatedContainer(

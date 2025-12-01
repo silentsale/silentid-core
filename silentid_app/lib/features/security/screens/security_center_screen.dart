@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/app_spacing.dart';
+import '../../../core/widgets/gamification/gamification.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/security_api_service.dart';
 
 /// Security Center main hub screen (Section 15)
 /// Digital protection hub with overview of all security features
+/// Level 7 Gamification: Animated risk meter, status transitions, interactive cards
 class SecurityCenterScreen extends StatefulWidget {
   const SecurityCenterScreen({super.key});
 
@@ -14,17 +17,34 @@ class SecurityCenterScreen extends StatefulWidget {
   State<SecurityCenterScreen> createState() => _SecurityCenterScreenState();
 }
 
-class _SecurityCenterScreenState extends State<SecurityCenterScreen> {
+class _SecurityCenterScreenState extends State<SecurityCenterScreen>
+    with SingleTickerProviderStateMixin {
   final _securityApi = SecurityApiService();
 
   SecurityOverview? _overview;
   bool _isLoading = true;
   String? _error;
 
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
   @override
   void initState() {
     super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
+    );
     _loadSecurityOverview();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSecurityOverview() async {
@@ -39,6 +59,7 @@ class _SecurityCenterScreenState extends State<SecurityCenterScreen> {
         _overview = overview;
         _isLoading = false;
       });
+      _fadeController.forward(from: 0.0);
     } catch (e) {
       setState(() {
         _error = 'Failed to load security data';
@@ -113,18 +134,21 @@ class _SecurityCenterScreenState extends State<SecurityCenterScreen> {
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildSecurityScoreCard(),
-                        const SizedBox(height: 24),
-                        _buildQuickActions(),
-                        const SizedBox(height: 24),
-                        _buildSecurityFeatures(),
-                        const SizedBox(height: 24),
-                        _buildRecentActivity(),
-                        const SizedBox(height: 32),
-                      ],
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSecurityScoreCard(),
+                          const SizedBox(height: AppSpacing.lg),
+                          _buildQuickActions(),
+                          const SizedBox(height: AppSpacing.lg),
+                          _buildSecurityFeatures(),
+                          const SizedBox(height: AppSpacing.lg),
+                          _buildRecentActivity(),
+                          const SizedBox(height: AppSpacing.xl),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -170,107 +194,160 @@ class _SecurityCenterScreenState extends State<SecurityCenterScreen> {
     final score = _overview?.identityStatus.verificationScore ?? 0;
     final riskLevel = _overview?.riskStatus.riskLevel ?? 'None';
     final isSecure = riskLevel == 'None' || riskLevel == 'Low';
+    final baseColor = isSecure ? AppTheme.successGreen : AppTheme.warningAmber;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isSecure
-              ? [AppTheme.successGreen, AppTheme.successGreen.withValues(alpha: 0.8)]
-              : [AppTheme.warningAmber, AppTheme.warningAmber.withValues(alpha: 0.8)],
+          colors: [baseColor, baseColor.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        boxShadow: [
+          BoxShadow(
+            color: baseColor.withValues(alpha: 0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.pureWhite.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
+          // Level 7: Animated Security Ring
+          AnimatedProgressRing(
+            progress: score / 100,
+            size: 100,
+            strokeWidth: 10,
+            progressColor: Colors.white,
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            center: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TweenAnimationBuilder<int>(
+                  tween: IntTween(begin: 0, end: score),
+                  duration: const Duration(milliseconds: 1200),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return Text(
+                      '$value',
+                      style: GoogleFonts.inter(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    );
+                  },
                 ),
-                child: Icon(
-                  isSecure ? Icons.shield_outlined : Icons.shield_outlined,
-                  color: AppTheme.pureWhite,
-                  size: 28,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppTheme.pureWhite.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  isSecure ? 'Secure' : 'Attention Needed',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.pureWhite,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Security Score',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppTheme.pureWhite.withValues(alpha: 0.9),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '$score',
-                style: GoogleFonts.inter(
-                  fontSize: 48,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.pureWhite,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10, left: 4),
-                child: Text(
+                Text(
                   '/ 100',
                   style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.pureWhite.withValues(alpha: 0.7),
+                    fontSize: 11,
+                    color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: score / 100,
-              backgroundColor: AppTheme.pureWhite.withValues(alpha: 0.2),
-              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.pureWhite),
-              minHeight: 6,
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            _overview?.identityStatus.statusText ?? 'Loading...',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: AppTheme.pureWhite.withValues(alpha: 0.9),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Status badge with animation
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 400),
+                  builder: (context, opacity, child) {
+                    return Opacity(
+                      opacity: opacity,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isSecure
+                                  ? Icons.check_circle_outline
+                                  : Icons.warning_amber_rounded,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isSecure ? 'Secure' : 'Attention Needed',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Security Score',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _overview?.identityStatus.statusText ?? 'Loading...',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Risk level indicator
+                Row(
+                  children: [
+                    _buildRiskChip('None', riskLevel == 'None'),
+                    const SizedBox(width: 4),
+                    _buildRiskChip('Low', riskLevel == 'Low'),
+                    const SizedBox(width: 4),
+                    _buildRiskChip('Med', riskLevel == 'Medium'),
+                    const SizedBox(width: 4),
+                    _buildRiskChip('High', riskLevel == 'High'),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRiskChip(String label, bool isActive) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: isActive
+            ? Colors.white.withValues(alpha: 0.25)
+            : Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 9,
+          fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+          color: Colors.white.withValues(alpha: isActive ? 1.0 : 0.6),
+        ),
       ),
     );
   }
@@ -322,54 +399,76 @@ class _SecurityCenterScreenState extends State<SecurityCenterScreen> {
     required bool isPositive,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return InteractiveCard(
       onTap: () {
-        HapticFeedback.lightImpact();
+        AppHaptics.light();
         onTap();
       },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.pureWhite,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.neutralGray300),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: AppTheme.primaryPurple, size: 24),
-            const SizedBox(height: 12),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.neutralGray900,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(
-                  isPositive ? Icons.check_circle : Icons.info_outline,
-                  size: 14,
-                  color: isPositive ? AppTheme.successGreen : AppTheme.warningAmber,
-                ),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    subtitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppTheme.neutralGray700,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Animated icon
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.8, end: 1.0),
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOut,
+            builder: (context, scale, child) {
+              return Transform.scale(
+                scale: scale,
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
                   ),
+                  child: Icon(icon, color: AppTheme.primaryPurple, size: 24),
                 ),
-              ],
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.neutralGray900,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 500),
+                builder: (context, opacity, child) {
+                  return Opacity(
+                    opacity: opacity,
+                    child: Icon(
+                      isPositive ? Icons.check_circle : Icons.info_outline,
+                      size: 14,
+                      color: isPositive
+                          ? AppTheme.successGreen
+                          : AppTheme.warningAmber,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppTheme.neutralGray700,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -437,34 +536,36 @@ class _SecurityCenterScreenState extends State<SecurityCenterScreen> {
     int badge = 0,
     bool isExternal = false,
   }) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
+    final iconColor = hasWarning ? AppTheme.warningAmber : AppTheme.primaryPurple;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InteractiveCard(
+        onTap: () {
+          AppHaptics.light();
+          onTap();
+        },
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.pureWhite,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.neutralGray300),
-        ),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: hasWarning
-                    ? AppTheme.warningAmber.withValues(alpha: 0.1)
-                    : AppTheme.primaryPurple.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                color: hasWarning ? AppTheme.warningAmber : AppTheme.primaryPurple,
-                size: 20,
-              ),
+            // Animated icon container
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.9, end: 1.0),
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+              builder: (context, scale, child) {
+                return Transform.scale(
+                  scale: scale,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, color: iconColor, size: 20),
+                  ),
+                );
+              },
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -484,7 +585,8 @@ class _SecurityCenterScreenState extends State<SecurityCenterScreen> {
                       if (isExternal) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: AppTheme.neutralGray300,
                             borderRadius: BorderRadius.circular(4),
@@ -506,31 +608,45 @@ class _SecurityCenterScreenState extends State<SecurityCenterScreen> {
                     subtitle,
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: hasWarning ? AppTheme.warningAmber : AppTheme.neutralGray700,
+                      color: hasWarning
+                          ? AppTheme.warningAmber
+                          : AppTheme.neutralGray700,
                     ),
                   ),
                 ],
               ),
             ),
             if (badge > 0)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.dangerRed,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '$badge',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.pureWhite,
-                  ),
-                ),
+              // Animated badge
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.elasticOut,
+                builder: (context, scale, child) {
+                  return Transform.scale(
+                    scale: scale,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.dangerRed,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '$badge',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.pureWhite,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               )
             else
               Icon(
-                Icons.chevron_right,
+                Icons.chevron_right_rounded,
                 color: AppTheme.neutralGray300,
                 size: 20,
               ),

@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/info_modal.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/profile_linking_service.dart';
 import 'connected_profiles_screen.dart';
 
 /// Connect Your Profiles Screen - Section 52.2
 /// Main entry point for unified profile linking
+/// Level 7: Gamification + Interactivity
 class ConnectProfilesScreen extends StatefulWidget {
   const ConnectProfilesScreen({super.key});
 
@@ -17,15 +18,34 @@ class ConnectProfilesScreen extends StatefulWidget {
   State<ConnectProfilesScreen> createState() => _ConnectProfilesScreenState();
 }
 
-class _ConnectProfilesScreenState extends State<ConnectProfilesScreen> {
+class _ConnectProfilesScreenState extends State<ConnectProfilesScreen>
+    with SingleTickerProviderStateMixin {
   final _service = ProfileLinkingService();
   List<ConnectedProfile> _connectedProfiles = [];
   bool _isLoading = true;
 
+  // Level 7: Animation controllers
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
+    );
     _loadProfiles();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadProfiles() async {
@@ -36,8 +56,11 @@ class _ConnectProfilesScreenState extends State<ConnectProfilesScreen> {
         _connectedProfiles = profiles;
         _isLoading = false;
       });
+      // Level 7: Start animations after data loads
+      _animController.forward();
     } catch (e) {
       setState(() => _isLoading = false);
+      _animController.forward();
     }
   }
 
@@ -93,10 +116,19 @@ class _ConnectProfilesScreenState extends State<ConnectProfilesScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: IconThemeData(color: AppTheme.neutralGray900),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            AppHaptics.light();
+            Navigator.of(context).pop();
+          },
+        ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryPurple))
+          : FadeTransition(
+              opacity: _fadeAnimation,
+              child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,6 +160,7 @@ class _ConnectProfilesScreenState extends State<ConnectProfilesScreen> {
                 ],
               ),
             ),
+          ),
     );
   }
 
@@ -296,32 +329,44 @@ class _ConnectProfilesScreenState extends State<ConnectProfilesScreen> {
   }
 
   Widget _buildAddProfileButton() {
-    return Material(
-      color: AppTheme.primaryPurple,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          _navigateToAddProfile();
-        },
+    // Level 7: Animated button with scale effect
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: 0.9 + (0.1 * value),
+          child: Opacity(opacity: value, child: child),
+        );
+      },
+      child: Material(
+        color: AppTheme.primaryPurple,
         borderRadius: BorderRadius.circular(12),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.add_rounded, color: Colors.white, size: 22),
-              const SizedBox(width: 8),
-              Text(
-                'Add Profile',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+        child: InkWell(
+          onTap: () {
+            AppHaptics.medium();
+            _navigateToAddProfile();
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.add_rounded, color: Colors.white, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  'Add Profile',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -333,7 +378,7 @@ class _ConnectProfilesScreenState extends State<ConnectProfilesScreen> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          HapticFeedback.selectionClick();
+          AppHaptics.light();
           _navigateToConnectedProfiles();
         },
         borderRadius: BorderRadius.circular(12),

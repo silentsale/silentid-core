@@ -8,6 +8,7 @@ import '../../../core/data/info_point_data.dart';
 import '../../../services/subscription_api_service.dart';
 
 /// Subscription Overview Screen
+/// Level 7 Gamification + Level 7 Interactivity
 ///
 /// Displays current subscription plan and management options
 /// Follows Section 53 UI Design Language
@@ -18,8 +19,13 @@ class SubscriptionOverviewScreen extends StatefulWidget {
   State<SubscriptionOverviewScreen> createState() => _SubscriptionOverviewScreenState();
 }
 
-class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen> {
+class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen>
+    with SingleTickerProviderStateMixin {
   final _subscriptionApi = SubscriptionApiService();
+
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
 
   bool _isLoading = true;
   SubscriptionInfo? _subscription;
@@ -27,7 +33,22 @@ class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen>
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _loadSubscription();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSubscription() async {
@@ -38,6 +59,8 @@ class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen>
         _subscription = subscription;
         _isLoading = false;
       });
+      // Level 7: Start animation after data loads
+      _animController.forward();
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -111,7 +134,9 @@ class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen>
           ),
         ),
       ),
-      body: SingleChildScrollView(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -292,6 +317,7 @@ class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen>
             ),
           ],
         ),
+      ),
       ),
     );
   }

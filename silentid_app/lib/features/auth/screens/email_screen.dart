@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/auth_service.dart';
 
 class EmailScreen extends StatefulWidget {
@@ -13,15 +14,40 @@ class EmailScreen extends StatefulWidget {
   State<EmailScreen> createState() => _EmailScreenState();
 }
 
-class _EmailScreenState extends State<EmailScreen> {
+class _EmailScreenState extends State<EmailScreen>
+    with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _authService = AuthService();
 
   bool _isLoading = false;
   String? _errorText;
 
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.2),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+    );
+    _animController.forward();
+  }
+
   @override
   void dispose() {
+    _animController.dispose();
     _emailController.dispose();
     super.dispose();
   }
@@ -90,53 +116,63 @@ class _EmailScreenState extends State<EmailScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            AppHaptics.light();
+            context.pop();
+          },
         ),
       ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 24),
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 24),
 
-              // Title
-              Text(
-                'Enter your email',
-                style: GoogleFonts.inter(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.deepBlack,
-                ),
-              ),
+                  // Level 7: Animated Title
+                  Text(
+                    'Enter your email',
+                    style: GoogleFonts.inter(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.deepBlack,
+                    ),
+                  ),
 
-              const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-              // Email text field
-              AppTextField(
-                controller: _emailController,
-                label: 'Email address',
-                hint: 'you@example.com',
-                errorText: _errorText,
-                keyboardType: TextInputType.emailAddress,
-                onChanged: (_) {
-                  if (_errorText != null) {
-                    setState(() {
-                      _errorText = null;
-                    });
-                  }
-                },
-              ),
+                  // Email text field
+                  AppTextField(
+                    controller: _emailController,
+                    label: 'Email address',
+                    hint: 'you@example.com',
+                    errorText: _errorText,
+                    keyboardType: TextInputType.emailAddress,
+                    onChanged: (_) {
+                      if (_errorText != null) {
+                        setState(() {
+                          _errorText = null;
+                        });
+                      }
+                    },
+                  ),
 
-              const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-              // Send button
-              PrimaryButton(
-                text: 'Send Verification Code',
-                isLoading: _isLoading,
-                onPressed: _sendVerificationCode,
-              ),
+                  // Level 7: Send button with haptic
+                  PrimaryButton(
+                    text: 'Send Verification Code',
+                    isLoading: _isLoading,
+                    onPressed: () {
+                      AppHaptics.medium();
+                      _sendVerificationCode();
+                    },
+                  ),
 
               const SizedBox(height: 16),
 
@@ -172,8 +208,10 @@ class _EmailScreenState extends State<EmailScreen> {
                   ),
                 ),
 
-              const Spacer(),
-            ],
+                  const Spacer(),
+                ],
+              ),
+            ),
           ),
         ),
       ),

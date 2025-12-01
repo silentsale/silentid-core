@@ -9,6 +9,7 @@ import '../../../services/concern_service.dart';
 import '../../../services/api_service.dart';
 
 /// Report a Concern Screen
+/// Level 7 Gamification + Level 7 Interactivity
 ///
 /// Multi-step flow for reporting concerns about public profiles.
 /// Uses neutral, safe language as per SilentID spec.
@@ -33,7 +34,12 @@ class ReportConcernScreen extends StatefulWidget {
   State<ReportConcernScreen> createState() => _ReportConcernScreenState();
 }
 
-class _ReportConcernScreenState extends State<ReportConcernScreen> {
+class _ReportConcernScreenState extends State<ReportConcernScreen>
+    with SingleTickerProviderStateMixin {
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   int _currentStep = 0;
   ConcernReason? _selectedReason;
   final _notesController = TextEditingController();
@@ -46,11 +52,22 @@ class _ReportConcernScreenState extends State<ReportConcernScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
+    _animController.forward();
     _concernService = ConcernService(ApiService());
   }
 
   @override
   void dispose() {
+    _animController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -119,7 +136,10 @@ class _ReportConcernScreenState extends State<ReportConcernScreen> {
         ],
       ),
       body: SafeArea(
-        child: _isSuccess ? _buildConfirmationStep() : _buildCurrentStep(),
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: _isSuccess ? _buildConfirmationStep() : _buildCurrentStep(),
+        ),
       ),
     );
   }

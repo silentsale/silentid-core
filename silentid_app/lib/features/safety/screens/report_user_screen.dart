@@ -8,6 +8,8 @@ import '../../../models/safety_report.dart';
 import '../../../services/api_service.dart';
 import '../../../services/safety_service.dart';
 
+/// Report User Screen
+/// Level 7 Gamification + Level 7 Interactivity
 class ReportUserScreen extends StatefulWidget {
   final String? username;
 
@@ -17,7 +19,12 @@ class ReportUserScreen extends StatefulWidget {
   State<ReportUserScreen> createState() => _ReportUserScreenState();
 }
 
-class _ReportUserScreenState extends State<ReportUserScreen> {
+class _ReportUserScreenState extends State<ReportUserScreen>
+    with SingleTickerProviderStateMixin {
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -40,6 +47,16 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
+    _animController.forward();
     if (widget.username != null) {
       _usernameController.text = widget.username!;
     }
@@ -47,6 +64,7 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
 
   @override
   void dispose() {
+    _animController.dispose();
     _usernameController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -138,12 +156,14 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
           ),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            // Warning banner
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              // Warning banner
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -350,7 +370,8 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
               onPressed: _isLoading ? null : _submitReport,
               text: _isLoading ? 'Submitting...' : 'Submit Report',
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );

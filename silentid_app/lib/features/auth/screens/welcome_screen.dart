@@ -5,6 +5,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/auth_service.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -14,12 +15,73 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> {
+class _WelcomeScreenState extends State<WelcomeScreen>
+    with SingleTickerProviderStateMixin {
   final _authService = AuthService();
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
   );
   bool _isLoading = false;
+
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
+      ),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
+      ),
+    );
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  // Level 7: Staggered button animation helper
+  Widget _buildAnimatedButton({required double delay, required Widget child}) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: (600 + (delay * 300)).toInt()),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, _) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
 
   Future<void> _handleAppleSignIn() async {
     setState(() => _isLoading = true);
@@ -244,91 +306,144 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             children: [
               const Spacer(),
 
-              // Logo placeholder (would be replaced with actual logo)
-              Container(
-                height: 80,
-                width: 80,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryPurple,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'S',
-                  style: GoogleFonts.inter(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.pureWhite,
-                  ),
-                ),
+              // Level 7: Animated Logo
+              AnimatedBuilder(
+                animation: _animController,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _scaleAnimation.value,
+                    child: Opacity(
+                      opacity: _fadeAnimation.value,
+                      child: Container(
+                        height: 80,
+                        width: 80,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryPurple,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          'S',
+                          style: GoogleFonts.inter(
+                            fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.pureWhite,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
 
               const SizedBox(height: 32),
 
-              // Title
-              Text(
-                'Welcome to SilentID',
-                style: GoogleFonts.inter(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.deepBlack,
+              // Level 7: Animated Title
+              SlideTransition(
+                position: _slideAnimation,
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Text(
+                    'Welcome to SilentID',
+                    style: GoogleFonts.inter(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.deepBlack,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
 
               const SizedBox(height: 12),
 
-              // Subtitle
-              Text(
-                'Your portable trust passport.',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  color: AppTheme.neutralGray700,
+              // Level 7: Animated Subtitle
+              SlideTransition(
+                position: _slideAnimation,
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Text(
+                    'Your portable trust passport.',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      color: AppTheme.neutralGray700,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
 
               const SizedBox(height: 48),
 
-              // Continue with Apple button
-              PrimaryButton(
-                text: 'Continue with Apple',
-                icon: Icons.apple,
-                isLoading: _isLoading,
-                onPressed: _isLoading ? () {} : _handleAppleSignIn,
+              // Level 7: Staggered button animations
+              _buildAnimatedButton(
+                delay: 0.3,
+                child: PrimaryButton(
+                  text: 'Continue with Apple',
+                  icon: Icons.apple,
+                  isLoading: _isLoading,
+                  onPressed: _isLoading
+                      ? () {}
+                      : () {
+                          AppHaptics.light();
+                          _handleAppleSignIn();
+                        },
+                ),
               ),
 
               const SizedBox(height: 16),
 
-              // Continue with Google button
-              PrimaryButton(
-                text: 'Continue with Google',
-                icon: Icons.g_mobiledata_rounded,
-                isSecondary: true,
-                isLoading: _isLoading,
-                onPressed: _isLoading ? () {} : _handleGoogleSignIn,
+              _buildAnimatedButton(
+                delay: 0.4,
+                child: PrimaryButton(
+                  text: 'Continue with Google',
+                  icon: Icons.g_mobiledata_rounded,
+                  isSecondary: true,
+                  isLoading: _isLoading,
+                  onPressed: _isLoading
+                      ? () {}
+                      : () {
+                          AppHaptics.light();
+                          _handleGoogleSignIn();
+                        },
+                ),
               ),
 
               const SizedBox(height: 16),
 
-              // Continue with Email button
-              PrimaryButton(
-                text: 'Continue with Email',
-                icon: Icons.email_outlined,
-                isSecondary: true,
-                onPressed: () {
-                  context.push('/email');
-                },
+              _buildAnimatedButton(
+                delay: 0.5,
+                child: PrimaryButton(
+                  text: 'Continue with Email',
+                  icon: Icons.email_outlined,
+                  isSecondary: true,
+                  onPressed: () {
+                    AppHaptics.light();
+                    context.push('/email');
+                  },
+                ),
               ),
 
               const SizedBox(height: 16),
 
-              // Use a Passkey button
-              PrimaryButton(
-                text: 'Use a Passkey',
-                icon: Icons.fingerprint,
-                isSecondary: true,
-                onPressed: _handlePasskeySignIn,
+              _buildAnimatedButton(
+                delay: 0.6,
+                child: PrimaryButton(
+                  text: 'Use a Passkey',
+                  icon: Icons.fingerprint,
+                  isSecondary: true,
+                  onPressed: () {
+                    AppHaptics.light();
+                    _handlePasskeySignIn();
+                  },
+                ),
               ),
 
               const Spacer(),

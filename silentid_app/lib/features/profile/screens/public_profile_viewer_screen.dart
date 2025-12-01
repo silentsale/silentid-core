@@ -12,6 +12,7 @@ import '../../../services/public_profile_service.dart';
 import '../../../services/api_service.dart';
 
 /// Public Profile Viewer Screen
+/// Level 7 Gamification + Level 7 Interactivity
 ///
 /// View other users' public profiles via username
 /// Uses GET /v1/public/profile/{username} endpoint
@@ -28,7 +29,12 @@ class PublicProfileViewerScreen extends StatefulWidget {
   State<PublicProfileViewerScreen> createState() => _PublicProfileViewerScreenState();
 }
 
-class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen> {
+class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen>
+    with SingleTickerProviderStateMixin {
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   bool _isLoading = true;
   PublicProfile? _profile;
   String? _error;
@@ -37,8 +43,23 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _publicProfileService = PublicProfileService(ApiService());
     _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadProfile() async {
@@ -53,6 +74,8 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen> {
         _profile = profile;
         _isLoading = false;
       });
+      // Level 7: Start animation after data loads
+      _animController.forward();
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -105,11 +128,14 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _buildErrorState()
-              : _buildProfileContent(),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? _buildErrorState()
+                : _buildProfileContent(),
+      ),
     );
   }
 

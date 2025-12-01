@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/info_point_helper.dart';
 import '../../../core/data/info_point_data.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/referral_api_service.dart';
 
@@ -443,7 +444,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   setState(() {
                     _showReferralInput = !_showReferralInput;
                   });
-                  HapticFeedback.lightImpact();
+                  AppHaptics.light();
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,

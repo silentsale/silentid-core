@@ -6,6 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/widgets/gamification/gamification.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/api_service.dart';
 
 // Color aliases for missing theme colors
@@ -36,7 +38,10 @@ class Level3VerificationScreen extends StatefulWidget {
   State<Level3VerificationScreen> createState() => _Level3VerificationScreenState();
 }
 
-class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
+class _Level3VerificationScreenState extends State<Level3VerificationScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
   final _api = ApiService();
 
   // Verification state
@@ -86,7 +91,21 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
+    );
+    _animController.forward();
     // Token will be fetched from backend when user selects TokenInBio method
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   /// Fetch verification token from backend (Section 49.3)
@@ -123,9 +142,9 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
   }
 
   Future<void> _initiateShareIntent() async {
+    AppHaptics.medium();
     setState(() {
       _shareInitiated = true;
-      
     });
 
     // Open share dialog with instructions
@@ -147,6 +166,7 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
   Future<void> _copyTokenToClipboard() async {
     if (_verificationToken == null) return;
 
+    AppHaptics.medium();
     await Clipboard.setData(ClipboardData(text: _verificationToken!));
     setState(() => _tokenCopied = true);
 
@@ -244,11 +264,16 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            AppHaptics.light();
+            context.pop();
+          },
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -264,6 +289,7 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
               // Current step content
               _buildCurrentStepContent(),
             ],
+          ),
           ),
         ),
       ),
@@ -458,7 +484,10 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
     final isSelected = _selectedMethod == method;
 
     return GestureDetector(
-      onTap: () => setState(() => _selectedMethod = method),
+      onTap: () {
+        AppHaptics.selection();
+        setState(() => _selectedMethod = method);
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
@@ -564,6 +593,7 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
             PrimaryButton(
               text: isSelected ? 'Continue with this method' : 'Select',
               onPressed: () async {
+                AppHaptics.medium();
                 setState(() {
                   _selectedMethod = method;
                   _currentStep = VerificationStep.verifyOwnership;
@@ -614,6 +644,21 @@ class _Level3VerificationScreenState extends State<Level3VerificationScreen> {
           _buildBenefitItem('Contributes to Universal Reputation Score (URS)'),
           _buildBenefitItem('+50% profile weight for TrustScore calculation'),
           _buildBenefitItem('Profile ownership locked to your account'),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const RewardIndicator(points: 25, compact: true),
+              const SizedBox(width: 8),
+              Text(
+                'Earn up to 25 points per verified profile',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppTheme.primaryPurple,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

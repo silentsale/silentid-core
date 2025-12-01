@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/haptics.dart';
 
 /// In-App Education for Sharing - Section 51.7
+/// Level 7 Gamification + Level 7 Interactivity
 /// Provides education on how sharing works, visibility modes, and QR scanning
 
 class SharingEducationScreen extends StatefulWidget {
@@ -15,9 +16,36 @@ class SharingEducationScreen extends StatefulWidget {
   State<SharingEducationScreen> createState() => _SharingEducationScreenState();
 }
 
-class _SharingEducationScreenState extends State<SharingEducationScreen> {
+class _SharingEducationScreenState extends State<SharingEducationScreen>
+    with SingleTickerProviderStateMixin {
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   final PageController _pageController = PageController();
   int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
 
   final List<_EducationPage> _pages = [
     _EducationPage(
@@ -58,12 +86,6 @@ class _SharingEducationScreenState extends State<SharingEducationScreen> {
     ),
   ];
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
   void _goToPage(int page) {
     _pageController.animateToPage(
       page,
@@ -85,15 +107,17 @@ class _SharingEducationScreenState extends State<SharingEducationScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: AppTheme.neutralGray900),
       ),
-      body: Column(
-        children: [
-          // Page View
-          Expanded(
-            child: PageView.builder(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Column(
+          children: [
+            // Page View
+            Expanded(
+              child: PageView.builder(
               controller: _pageController,
               itemCount: _pages.length,
               onPageChanged: (index) {
-                HapticFeedback.selectionClick();
+                AppHaptics.light();
                 setState(() => _currentPage = index);
               },
               itemBuilder: (context, index) {
@@ -178,6 +202,7 @@ class _SharingEducationScreenState extends State<SharingEducationScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

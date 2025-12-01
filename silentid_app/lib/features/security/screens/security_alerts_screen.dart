@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/security_api_service.dart';
 
 /// Security Alerts screen (Section 15.4)
 /// Shows security alerts with read/unread management
+/// Level 7 Gamification + Level 7 Interactivity
 class SecurityAlertsScreen extends StatefulWidget {
   const SecurityAlertsScreen({super.key});
 
@@ -15,8 +16,13 @@ class SecurityAlertsScreen extends StatefulWidget {
   State<SecurityAlertsScreen> createState() => _SecurityAlertsScreenState();
 }
 
-class _SecurityAlertsScreenState extends State<SecurityAlertsScreen> {
+class _SecurityAlertsScreenState extends State<SecurityAlertsScreen>
+    with SingleTickerProviderStateMixin {
   final _securityApi = SecurityApiService();
+
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
 
   List<SecurityAlert> _alerts = [];
   int _unreadCount = 0;
@@ -27,7 +33,22 @@ class _SecurityAlertsScreenState extends State<SecurityAlertsScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _loadAlerts();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadAlerts() async {
@@ -43,6 +64,8 @@ class _SecurityAlertsScreenState extends State<SecurityAlertsScreen> {
         _unreadCount = response.unreadCount;
         _isLoading = false;
       });
+      // Level 7: Start animations after data loads
+      _animController.forward();
     } catch (e) {
       setState(() {
         _error = 'Failed to load security alerts';
@@ -127,7 +150,10 @@ class _SecurityAlertsScreenState extends State<SecurityAlertsScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppTheme.neutralGray900),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            AppHaptics.light();
+            context.pop();
+          },
         ),
         title: Text(
           'Security Alerts',
@@ -153,28 +179,32 @@ class _SecurityAlertsScreenState extends State<SecurityAlertsScreen> {
             ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryPurple))
-          : _error != null
-              ? _buildErrorState()
-              : Column(
-                  children: [
-                    _buildFilterToggle(),
-                    Expanded(
-                      child: _alerts.isEmpty
-                          ? _buildEmptyState()
-                          : RefreshIndicator(
-                              onRefresh: _loadAlerts,
-                              color: AppTheme.primaryPurple,
-                              child: ListView.builder(
-                                padding: const EdgeInsets.all(24),
-                                itemCount: _alerts.length,
-                                itemBuilder: (context, index) => _buildAlertCard(_alerts[index]),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryPurple))
+            : _error != null
+                ? _buildErrorState()
+                : Column(
+                    children: [
+                      _buildFilterToggle(),
+                      Expanded(
+                        child: _alerts.isEmpty
+                            ? _buildEmptyState()
+                            : RefreshIndicator(
+                                onRefresh: _loadAlerts,
+                                color: AppTheme.primaryPurple,
+                                child: ListView.builder(
+                                  padding: const EdgeInsets.all(24),
+                                  itemCount: _alerts.length,
+                                  // Level 7: Staggered animation for alert cards
+                                  itemBuilder: (context, index) => _buildAnimatedAlertCard(index, _alerts[index]),
+                                ),
                               ),
-                            ),
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+      ),
     );
   }
 
@@ -193,7 +223,7 @@ class _SecurityAlertsScreenState extends State<SecurityAlertsScreen> {
           const Spacer(),
           GestureDetector(
             onTap: () {
-              HapticFeedback.lightImpact();
+              AppHaptics.light();
               setState(() {
                 _showAllAlerts = !_showAllAlerts;
               });
@@ -223,12 +253,28 @@ class _SecurityAlertsScreenState extends State<SecurityAlertsScreen> {
     );
   }
 
+  // Level 7: Animated alert card with staggered entrance
+  Widget _buildAnimatedAlertCard(int index, SecurityAlert alert) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 50)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(30 * (1 - value), 0),
+          child: Opacity(opacity: value, child: child),
+        );
+      },
+      child: _buildAlertCard(alert),
+    );
+  }
+
   Widget _buildAlertCard(SecurityAlert alert) {
     final dateFormatter = DateFormat('MMM d, yyyy • h:mm a');
 
     return GestureDetector(
       onTap: () {
-        HapticFeedback.lightImpact();
+        AppHaptics.light();
         _markAsRead(alert);
         _showAlertDetails(alert);
       },

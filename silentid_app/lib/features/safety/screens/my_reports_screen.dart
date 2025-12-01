@@ -6,6 +6,8 @@ import '../../../models/safety_report.dart';
 import '../../../services/api_service.dart';
 import '../../../services/safety_service.dart';
 
+/// My Reports Screen
+/// Level 7 Gamification + Level 7 Interactivity
 class MyReportsScreen extends StatefulWidget {
   const MyReportsScreen({super.key});
 
@@ -13,7 +15,12 @@ class MyReportsScreen extends StatefulWidget {
   State<MyReportsScreen> createState() => _MyReportsScreenState();
 }
 
-class _MyReportsScreenState extends State<MyReportsScreen> {
+class _MyReportsScreenState extends State<MyReportsScreen>
+    with SingleTickerProviderStateMixin {
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   final _safetyService = SafetyService(ApiService());
 
   List<SafetyReport> _reports = [];
@@ -23,7 +30,22 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _loadReports();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadReports() async {
@@ -100,10 +122,13 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
           ),
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadReports,
-        color: AppTheme.primaryPurple,
-        child: _buildBody(),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: RefreshIndicator(
+          onRefresh: _loadReports,
+          color: AppTheme.primaryPurple,
+          child: _buildBody(),
+        ),
       ),
     );
   }

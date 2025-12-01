@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/trustscore_api_service.dart';
 
+/// TrustScore History Screen - Level 7 SuperDesign
 class TrustScoreHistoryScreen extends StatefulWidget {
   const TrustScoreHistoryScreen({super.key});
 
@@ -11,16 +13,35 @@ class TrustScoreHistoryScreen extends StatefulWidget {
       _TrustScoreHistoryScreenState();
 }
 
-class _TrustScoreHistoryScreenState extends State<TrustScoreHistoryScreen> {
+class _TrustScoreHistoryScreenState extends State<TrustScoreHistoryScreen>
+    with SingleTickerProviderStateMixin {
   final _trustScoreApi = TrustScoreApiService();
 
   bool _isLoading = true;
   List<Map<String, dynamic>>? _historyData;
 
+  // Level 7: Animation controllers
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+    );
     _loadHistory();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   /// Get trust label from score
@@ -62,8 +83,11 @@ class _TrustScoreHistoryScreenState extends State<TrustScoreHistoryScreen> {
         _historyData = historyList;
         _isLoading = false;
       });
+      // Level 7: Start animations
+      _animController.forward();
     } catch (e) {
       setState(() => _isLoading = false);
+      _animController.forward();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load history: $e')),
@@ -79,45 +103,94 @@ class _TrustScoreHistoryScreenState extends State<TrustScoreHistoryScreen> {
       appBar: AppBar(
         title: const Text('TrustScore History'),
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            AppHaptics.light();
+            Navigator.of(context).pop();
+          },
+        ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadHistory,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Chart Section
-                    const Text(
-                      'Score Trend',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.neutralGray900,
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryPurple))
+          : FadeTransition(
+              opacity: _fadeAnimation,
+              child: RefreshIndicator(
+                onRefresh: _loadHistory,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Level 7: Animated Chart Section
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        duration: const Duration(milliseconds: 600),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, value, child) {
+                          return Transform.translate(
+                            offset: Offset(0, 20 * (1 - value)),
+                            child: Opacity(opacity: value, child: child),
+                          );
+                        },
+                        child: const Text(
+                          'Score Trend',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.neutralGray900,
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildChart(),
-                    const SizedBox(height: 40),
+                      const SizedBox(height: 20),
+                      _buildChart(),
+                      const SizedBox(height: 40),
 
-                    // History List
-                    const Text(
-                      'History',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.neutralGray900,
+                      // Level 7: Animated History List
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        duration: const Duration(milliseconds: 700),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, value, child) {
+                          return Transform.translate(
+                            offset: Offset(0, 20 * (1 - value)),
+                            child: Opacity(opacity: value, child: child),
+                          );
+                        },
+                        child: const Text(
+                          'History',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.neutralGray900,
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    ..._historyData!.map((snapshot) => _buildHistoryItem(snapshot)),
-                  ],
+                      const SizedBox(height: 16),
+                      ..._historyData!.asMap().entries.map((entry) =>
+                        _buildAnimatedHistoryItem(entry.key, entry.value)),
+                    ],
+                  ),
                 ),
               ),
             ),
+    );
+  }
+
+  // Level 7: Animated history item with staggered delay
+  Widget _buildAnimatedHistoryItem(int index, Map<String, dynamic> snapshot) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 50)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(30 * (1 - value), 0),
+          child: Opacity(opacity: value, child: child),
+        );
+      },
+      child: _buildHistoryItem(snapshot),
     );
   }
 

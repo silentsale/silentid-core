@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../core/widgets/info_modal.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../services/api_service.dart';
@@ -25,8 +25,14 @@ class PrivacySettingsScreen extends StatefulWidget {
   State<PrivacySettingsScreen> createState() => _PrivacySettingsScreenState();
 }
 
-class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
+class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
+    with SingleTickerProviderStateMixin {
   final _api = ApiService();
+
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   bool _isLoading = true;
 
   // TrustScore Visibility Mode (Section 51.5)
@@ -40,7 +46,22 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSettings() async {
@@ -57,6 +78,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         _showAccountAge = data['showAccountAge'] ?? true;
         _isLoading = false;
       });
+      // Level 7: Start animation after data loads
+      _animController.forward();
     } catch (e) {
       setState(() => _isLoading = false);
     }
@@ -89,7 +112,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   }
 
   void _onVisibilityModeChanged(TrustScoreVisibility mode) {
-    HapticFeedback.selectionClick();
+    AppHaptics.light();
     setState(() {
       _trustScoreVisibility = mode;
     });
@@ -137,9 +160,11 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         ),
         centerTitle: true,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(
               padding: const EdgeInsets.all(24),
               children: [
                 // Section 51.5: TrustScore Visibility Control
@@ -273,6 +298,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                 ),
               ],
             ),
+      ),
     );
   }
 

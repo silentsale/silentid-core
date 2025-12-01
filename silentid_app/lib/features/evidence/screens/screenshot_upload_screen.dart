@@ -7,7 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/info_point_helper.dart';
+import '../../../core/widgets/gamification/gamification.dart';
 import '../../../core/data/info_point_data.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/api_service.dart';
 
 class ScreenshotUploadScreen extends StatefulWidget {
@@ -17,7 +19,10 @@ class ScreenshotUploadScreen extends StatefulWidget {
   State<ScreenshotUploadScreen> createState() => _ScreenshotUploadScreenState();
 }
 
-class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
+class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
   final _api = ApiService();
   final _picker = ImagePicker();
 
@@ -25,6 +30,25 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
   XFile? _selectedImage;
   bool _isLoading = false;
   String _uploadStep = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
+    );
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
 
   final List<String> _platforms = [
     'Vinted',
@@ -36,10 +60,12 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
   ];
 
   Future<void> _pickFromGallery() async {
+    AppHaptics.light();
     await _pickImage(ImageSource.gallery);
   }
 
   Future<void> _captureWithCamera() async {
+    AppHaptics.light();
     await _pickImage(ImageSource.camera);
   }
 
@@ -187,9 +213,11 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Info text
@@ -456,14 +484,45 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen> {
                   ),
                 ),
 
+              // Level 7: Reward hint
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.successGreen.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const RewardIndicator(points: 10, compact: true),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Each verified screenshot adds 10 points to your TrustScore',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppTheme.neutralGray700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               // Upload button
               PrimaryButton(
                 text: 'Upload Screenshot',
                 isLoading: _isLoading,
-                onPressed: _isLoading ? () {} : _uploadScreenshot,
+                onPressed: _isLoading
+                    ? () {}
+                    : () {
+                        AppHaptics.medium();
+                        _uploadScreenshot();
+                      },
               ),
             ],
           ),
+        ),
         ),
       ),
     );

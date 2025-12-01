@@ -7,8 +7,9 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../core/data/help_center_data.dart';
 
 /// Help Article screen
+/// Level 7 Gamification + Level 7 Interactivity
 /// Displays a single help article with formatted content
-class HelpArticleScreen extends StatelessWidget {
+class HelpArticleScreen extends StatefulWidget {
   final String categorySlug;
   final String articleSlug;
 
@@ -19,9 +20,40 @@ class HelpArticleScreen extends StatelessWidget {
   });
 
   @override
+  State<HelpArticleScreen> createState() => _HelpArticleScreenState();
+}
+
+class _HelpArticleScreenState extends State<HelpArticleScreen>
+    with SingleTickerProviderStateMixin {
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final article = HelpCenterData.getArticleBySlug(categorySlug, articleSlug);
-    final category = HelpCenterData.getCategoryBySlug(categorySlug);
+    final article = HelpCenterData.getArticleBySlug(widget.categorySlug, widget.articleSlug);
+    final category = HelpCenterData.getCategoryBySlug(widget.categorySlug);
 
     if (article == null) {
       return Scaffold(
@@ -65,7 +97,7 @@ class HelpArticleScreen extends StatelessWidget {
 
     // Get prev/next articles
     final articles = category?.articles ?? [];
-    final currentIndex = articles.indexWhere((a) => a.slug == articleSlug);
+    final currentIndex = articles.indexWhere((a) => a.slug == widget.articleSlug);
     final prevArticle = currentIndex > 0 ? articles[currentIndex - 1] : null;
     final nextArticle = currentIndex < articles.length - 1 ? articles[currentIndex + 1] : null;
 
@@ -95,11 +127,13 @@ class HelpArticleScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Breadcrumb
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Breadcrumb
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Wrap(
@@ -123,7 +157,7 @@ class HelpArticleScreen extends StatelessWidget {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => context.go('/help/$categorySlug'),
+                    onTap: () => context.go('/help/${widget.categorySlug}'),
                     child: Text(
                       article.category,
                       style: GoogleFonts.inter(
@@ -229,7 +263,8 @@ class HelpArticleScreen extends StatelessWidget {
             _buildContactSupport(),
 
             const SizedBox(height: AppSpacing.xl),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -647,7 +682,7 @@ class HelpArticleScreen extends StatelessWidget {
             TextButton(
               onPressed: () async {
                 final url = Uri.parse(
-                  'mailto:support@silentid.co.uk?subject=Help%20with:%20$articleSlug',
+                  'mailto:support@silentid.co.uk?subject=Help%20with:%20${widget.articleSlug}',
                 );
                 try {
                   await launchUrl(url);

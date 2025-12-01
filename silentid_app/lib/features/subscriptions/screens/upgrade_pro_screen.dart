@@ -5,6 +5,7 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../services/subscription_api_service.dart';
 
 /// Upgrade to Pro Screen
+/// Level 7 Gamification + Level 7 Interactivity
 ///
 /// Displays Pro subscription benefits and upgrade flow
 /// Following Section 12 & 16 specifications
@@ -15,9 +16,36 @@ class UpgradeProScreen extends StatefulWidget {
   State<UpgradeProScreen> createState() => _UpgradeProScreenState();
 }
 
-class _UpgradeProScreenState extends State<UpgradeProScreen> {
+class _UpgradeProScreenState extends State<UpgradeProScreen>
+    with SingleTickerProviderStateMixin {
   final _subscriptionApi = SubscriptionApiService();
+
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
 
   Future<void> _handleUpgrade() async {
     setState(() => _isLoading = true);
@@ -131,10 +159,12 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
           ),
         ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -424,6 +454,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

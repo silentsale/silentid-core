@@ -3,10 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/security_api_service.dart';
 
 /// Login Activity screen (Section 15.3)
 /// Shows complete history of SilentID account logins
+/// Level 7 Gamification + Level 7 Interactivity
 class LoginActivityScreen extends StatefulWidget {
   const LoginActivityScreen({super.key});
 
@@ -14,8 +16,13 @@ class LoginActivityScreen extends StatefulWidget {
   State<LoginActivityScreen> createState() => _LoginActivityScreenState();
 }
 
-class _LoginActivityScreenState extends State<LoginActivityScreen> {
+class _LoginActivityScreenState extends State<LoginActivityScreen>
+    with SingleTickerProviderStateMixin {
   final _securityApi = SecurityApiService();
+
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
 
   List<LoginEntry> _logins = [];
   int _totalCount = 0;
@@ -25,7 +32,22 @@ class _LoginActivityScreenState extends State<LoginActivityScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _loadLoginHistory();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadLoginHistory() async {
@@ -41,6 +63,8 @@ class _LoginActivityScreenState extends State<LoginActivityScreen> {
         _totalCount = response.totalCount;
         _isLoading = false;
       });
+      // Level 7: Start animations after data loads
+      _animController.forward();
     } catch (e) {
       setState(() {
         _error = 'Failed to load login history';
@@ -58,7 +82,10 @@ class _LoginActivityScreenState extends State<LoginActivityScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppTheme.neutralGray900),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            AppHaptics.light();
+            context.pop();
+          },
         ),
         title: Text(
           'Login Activity',
@@ -70,26 +97,30 @@ class _LoginActivityScreenState extends State<LoginActivityScreen> {
         ),
         centerTitle: true,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryPurple))
-          : _error != null
-              ? _buildErrorState()
-              : _logins.isEmpty
-                  ? _buildEmptyState()
-                  : RefreshIndicator(
-                      onRefresh: _loadLoginHistory,
-                      color: AppTheme.primaryPurple,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(24),
-                        itemCount: _logins.length + 1, // +1 for header
-                        itemBuilder: (context, index) {
-                          if (index == 0) {
-                            return _buildHeader();
-                          }
-                          return _buildLoginCard(_logins[index - 1]);
-                        },
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryPurple))
+            : _error != null
+                ? _buildErrorState()
+                : _logins.isEmpty
+                    ? _buildEmptyState()
+                    : RefreshIndicator(
+                        onRefresh: _loadLoginHistory,
+                        color: AppTheme.primaryPurple,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(24),
+                          itemCount: _logins.length + 1, // +1 for header
+                          itemBuilder: (context, index) {
+                            if (index == 0) {
+                              return _buildHeader();
+                            }
+                            // Level 7: Staggered animation for login cards
+                            return _buildAnimatedLoginCard(index - 1, _logins[index - 1]);
+                          },
+                        ),
                       ),
-                    ),
+      ),
     );
   }
 
@@ -131,6 +162,22 @@ class _LoginActivityScreenState extends State<LoginActivityScreen> {
         ),
         const SizedBox(height: 16),
       ],
+    );
+  }
+
+  // Level 7: Animated login card with staggered entrance
+  Widget _buildAnimatedLoginCard(int index, LoginEntry login) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 50)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(30 * (1 - value), 0),
+          child: Opacity(opacity: value, child: child),
+        );
+      },
+      child: _buildLoginCard(login),
     );
   }
 

@@ -8,6 +8,7 @@ import '../../../services/support_service.dart';
 import '../../../services/api_service.dart';
 
 /// Contact Support Screen
+/// Level 7 Gamification + Level 7 Interactivity
 ///
 /// Unified help system accessible anywhere in the app.
 /// Follows Section 53 UI guidelines.
@@ -24,7 +25,12 @@ class ContactSupportScreen extends StatefulWidget {
   State<ContactSupportScreen> createState() => _ContactSupportScreenState();
 }
 
-class _ContactSupportScreenState extends State<ContactSupportScreen> {
+class _ContactSupportScreenState extends State<ContactSupportScreen>
+    with SingleTickerProviderStateMixin {
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   SupportCategory? _selectedCategory;
   final _messageController = TextEditingController();
   final _emailController = TextEditingController();
@@ -37,12 +43,23 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
+    _animController.forward();
     _supportService = SupportService(ApiService());
     _selectedCategory = widget.initialCategory;
   }
 
   @override
   void dispose() {
+    _animController.dispose();
     _messageController.dispose();
     _emailController.dispose();
     super.dispose();
@@ -103,8 +120,11 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
           InfoPointHelper(data: InfoPoints.contactSupport),
         ],
       ),
-      body: SafeArea(
-        child: _isSuccess ? _buildSuccessView() : _buildFormView(),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SafeArea(
+          child: _isSuccess ? _buildSuccessView() : _buildFormView(),
+        ),
       ),
     );
   }

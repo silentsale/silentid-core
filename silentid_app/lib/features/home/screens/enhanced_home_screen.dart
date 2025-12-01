@@ -4,10 +4,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/app_spacing.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/offline_indicator.dart';
 import '../../../core/widgets/onboarding_checklist.dart';
+import '../../../core/widgets/gamification/gamification.dart';
 import '../../../core/utils/animations.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/user_api_service.dart';
 import '../../../services/evidence_service.dart';
@@ -479,30 +482,44 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
 
             const SizedBox(height: 24),
 
-            // Quick actions with stagger
+            // Quick actions with Level 7 gamification (reward points)
             _buildQuickActionCard(
               icon: Icons.shield_outlined,
               title: 'Verify Identity',
               subtitle: 'Complete your Stripe verification',
               onTap: () => context.push('/identity/intro'),
+              rewardPoints: _identityVerified ? null : 50,
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
             _buildQuickActionCard(
               icon: Icons.link,
               title: 'Connect Profiles',
               subtitle: 'Link your Vinted, eBay, Depop ratings',
               onTap: () => context.push('/profiles/connect'),
+              rewardPoints: _profileConnected ? null : 25,
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
+
+            // NEW: Share-Import feature card (Section 55)
+            _buildQuickActionCard(
+              icon: Icons.ios_share_outlined,
+              title: 'Import From Share',
+              subtitle: 'Share any profile link to connect',
+              onTap: () => context.push('/sharing/education'),
+              rewardPoints: 25,
+            ),
+
+            const SizedBox(height: AppSpacing.md),
 
             _buildQuickActionCard(
               icon: Icons.receipt_outlined,
               title: 'Add Evidence',
               subtitle: 'Upload receipts and screenshots',
               onTap: () => context.push('/evidence'),
+              rewardPoints: _firstEvidenceAdded ? null : 10,
             ),
           ],
         ),
@@ -511,76 +528,28 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
   }
 
   Widget _buildTrustScoreCard() {
-    return InkWell(
-      onTap: () => context.push('/trust/overview'),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppTheme.primaryPurple, AppTheme.darkModePurple],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryPurple.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Text(
-              'Your TrustScore',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                color: AppTheme.pureWhite.withValues(alpha: 0.9),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '754',
-              style: GoogleFonts.inter(
-                fontSize: 64,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.pureWhite,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'High Trust',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppTheme.pureWhite.withValues(alpha: 0.8),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'View Details',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: AppTheme.pureWhite,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.arrow_forward,
-                  color: AppTheme.pureWhite,
-                  size: 16,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    // Level 7 Gamification: Use TrustScoreHeroCard with animations
+    return TrustScoreHeroCard(
+      trustScore: 754,
+      userLevel: _calculateUserLevel(),
+      trustLabel: 'High Trust',
+      showLevel: true,
+      animate: true,
+      onTap: () {
+        AppHaptics.light();
+        context.push('/trust/overview');
+      },
     );
+  }
+
+  /// Calculate user level based on actions completed (Level 7 Gamification)
+  int _calculateUserLevel() {
+    int level = 1;
+    if (_identityVerified) level += 2;
+    if (_profileConnected) level += 2;
+    if (_firstEvidenceAdded) level += 1;
+    // Add more level calculations based on TrustScore, evidence count, etc.
+    return level.clamp(1, 10);
   }
 
   Widget _buildQuickActionCard({
@@ -588,64 +557,17 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    int? rewardPoints,
   }) {
-    return InkWell(
+    // Level 7 Interactivity: Use QuickActionCard with haptics and lift effect
+    return QuickActionCard(
+      icon: icon,
+      title: title,
+      subtitle: subtitle,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.pureWhite,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppTheme.neutralGray300,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.softLilac,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                color: AppTheme.primaryPurple,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.deepBlack,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: AppTheme.neutralGray700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppTheme.neutralGray700,
-            ),
-          ],
-        ),
-      ),
+      trailing: rewardPoints != null
+          ? RewardIndicator(points: rewardPoints, compact: true)
+          : null,
     );
   }
 

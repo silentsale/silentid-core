@@ -6,8 +6,9 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../core/data/help_center_data.dart';
 
 /// Help Category screen
+/// Level 7 Gamification + Level 7 Interactivity
 /// Displays all articles in a specific category
-class HelpCategoryScreen extends StatelessWidget {
+class HelpCategoryScreen extends StatefulWidget {
   final String categorySlug;
 
   const HelpCategoryScreen({
@@ -16,8 +17,39 @@ class HelpCategoryScreen extends StatelessWidget {
   });
 
   @override
+  State<HelpCategoryScreen> createState() => _HelpCategoryScreenState();
+}
+
+class _HelpCategoryScreenState extends State<HelpCategoryScreen>
+    with SingleTickerProviderStateMixin {
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final category = HelpCenterData.getCategoryBySlug(categorySlug);
+    final category = HelpCenterData.getCategoryBySlug(widget.categorySlug);
 
     if (category == null) {
       return Scaffold(
@@ -61,7 +93,9 @@ class HelpCategoryScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.pureWhite,
-      body: CustomScrollView(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: CustomScrollView(
         slivers: [
           // Header
           SliverAppBar(
@@ -155,6 +189,7 @@ class HelpCategoryScreen extends StatelessWidget {
             child: SizedBox(height: AppSpacing.xl),
           ),
         ],
+        ),
       ),
     );
   }

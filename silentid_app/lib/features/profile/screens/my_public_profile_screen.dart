@@ -9,6 +9,8 @@ import '../../../services/public_profile_service.dart';
 import '../../../services/api_service.dart';
 import '../../../services/storage_service.dart';
 
+/// My Public Profile Screen
+/// Level 7 Gamification + Level 7 Interactivity
 class MyPublicProfileScreen extends StatefulWidget {
   const MyPublicProfileScreen({super.key});
 
@@ -16,7 +18,12 @@ class MyPublicProfileScreen extends StatefulWidget {
   State<MyPublicProfileScreen> createState() => _MyPublicProfileScreenState();
 }
 
-class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
+class _MyPublicProfileScreenState extends State<MyPublicProfileScreen>
+    with SingleTickerProviderStateMixin {
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   bool _isLoading = true;
   PublicProfile? _profile;
   late final PublicProfileService _publicProfileService;
@@ -25,8 +32,23 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _publicProfileService = PublicProfileService(ApiService());
     _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadProfile() async {
@@ -47,6 +69,8 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
         _profile = profile;
         _isLoading = false;
       });
+      // Level 7: Start animation after data loads
+      _animController.forward();
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -83,9 +107,11 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadProfile,
-              child: SingleChildScrollView(
+          : FadeTransition(
+              opacity: _fadeAnimation,
+              child: RefreshIndicator(
+                onRefresh: _loadProfile,
+                child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(24),
                 child: Column(
@@ -191,6 +217,7 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen> {
                 ),
               ),
             ),
+          ),
     );
   }
 

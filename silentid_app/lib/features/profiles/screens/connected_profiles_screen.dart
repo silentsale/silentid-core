@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/app_spacing.dart';
 import '../../../core/widgets/info_modal.dart';
+import '../../../core/widgets/gamification/gamification.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/profile_linking_service.dart';
 import 'upgrade_to_verified_screen.dart';
 
@@ -109,7 +111,7 @@ class _ConnectedProfilesScreenState extends State<ConnectedProfilesScreen> {
   }
 
   Future<void> _toggleVisibility(ConnectedProfile profile) async {
-    HapticFeedback.selectionClick();
+    AppHaptics.selection();
     final updated = await _service.togglePassportVisibility(profile);
     setState(() {
       final index = _profiles.indexWhere((p) => p.id == updated.id);
@@ -265,6 +267,15 @@ class _ConnectedProfilesScreenState extends State<ConnectedProfilesScreen> {
     );
   }
 
+  // Calculate trust score contribution from profiles
+  int get _trustScoreContribution {
+    int score = 0;
+    for (final profile in _profiles) {
+      score += profile.isVerified ? 25 : 5; // Verified = 25pts, Linked = 5pts
+    }
+    return score > 100 ? 100 : score; // Max 100 from profiles
+  }
+
   Widget _buildSummary() {
     final verified = _profiles.where((p) => p.isVerified).length;
     final linked = _profiles.where((p) => !p.isVerified).length;
@@ -273,48 +284,99 @@ class _ConnectedProfilesScreenState extends State<ConnectedProfilesScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            AppTheme.primaryPurple.withValues(alpha: 0.08),
-            AppTheme.primaryPurple.withValues(alpha: 0.03),
+            AppTheme.primaryPurple.withValues(alpha: 0.12),
+            AppTheme.primaryPurple.withValues(alpha: 0.04),
           ],
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: _buildSummaryItem(
-              'Total',
-              '${_profiles.length}',
-              Icons.account_circle_rounded,
-              AppTheme.primaryPurple,
-            ),
+          // Trust contribution header
+          Row(
+            children: [
+              AnimatedProgressRing(
+                progress: _trustScoreContribution / 100,
+                size: 48,
+                strokeWidth: 5,
+                progressColor: AppTheme.primaryPurple,
+                backgroundColor: AppTheme.primaryPurple.withValues(alpha: 0.2),
+                center: Text(
+                  '$_trustScoreContribution',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryPurple,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Profile Trust Contribution',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.neutralGray900,
+                      ),
+                    ),
+                    Text(
+                      'Up to 100 points from connected profiles',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: AppTheme.neutralGray700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          Container(
-            width: 1,
-            height: 40,
-            color: AppTheme.neutralGray300,
-          ),
-          Expanded(
-            child: _buildSummaryItem(
-              'Verified',
-              '$verified',
-              Icons.verified_rounded,
-              AppTheme.successGreen,
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 40,
-            color: AppTheme.neutralGray300,
-          ),
-          Expanded(
-            child: _buildSummaryItem(
-              'Linked',
-              '$linked',
-              Icons.link_rounded,
-              AppTheme.warningAmber,
-            ),
+          const SizedBox(height: 16),
+          // Stats row
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryItem(
+                  'Total',
+                  '${_profiles.length}',
+                  Icons.account_circle_rounded,
+                  AppTheme.primaryPurple,
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: AppTheme.neutralGray300.withValues(alpha: 0.5),
+              ),
+              Expanded(
+                child: _buildSummaryItem(
+                  'Verified',
+                  '$verified',
+                  Icons.verified_rounded,
+                  AppTheme.successGreen,
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: AppTheme.neutralGray300.withValues(alpha: 0.5),
+              ),
+              Expanded(
+                child: _buildSummaryItem(
+                  'Linked',
+                  '$linked',
+                  Icons.link_rounded,
+                  AppTheme.warningAmber,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -402,219 +464,271 @@ class _ConnectedProfilesScreenState extends State<ConnectedProfilesScreen> {
     final platform = _service.getPlatformById(profile.platformId);
     if (platform == null) return const SizedBox.shrink();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: profile.isVerified
-              ? AppTheme.successGreen.withValues(alpha: 0.3)
-              : AppTheme.neutralGray300,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Profile info row
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: platform.brandColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  platform.icon,
-                  color: platform.brandColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          platform.displayName,
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.neutralGray900,
-                          ),
+    // Level 7 Gamification: Points contribution
+    final pointsContribution = profile.isVerified ? 25 : 5;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InteractiveCard(
+        onTap: () {
+          AppHaptics.light();
+          // Show profile details or options
+        },
+        padding: const EdgeInsets.all(16),
+        borderColor: profile.isVerified
+            ? AppTheme.successGreen.withValues(alpha: 0.3)
+            : null,
+        child: Column(
+          children: [
+            // Profile info row
+            Row(
+              children: [
+                // Animated icon container
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.8, end: 1.0),
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeOut,
+                  builder: (context, scale, child) {
+                    return Transform.scale(
+                      scale: scale,
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: platform.brandColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        if (profile.isVerified) ...[
-                          const SizedBox(width: 6),
-                          Icon(
-                            Icons.verified_rounded,
-                            size: 16,
-                            color: AppTheme.successGreen,
-                          ),
-                        ],
-                      ],
-                    ),
-                    Text(
-                      '@${profile.username}',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppTheme.neutralGray700,
+                        child: Icon(
+                          platform.icon,
+                          color: platform.brandColor,
+                          size: 24,
+                        ),
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
-              ),
-              PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.more_vert_rounded,
-                  color: AppTheme.neutralGray700,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                onSelected: (value) {
-                  switch (value) {
-                    case 'visibility':
-                      _toggleVisibility(profile);
-                      break;
-                    case 'remove':
-                      _removeProfile(profile);
-                      break;
-                  }
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'visibility',
-                    child: Row(
-                      children: [
-                        Icon(
-                          profile.isPublicOnPassport
-                              ? Icons.visibility_off_rounded
-                              : Icons.visibility_rounded,
-                          size: 18,
-                          color: AppTheme.neutralGray700,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          profile.isPublicOnPassport
-                              ? 'Hide from Passport'
-                              : 'Show on Passport',
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'remove',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.delete_outline_rounded,
-                          size: 18,
-                          color: AppTheme.dangerRed,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Remove',
-                          style: TextStyle(color: AppTheme.dangerRed),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          // Status row
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              // Status badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: profile.isVerified
-                      ? AppTheme.successGreen.withValues(alpha: 0.1)
-                      : AppTheme.warningAmber.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  profile.stateDisplayText,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: profile.isVerified
-                        ? AppTheme.successGreen
-                        : AppTheme.warningAmber,
-                  ),
-                ),
-              ),
-
-              // Visibility indicator
-              if (!profile.isPublicOnPassport) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.neutralGray300.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.visibility_off_rounded,
-                        size: 12,
-                        color: AppTheme.neutralGray700,
+                      Row(
+                        children: [
+                          Text(
+                            platform.displayName,
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.neutralGray900,
+                            ),
+                          ),
+                          if (profile.isVerified) ...[
+                            const SizedBox(width: 6),
+                            TweenAnimationBuilder<double>(
+                              tween: Tween(begin: 0.0, end: 1.0),
+                              duration: const Duration(milliseconds: 500),
+                              builder: (context, opacity, child) {
+                                return Opacity(
+                                  opacity: opacity,
+                                  child: Icon(
+                                    Icons.verified_rounded,
+                                    size: 16,
+                                    color: AppTheme.successGreen,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ],
                       ),
-                      const SizedBox(width: 4),
                       Text(
-                        'Hidden',
+                        '@${profile.username}',
                         style: GoogleFonts.inter(
-                          fontSize: 11,
+                          fontSize: 13,
                           color: AppTheme.neutralGray700,
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-
-              const Spacer(),
-
-              // Upgrade button for linked profiles
-              if (!profile.isVerified)
-                TextButton(
-                  onPressed: () => _upgradeToVerified(profile),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    'Upgrade to Verified',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.primaryPurple,
-                    ),
-                  ),
+                // Reward indicator showing points contribution
+                RewardIndicator(
+                  points: pointsContribution,
+                  compact: true,
                 ),
-            ],
-          ),
-        ],
+                const SizedBox(width: 4),
+                PopupMenuButton<String>(
+                  icon: Icon(
+                    Icons.more_vert_rounded,
+                    color: AppTheme.neutralGray700,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'visibility':
+                        _toggleVisibility(profile);
+                        break;
+                      case 'remove':
+                        _removeProfile(profile);
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'visibility',
+                      child: Row(
+                        children: [
+                          Icon(
+                            profile.isPublicOnPassport
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
+                            size: 18,
+                            color: AppTheme.neutralGray700,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            profile.isPublicOnPassport
+                                ? 'Hide from Passport'
+                                : 'Show on Passport',
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'remove',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.delete_outline_rounded,
+                            size: 18,
+                            color: AppTheme.dangerRed,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Remove',
+                            style: TextStyle(color: AppTheme.dangerRed),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            // Status row
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                // Status badge with animation
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 300),
+                  builder: (context, opacity, child) {
+                    return Opacity(
+                      opacity: opacity,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: profile.isVerified
+                              ? AppTheme.successGreen.withValues(alpha: 0.1)
+                              : AppTheme.warningAmber.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          profile.stateDisplayText,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: profile.isVerified
+                                ? AppTheme.successGreen
+                                : AppTheme.warningAmber,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+                // Visibility indicator
+                if (!profile.isPublicOnPassport) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.neutralGray300.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.visibility_off_rounded,
+                          size: 12,
+                          color: AppTheme.neutralGray700,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Hidden',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: AppTheme.neutralGray700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                const Spacer(),
+
+                // Upgrade button for linked profiles with reward hint
+                if (!profile.isVerified)
+                  GestureDetector(
+                    onTap: () {
+                      AppHaptics.light();
+                      _upgradeToVerified(profile);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Verify',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.primaryPurple,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '+20',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.successGreen,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

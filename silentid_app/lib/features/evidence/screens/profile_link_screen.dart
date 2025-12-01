@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/gamification/gamification.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/api_service.dart';
 
 class ProfileLinkScreen extends StatefulWidget {
@@ -13,13 +15,29 @@ class ProfileLinkScreen extends StatefulWidget {
   State<ProfileLinkScreen> createState() => _ProfileLinkScreenState();
 }
 
-class _ProfileLinkScreenState extends State<ProfileLinkScreen> {
+class _ProfileLinkScreenState extends State<ProfileLinkScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
   final _formKey = GlobalKey<FormState>();
   final _api = ApiService();
   final _urlController = TextEditingController();
 
   bool _isLoading = false;
   String? _detectedPlatform;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
+    );
+    _animController.forward();
+  }
 
   final Map<String, List<String>> _platformExamples = {
     'Vinted': [
@@ -43,6 +61,7 @@ class _ProfileLinkScreenState extends State<ProfileLinkScreen> {
 
   @override
   void dispose() {
+    _animController.dispose();
     _urlController.dispose();
     super.dispose();
   }
@@ -143,13 +162,18 @@ class _ProfileLinkScreenState extends State<ProfileLinkScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            AppHaptics.light();
+            context.pop();
+          },
         ),
       ),
       body: SafeArea(
         child: Form(
           key: _formKey,
-          child: SingleChildScrollView(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -265,16 +289,48 @@ class _ProfileLinkScreenState extends State<ProfileLinkScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
+
+                // Level 7: Reward hint
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.successGreen.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const RewardIndicator(points: 25, compact: true),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Level 3 verified profiles add up to 25 points',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: AppTheme.neutralGray700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
 
                 // Submit button
                 PrimaryButton(
                   text: 'Continue to Verification',
                   isLoading: _isLoading,
-                  onPressed: _isLoading ? () {} : _submitProfile,
+                  onPressed: _isLoading
+                      ? () {}
+                      : () {
+                          AppHaptics.medium();
+                          _submitProfile();
+                        },
                 ),
               ],
             ),
+          ),
           ),
         ),
       ),

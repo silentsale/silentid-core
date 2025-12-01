@@ -4,9 +4,11 @@ import '../../../core/widgets/info_point_helper.dart';
 import '../../../core/widgets/public_connected_profiles.dart';
 import '../../../core/widgets/connected_profiles_trust_contribution.dart';
 import '../../../core/data/info_point_data.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/trustscore_api_service.dart';
 import '../../../services/profile_linking_service.dart';
 
+/// TrustScore Breakdown Screen - Level 7 SuperDesign
 class TrustScoreBreakdownScreen extends StatefulWidget {
   const TrustScoreBreakdownScreen({super.key});
 
@@ -16,7 +18,8 @@ class TrustScoreBreakdownScreen extends StatefulWidget {
 }
 
 class _TrustScoreBreakdownScreenState
-    extends State<TrustScoreBreakdownScreen> {
+    extends State<TrustScoreBreakdownScreen>
+    with SingleTickerProviderStateMixin {
   final _trustScoreApi = TrustScoreApiService();
   final _profileLinkingService = ProfileLinkingService();
 
@@ -24,10 +27,28 @@ class _TrustScoreBreakdownScreenState
   Map<String, dynamic>? _breakdownData;
   List<PublicConnectedProfile> _connectedProfiles = [];
 
+  // Level 7: Animation controllers
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+    );
     _loadBreakdown();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadBreakdown() async {
@@ -69,10 +90,13 @@ class _TrustScoreBreakdownScreenState
         _breakdownData = breakdown.toUiFormat();
         _isLoading = false;
       });
+      // Level 7: Start animations
+      _animController.forward();
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
+      _animController.forward();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load breakdown: $e')),
@@ -88,10 +112,19 @@ class _TrustScoreBreakdownScreenState
       appBar: AppBar(
         title: const Text('TrustScore Breakdown'),
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            AppHaptics.light();
+            Navigator.of(context).pop();
+          },
+        ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryPurple))
+          : FadeTransition(
+              opacity: _fadeAnimation,
+              child: RefreshIndicator(
               onRefresh: _loadBreakdown,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -149,6 +182,7 @@ class _TrustScoreBreakdownScreenState
                 ),
               ),
             ),
+          ),
     );
   }
 

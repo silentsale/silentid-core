@@ -4,10 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../services/referral_api_service.dart';
 
 /// Referral Program Screen (Section 50.6.1)
+/// Level 7 Gamification + Level 7 Interactivity
 ///
 /// "Invite a friend → both get +50 TrustScore bonus once identity is verified."
 ///
@@ -23,8 +25,13 @@ class ReferralScreen extends StatefulWidget {
   State<ReferralScreen> createState() => _ReferralScreenState();
 }
 
-class _ReferralScreenState extends State<ReferralScreen> {
+class _ReferralScreenState extends State<ReferralScreen>
+    with SingleTickerProviderStateMixin {
   final _referralApi = ReferralApiService();
+
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
 
   bool _isLoading = true;
   String? _referralCode;
@@ -35,7 +42,22 @@ class _ReferralScreenState extends State<ReferralScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _loadReferralData();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadReferralData() async {
@@ -60,6 +82,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
         )).toList();
         _isLoading = false;
       });
+      // Level 7: Start animation after data loads
+      _animController.forward();
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -74,7 +98,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
     if (_referralCode == null) return;
 
     await Clipboard.setData(ClipboardData(text: _referralCode!));
-    HapticFeedback.lightImpact();
+    AppHaptics.light();
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -90,7 +114,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
   Future<void> _shareReferralLink() async {
     if (_referralLink == null) return;
 
-    HapticFeedback.lightImpact();
+    AppHaptics.light();
 
     await SharePlus.instance.share(
       ShareParams(
@@ -115,38 +139,41 @@ class _ReferralScreenState extends State<ReferralScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadReferralData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Reward banner
-                    _buildRewardBanner(),
-                    const SizedBox(height: 24),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _loadReferralData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Reward banner
+                      _buildRewardBanner(),
+                      const SizedBox(height: 24),
 
-                    // Referral code section
-                    _buildReferralCodeSection(),
-                    const SizedBox(height: 24),
+                      // Referral code section
+                      _buildReferralCodeSection(),
+                      const SizedBox(height: 24),
 
-                    // Share buttons
-                    _buildShareSection(),
-                    const SizedBox(height: 32),
+                      // Share buttons
+                      _buildShareSection(),
+                      const SizedBox(height: 32),
 
-                    // How it works
-                    _buildHowItWorks(),
-                    const SizedBox(height: 32),
+                      // How it works
+                      _buildHowItWorks(),
+                      const SizedBox(height: 32),
 
-                    // Referral history
-                    if (_referrals.isNotEmpty) _buildReferralHistory(),
-                  ],
+                      // Referral history
+                      if (_referrals.isNotEmpty) _buildReferralHistory(),
+                    ],
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 
@@ -629,7 +656,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
   void _showQrCodeModal() {
     if (_referralLink == null) return;
 
-    HapticFeedback.lightImpact();
+    AppHaptics.light();
 
     showModalBottomSheet(
       context: context,

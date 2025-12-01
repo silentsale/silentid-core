@@ -7,6 +7,7 @@ import '../../../core/data/info_point_data.dart';
 import '../../../core/widgets/info_point_helper.dart';
 
 /// Login Methods Management Screen (Section 54)
+/// Level 7 Gamification + Level 7 Interactivity
 ///
 /// Displays all available authentication methods:
 /// - Passkeys (WebAuthn/FIDO2) - Face ID, Touch ID, Windows Hello
@@ -20,8 +21,14 @@ class LoginMethodsScreen extends StatefulWidget {
   State<LoginMethodsScreen> createState() => _LoginMethodsScreenState();
 }
 
-class _LoginMethodsScreenState extends State<LoginMethodsScreen> {
+class _LoginMethodsScreenState extends State<LoginMethodsScreen>
+    with SingleTickerProviderStateMixin {
   final _securityApi = SecurityApiService();
+
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   bool _isLoading = true;
   IdentityStatusResponse? _identityStatus;
   String? _errorMessage;
@@ -29,7 +36,22 @@ class _LoginMethodsScreenState extends State<LoginMethodsScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _loadIdentityStatus();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadIdentityStatus() async {
@@ -45,6 +67,8 @@ class _LoginMethodsScreenState extends State<LoginMethodsScreen> {
           _identityStatus = status;
           _isLoading = false;
         });
+        // Level 7: Start animation after data loads
+        _animController.forward();
       }
     } catch (e) {
       if (mounted) {
@@ -77,11 +101,14 @@ class _LoginMethodsScreenState extends State<LoginMethodsScreen> {
         ),
         centerTitle: true,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryPurple))
-          : _errorMessage != null
-              ? _buildErrorState()
-              : _buildContent(),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryPurple))
+            : _errorMessage != null
+                ? _buildErrorState()
+                : _buildContent(),
+      ),
     );
   }
 

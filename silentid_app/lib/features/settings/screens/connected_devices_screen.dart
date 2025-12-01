@@ -3,6 +3,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../services/api_service.dart';
 
+/// Connected Devices Screen
+/// Level 7 Gamification + Level 7 Interactivity
 class ConnectedDevicesScreen extends StatefulWidget {
   const ConnectedDevicesScreen({super.key});
 
@@ -10,15 +12,36 @@ class ConnectedDevicesScreen extends StatefulWidget {
   State<ConnectedDevicesScreen> createState() => _ConnectedDevicesScreenState();
 }
 
-class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
+class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen>
+    with SingleTickerProviderStateMixin {
   final _api = ApiService();
+
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   bool _isLoading = true;
   List<Map<String, dynamic>> _devices = [];
 
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _loadDevices();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadDevices() async {
@@ -32,6 +55,8 @@ class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
         _devices = data.map((device) => device as Map<String, dynamic>).toList();
         _isLoading = false;
       });
+      // Level 7: Start animation after data loads
+      _animController.forward();
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -102,28 +127,31 @@ class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
         title: const Text('Connected Devices'),
         centerTitle: true,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadDevices,
-              child: ListView.separated(
-                padding: const EdgeInsets.all(24),
-                itemCount: _devices.length + 1,
-                separatorBuilder: (context, index) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return Text(
-                      'Devices with access to your SilentID account',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppTheme.neutralGray700,
-                      ),
-                    );
-                  }
-                  return _buildDeviceCard(_devices[index - 1]);
-                },
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _loadDevices,
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(24),
+                  itemCount: _devices.length + 1,
+                  separatorBuilder: (context, index) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      return Text(
+                        'Devices with access to your SilentID account',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.neutralGray700,
+                        ),
+                      );
+                    }
+                    return _buildDeviceCard(_devices[index - 1]);
+                  },
+                ),
               ),
-            ),
+      ),
     );
   }
 

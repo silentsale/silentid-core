@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/app_spacing.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/widgets/gamification/gamification.dart';
 import '../../../core/enums/button_variant.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/api_service.dart';
 
 class TrustScoreOverviewScreen extends StatefulWidget {
@@ -150,48 +154,133 @@ class _TrustScoreOverviewScreenState extends State<TrustScoreOverviewScreen> {
     final level = _getScoreLevel(score);
     final color = _getScoreColor(score);
 
-    return Container(
-      width: 240,
-      height: 240,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: color,
-          width: 12,
+    final identityScore = _trustScoreData!['identity'] as int;
+    final evidenceScore = _trustScoreData!['evidence'] as int;
+    final behaviourScore = _trustScoreData!['behaviour'] as int;
+
+    // Level 7 Gamification: Multi-segment animated ring
+    return Column(
+      children: [
+        // User level badge
+        LevelIndicator(level: _calculateUserLevel(score), height: 28),
+        const SizedBox(height: AppSpacing.md),
+
+        // Animated multi-segment ring
+        MultiSegmentProgressRing(
+          size: 220,
+          strokeWidth: 18,
+          animate: true,
+          segments: [
+            ProgressSegment(
+              value: identityScore.toDouble(),
+              color: AppTheme.primaryPurple,
+              label: 'Identity',
+            ),
+            ProgressSegment(
+              value: evidenceScore.toDouble(),
+              color: AppTheme.successGreen,
+              label: 'Evidence',
+            ),
+            ProgressSegment(
+              value: behaviourScore.toDouble(),
+              color: const Color(0xFF3B82F6),
+              label: 'Behaviour',
+            ),
+          ],
+          center: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TweenAnimationBuilder<int>(
+                tween: IntTween(begin: 0, end: score),
+                duration: const Duration(milliseconds: 1500),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) {
+                  return Text(
+                    '$value',
+                    style: GoogleFonts.inter(
+                      fontSize: 56,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                      height: 1,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  level,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.2),
-            blurRadius: 20,
-            spreadRadius: 5,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            score.toString(),
-            style: TextStyle(
-              fontSize: 72,
-              fontWeight: FontWeight.bold,
-              color: color,
-              height: 1,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            level,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+
+        const SizedBox(height: AppSpacing.md),
+
+        // Legend
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem('Identity', AppTheme.primaryPurple),
+            const SizedBox(width: AppSpacing.md),
+            _buildLegendItem('Evidence', AppTheme.successGreen),
+            const SizedBox(width: AppSpacing.md),
+            _buildLegendItem('Behaviour', const Color(0xFF3B82F6)),
+          ],
+        ),
+      ],
     );
+  }
+
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            color: AppTheme.neutralGray700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  int _calculateUserLevel(int score) {
+    if (score >= 900) return 10;
+    if (score >= 800) return 9;
+    if (score >= 700) return 8;
+    if (score >= 600) return 7;
+    if (score >= 500) return 6;
+    if (score >= 400) return 5;
+    if (score >= 300) return 4;
+    if (score >= 200) return 3;
+    if (score >= 100) return 2;
+    return 1;
   }
 
   Widget _buildComponentCard(
@@ -200,68 +289,48 @@ class _TrustScoreOverviewScreenState extends State<TrustScoreOverviewScreen> {
     int max,
     IconData icon,
   ) {
-    final progress = current / max;
+    // Determine color based on component type
+    Color componentColor;
+    int rewardPoints;
+    String subtitle;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.neutralGray300),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                icon,
-                color: AppTheme.primaryPurple,
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.neutralGray900,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '$current/$max',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.primaryPurple,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+    switch (title) {
+      case 'Identity':
+        componentColor = AppTheme.primaryPurple;
+        rewardPoints = 50;
+        subtitle = 'Verify your identity to boost this score';
+        break;
+      case 'Evidence':
+        componentColor = AppTheme.successGreen;
+        rewardPoints = 10;
+        subtitle = 'Add receipts and screenshots';
+        break;
+      case 'Behaviour':
+        componentColor = const Color(0xFF3B82F6);
+        rewardPoints = 0;
+        subtitle = 'Based on your activity and engagement';
+        break;
+      default:
+        componentColor = AppTheme.primaryPurple;
+        rewardPoints = 0;
+        subtitle = '';
+    }
 
-          // Progress Bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress > 1.0 ? 1.0 : progress,
-              minHeight: 8,
-              backgroundColor: AppTheme.softLilac,
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                AppTheme.primaryPurple,
-              ),
-            ),
-          ),
-        ],
-      ),
+    // Level 7 Gamification: Use MilestoneProgress widget
+    return MilestoneProgress(
+      title: title,
+      subtitle: subtitle,
+      current: current,
+      target: max,
+      rewardPoints: rewardPoints,
+      icon: icon,
+      color: componentColor,
+      showReward: rewardPoints > 0 && current < max,
+      animate: true,
+      onTap: () {
+        AppHaptics.light();
+        context.push('/trust/breakdown');
+      },
     );
   }
 }

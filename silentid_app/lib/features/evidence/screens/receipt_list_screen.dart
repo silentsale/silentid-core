@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/gamification/gamification.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/evidence_service.dart';
 import '../../../services/receipt_api_service.dart' hide Receipt;
 import '../../../models/evidence_models.dart';
@@ -14,7 +16,10 @@ class ReceiptListScreen extends StatefulWidget {
   State<ReceiptListScreen> createState() => _ReceiptListScreenState();
 }
 
-class _ReceiptListScreenState extends State<ReceiptListScreen> {
+class _ReceiptListScreenState extends State<ReceiptListScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
   final _evidenceService = EvidenceService();
   final _receiptApi = ReceiptApiService();
   List<Receipt> _receipts = [];
@@ -25,7 +30,20 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
+    );
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -47,6 +65,7 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
         _receipts = receipts;
         _isLoading = false;
       });
+      _animController.forward(from: 0.0);
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -83,8 +102,10 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
         ),
       ),
       body: SafeArea(
-        child: _isLoading
-            ? const Center(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: _isLoading
+              ? const Center(
                 child: CircularProgressIndicator(
                   color: AppTheme.primaryPurple,
                 ),
@@ -106,9 +127,11 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
                           },
                         ),
                       ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
+          AppHaptics.light();
           await context.push('/evidence/receipts/upload');
           _loadReceipts(); // Refresh after adding
         },
@@ -188,14 +211,12 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
   Widget _buildReceiptCard(Receipt receipt) {
     final dateFormatter = DateFormat('dd/MM/yyyy');
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.neutralGray300),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: InteractiveCard(
+        onTap: () => AppHaptics.light(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Platform and role badges
@@ -303,6 +324,7 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
             ],
           ),
         ],
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../core/data/help_center_data.dart';
 
 /// Help Center main screen
+/// Level 7 Gamification + Level 7 Interactivity
 /// Displays all categories and search functionality
 class HelpCenterScreen extends StatefulWidget {
   const HelpCenterScreen({super.key});
@@ -15,13 +16,35 @@ class HelpCenterScreen extends StatefulWidget {
   State<HelpCenterScreen> createState() => _HelpCenterScreenState();
 }
 
-class _HelpCenterScreenState extends State<HelpCenterScreen> {
+class _HelpCenterScreenState extends State<HelpCenterScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
+
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   List<HelpArticle> _searchResults = [];
   bool _isSearching = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
+    _animController.forward();
+  }
+
+  @override
   void dispose() {
+    _animController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -83,10 +106,12 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Search bar
-          Container(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Column(
+          children: [
+            // Search bar
+            Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: TextField(
               controller: _searchController,
@@ -123,11 +148,12 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
             ),
           ),
 
-          // Content
-          Expanded(
-            child: _isSearching ? _buildSearchResults() : _buildCategories(),
-          ),
-        ],
+            // Content
+            Expanded(
+              child: _isSearching ? _buildSearchResults() : _buildCategories(),
+            ),
+          ],
+        ),
       ),
     );
   }

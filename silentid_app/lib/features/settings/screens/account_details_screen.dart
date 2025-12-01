@@ -5,6 +5,8 @@ import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../services/user_api_service.dart';
 
+/// Account Details Screen
+/// Level 7 Gamification + Level 7 Interactivity
 class AccountDetailsScreen extends StatefulWidget {
   const AccountDetailsScreen({super.key});
 
@@ -12,11 +14,16 @@ class AccountDetailsScreen extends StatefulWidget {
   State<AccountDetailsScreen> createState() => _AccountDetailsScreenState();
 }
 
-class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
+class _AccountDetailsScreenState extends State<AccountDetailsScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _displayNameController = TextEditingController();
   final _userApi = UserApiService();
+
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
 
   bool _isLoading = true;
   bool _isSaving = false;
@@ -28,11 +35,21 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _loadAccountDetails();
   }
 
   @override
   void dispose() {
+    _animController.dispose();
     _usernameController.dispose();
     _displayNameController.dispose();
     super.dispose();
@@ -53,6 +70,8 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
         _displayNameController.text = profile.displayName ?? '';
         _isLoading = false;
       });
+      // Level 7: Start animation after data loads
+      _animController.forward();
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -333,9 +352,11 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
         title: const Text('Account Details'),
         centerTitle: true,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Form(
                 key: _formKey,
@@ -445,6 +466,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                 ),
               ),
             ),
+      ),
     );
   }
 

@@ -4,6 +4,8 @@ import '../../../models/safety_report.dart';
 import '../../../services/api_service.dart';
 import '../../../services/safety_service.dart';
 
+/// Report Details Screen
+/// Level 7 Gamification + Level 7 Interactivity
 class ReportDetailsScreen extends StatefulWidget {
   final String reportId;
 
@@ -16,7 +18,12 @@ class ReportDetailsScreen extends StatefulWidget {
   State<ReportDetailsScreen> createState() => _ReportDetailsScreenState();
 }
 
-class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
+class _ReportDetailsScreenState extends State<ReportDetailsScreen>
+    with SingleTickerProviderStateMixin {
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   final _safetyService = SafetyService(ApiService());
 
   SafetyReport? _report;
@@ -26,7 +33,22 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _loadReport();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadReport() async {
@@ -103,15 +125,18 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
           ),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _buildErrorState()
-              : RefreshIndicator(
-                  onRefresh: _loadReport,
-                  color: AppTheme.primaryPurple,
-                  child: _buildContent(),
-                ),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? _buildErrorState()
+                : RefreshIndicator(
+                    onRefresh: _loadReport,
+                    color: AppTheme.primaryPurple,
+                    child: _buildContent(),
+                  ),
+      ),
     );
   }
 

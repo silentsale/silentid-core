@@ -8,6 +8,8 @@ import '../../../core/constants/api_constants.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
 
+/// Delete Account Screen
+/// Level 7 Gamification + Level 7 Interactivity
 class DeleteAccountScreen extends StatefulWidget {
   const DeleteAccountScreen({super.key});
 
@@ -15,15 +17,37 @@ class DeleteAccountScreen extends StatefulWidget {
   State<DeleteAccountScreen> createState() => _DeleteAccountScreenState();
 }
 
-class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
+class _DeleteAccountScreenState extends State<DeleteAccountScreen>
+    with SingleTickerProviderStateMixin {
   final _api = ApiService();
   final _authService = AuthService();
   final _usernameController = TextEditingController();
+
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   bool _confirmChecked = false;
   bool _isDeleting = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
+    _animController.forward();
+  }
+
+  @override
   void dispose() {
+    _animController.dispose();
     _usernameController.dispose();
     super.dispose();
   }
@@ -101,7 +125,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         title: const Text('Delete Account'),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -245,6 +271,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

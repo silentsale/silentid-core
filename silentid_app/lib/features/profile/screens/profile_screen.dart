@@ -10,6 +10,7 @@ import '../../../core/data/info_point_data.dart';
 import '../../../services/user_api_service.dart';
 
 /// Profile/Settings screen following Section 39 specifications
+/// Level 7 Gamification + Level 7 Interactivity
 ///
 /// Contains 7 mandatory sections in exact order:
 /// 1. Account & Identity
@@ -26,8 +27,13 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
   final _userApi = UserApiService();
+
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
 
   UserProfile? _profile;
 
@@ -44,7 +50,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadProfile() async {
@@ -54,6 +75,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _profile = profile;
         });
+        // Level 7: Start animation after data loads
+        _animController.forward();
       }
     } catch (e) {
       if (mounted) {
@@ -69,9 +92,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: AppTheme.pureWhite,
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            // Profile Header
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: CustomScrollView(
+            slivers: [
+              // Profile Header
             SliverToBoxAdapter(
               child: _buildProfileHeader(),
             ),
@@ -111,11 +136,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: _buildSection7AboutLegal(),
             ),
 
-            // Bottom padding
-            const SliverToBoxAdapter(
-              child: SizedBox(height: AppSpacing.xl),
-            ),
-          ],
+              // Bottom padding
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppSpacing.xl),
+              ),
+            ],
+          ),
         ),
       ),
     );

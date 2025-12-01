@@ -4,6 +4,8 @@ import '../../../core/widgets/primary_button.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../services/api_service.dart';
 
+/// Data Export Screen
+/// Level 7 Gamification + Level 7 Interactivity
 class DataExportScreen extends StatefulWidget {
   const DataExportScreen({super.key});
 
@@ -11,9 +13,36 @@ class DataExportScreen extends StatefulWidget {
   State<DataExportScreen> createState() => _DataExportScreenState();
 }
 
-class _DataExportScreenState extends State<DataExportScreen> {
+class _DataExportScreenState extends State<DataExportScreen>
+    with SingleTickerProviderStateMixin {
   final _api = ApiService();
+
+  // Level 7: Animation controller
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
   bool _isRequesting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Level 7: Initialize animations
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
 
   Future<void> _requestExport() async {
     setState(() => _isRequesting = true);
@@ -54,7 +83,9 @@ class _DataExportScreenState extends State<DataExportScreen> {
         title: const Text('Export Your Data'),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -151,6 +182,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
