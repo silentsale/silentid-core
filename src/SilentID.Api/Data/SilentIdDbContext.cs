@@ -60,6 +60,10 @@ public class SilentIdDbContext : DbContext
     public DbSet<PushNotificationToken> PushNotificationTokens { get; set; } = null!;
     public DbSet<InAppNotification> InAppNotifications { get; set; } = null!;
 
+    // OTP tables (persistent storage for production)
+    public DbSet<OtpCode> OtpCodes { get; set; } = null!;
+    public DbSet<OtpRateLimit> OtpRateLimits { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -724,6 +728,35 @@ public class SilentIdDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // OtpCode configuration
+        modelBuilder.Entity<OtpCode>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Email);
+            entity.HasIndex(e => e.ExpiresAt);
+            entity.HasIndex(e => new { e.Email, e.IsConsumed });
+
+            entity.Property(e => e.Email)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(e => e.OtpHash)
+                .IsRequired()
+                .HasMaxLength(128);
+        });
+
+        // OtpRateLimit configuration
+        modelBuilder.Entity<OtpRateLimit>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.HasIndex(e => e.WindowExpiresAt);
+
+            entity.Property(e => e.Email)
+                .IsRequired()
+                .HasMaxLength(255);
         });
 
         }

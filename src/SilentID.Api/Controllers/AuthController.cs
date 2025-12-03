@@ -20,6 +20,8 @@ public class AuthController : ControllerBase
     private readonly IPasskeyService _passkeyService;
     private readonly IAppleAuthService _appleAuthService;
     private readonly IGoogleAuthService _googleAuthService;
+    private readonly IStepUpAuthService _stepUpAuthService;
+    private readonly ISecurityCenterService _securityCenterService;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
@@ -31,6 +33,8 @@ public class AuthController : ControllerBase
         IPasskeyService passkeyService,
         IAppleAuthService appleAuthService,
         IGoogleAuthService googleAuthService,
+        IStepUpAuthService stepUpAuthService,
+        ISecurityCenterService securityCenterService,
         ILogger<AuthController> logger)
     {
         _context = context;
@@ -41,6 +45,8 @@ public class AuthController : ControllerBase
         _passkeyService = passkeyService;
         _appleAuthService = appleAuthService;
         _googleAuthService = googleAuthService;
+        _stepUpAuthService = stepUpAuthService;
+        _securityCenterService = securityCenterService;
         _logger = logger;
     }
 
@@ -62,9 +68,39 @@ public class AuthController : ControllerBase
         }
 
         var email = request.Email.ToLowerInvariant();
+        var ipAddress = GetClientIpAddress();
+        var deviceId = request.DeviceId;
 
         try
         {
+            // Check if user exists for step-up auth checks
+            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            // For existing users, check if OTP is allowed based on device trust (Section 54.2)
+            if (existingUser != null && !string.IsNullOrEmpty(deviceId))
+            {
+                var stepUpResult = await _stepUpAuthService.CheckStepUpRequiredAsync(
+                    existingUser.Id, deviceId, ipAddress);
+
+                // Check if email_otp is allowed for this device
+                if (!stepUpResult.AllowedMethods.Contains("email_otp"))
+                {
+                    _logger.LogWarning(
+                        "OTP blocked for user {UserId} on device {DeviceId}: {Reason}. Allowed: {Methods}",
+                        existingUser.Id, deviceId, stepUpResult.Reason,
+                        string.Join(", ", stepUpResult.AllowedMethods));
+
+                    return StatusCode(403, new
+                    {
+                        error = "step_up_required",
+                        message = "Email verification is not available for this device. Please use a stronger authentication method.",
+                        allowedMethods = stepUpResult.AllowedMethods,
+                        deviceTrustLevel = stepUpResult.DeviceTrustLevel.ToString(),
+                        reason = stepUpResult.Reason
+                    });
+                }
+            }
+
             // Check rate limiting
             if (!await _otpService.CanRequestOtpAsync(email))
             {
@@ -119,6 +155,11 @@ public class AuthController : ControllerBase
         }
 
         var email = request.Email.ToLowerInvariant();
+        var ipAddress = GetClientIpAddress();
+        var deviceId = request.DeviceId ?? "unknown";
+
+        // Check if user exists (for login attempt recording)
+        var existingUserForAttempt = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
         // Validate OTP
         var isValidOtp = await _otpService.ValidateOtpAsync(email, request.Otp);
@@ -126,6 +167,48 @@ public class AuthController : ControllerBase
         if (!isValidOtp)
         {
             _logger.LogWarning("Invalid OTP attempt for {Email}", email);
+
+            // Record failed login attempt (Section 54.4)
+            if (existingUserForAttempt != null)
+            {
+                var deviceTrustLevel = await _stepUpAuthService.GetDeviceTrustLevelAsync(
+                    existingUserForAttempt.Id, deviceId);
+
+                await _stepUpAuthService.RecordLoginAttemptAsync(new LoginAttempt
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = existingUserForAttempt.Id,
+                    DeviceId = deviceId,
+                    AuthMethod = "email_otp",
+                    Success = false,
+                    FailureReason = "Invalid or expired OTP",
+                    IpAddress = ipAddress,
+                    UserAgent = Request.Headers.UserAgent.FirstOrDefault(),
+                    DeviceTrustLevel = deviceTrustLevel,
+                    StepUpRequired = false,
+                    AttemptedAt = DateTime.UtcNow
+                });
+
+                // Downgrade device trust after failed attempt
+                await _stepUpAuthService.UpdateDeviceTrustAsync(existingUserForAttempt.Id, deviceId, false);
+
+                // Create security alert for suspicious login attempt (Section 54.4)
+                await _securityCenterService.CreateAlertAsync(
+                    existingUserForAttempt.Id,
+                    SecurityAlertType.SuspiciousLogin,
+                    "Failed Login Attempt",
+                    $"A failed login attempt was detected from device {deviceId ?? "unknown"}. If this wasn't you, please review your security settings.",
+                    severity: 5,
+                    metadata: System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        deviceId,
+                        ipAddress,
+                        timestamp = DateTime.UtcNow,
+                        reason = "Invalid OTP"
+                    })
+                );
+            }
+
             return Unauthorized(new
             {
                 error = "invalid_otp",
@@ -145,10 +228,7 @@ public class AuthController : ControllerBase
             // New user registration
             isNewUser = true;
 
-            // Check for duplicates
-            var deviceId = request.DeviceId;
-            var ipAddress = GetClientIpAddress();
-
+            // Check for duplicates (using already-defined deviceId and ipAddress)
             var duplicateCheck = await _duplicateDetection.CheckForDuplicatesAsync(email, deviceId, ipAddress);
 
             if (duplicateCheck.HasExistingUser)
@@ -231,6 +311,49 @@ public class AuthController : ControllerBase
         if (!string.IsNullOrWhiteSpace(request.DeviceId))
         {
             await TrackDeviceAsync(user.Id, request.DeviceId, request.DeviceModel, request.OS, request.Browser);
+        }
+
+        // Record successful login attempt and upgrade device trust (Section 54.4)
+        if (!string.IsNullOrWhiteSpace(request.DeviceId))
+        {
+            var currentTrustLevel = await _stepUpAuthService.GetDeviceTrustLevelAsync(user.Id, deviceId);
+
+            await _stepUpAuthService.RecordLoginAttemptAsync(new LoginAttempt
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                DeviceId = deviceId,
+                AuthMethod = "email_otp",
+                Success = true,
+                IpAddress = ipAddress,
+                UserAgent = Request.Headers.UserAgent.FirstOrDefault(),
+                DeviceTrustLevel = currentTrustLevel,
+                StepUpRequired = false,
+                AttemptedAt = DateTime.UtcNow
+            });
+
+            // Create security alert for new device login (Section 54.4)
+            if (currentTrustLevel == DeviceTrustLevel.New && !isNewUser)
+            {
+                await _securityCenterService.CreateAlertAsync(
+                    user.Id,
+                    SecurityAlertType.NewDevice,
+                    "New Device Login",
+                    $"Your account was accessed from a new device ({request.DeviceModel ?? "Unknown device"}). If this wasn't you, please secure your account immediately.",
+                    severity: 6,
+                    metadata: System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        deviceId,
+                        deviceModel = request.DeviceModel,
+                        os = request.OS,
+                        ipAddress,
+                        timestamp = DateTime.UtcNow
+                    })
+                );
+            }
+
+            // Upgrade device trust after successful login
+            await _stepUpAuthService.UpdateDeviceTrustAsync(user.Id, deviceId, true);
         }
 
         return Ok(new
@@ -884,7 +1007,10 @@ public class AuthController : ControllerBase
 }
 
 // Request DTOs
-public record RequestOtpRequest(string Email);
+public record RequestOtpRequest(
+    string Email,
+    string? DeviceId = null
+);
 
 public record VerifyOtpRequest(
     string Email,

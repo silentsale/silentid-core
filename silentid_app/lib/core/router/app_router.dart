@@ -176,11 +176,22 @@ class AppRouter {
           GoRoute(
             path: '/evidence/level3-verify',
             name: 'level3-verify',
+            redirect: (context, state) {
+              // Guard: Redirect to profiles if accessed via deep link without required data
+              final extra = state.extra as Map<String, dynamic>?;
+              if (extra == null ||
+                  extra['profileUrl'] == null ||
+                  extra['platform'] == null) {
+                return '/profiles/connected';
+              }
+              return null;
+            },
             builder: (context, state) {
               final extra = state.extra as Map<String, dynamic>?;
+              // Double-check (redirect should catch this, but safety first)
               if (extra == null) {
                 return const Scaffold(
-                  body: Center(child: Text('Verification data required')),
+                  body: Center(child: Text('Redirecting...')),
                 );
               }
               return Level3VerificationScreen(
@@ -326,11 +337,20 @@ class AppRouter {
           GoRoute(
             path: '/profiles/upgrade',
             name: 'upgrade-to-verified',
-            builder: (context, state) {
+            redirect: (context, state) {
+              // Guard: Redirect to connected profiles if accessed via deep link without profile data
               final profile = state.extra as ConnectedProfile?;
               if (profile == null) {
+                return '/profiles/connected';
+              }
+              return null;
+            },
+            builder: (context, state) {
+              final profile = state.extra as ConnectedProfile?;
+              // Double-check (redirect should catch this, but safety first)
+              if (profile == null) {
                 return const Scaffold(
-                  body: Center(child: Text('Profile required')),
+                  body: Center(child: Text('Redirecting...')),
                 );
               }
               return UpgradeToVerifiedScreen(profile: profile);

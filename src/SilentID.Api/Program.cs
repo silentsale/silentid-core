@@ -82,6 +82,7 @@ builder.Services.AddScoped<IAdminAuthService, AdminAuthService>();
 
 // Add Background Services
 builder.Services.AddHostedService<TrustScoreRegenerationService>();
+builder.Services.AddHostedService<OtpCleanupService>();
 
 // Add JWT authentication
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
