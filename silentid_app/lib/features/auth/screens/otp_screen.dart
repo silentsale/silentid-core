@@ -543,7 +543,6 @@ class _OtpScreenState extends State<OtpScreen> with TickerProviderStateMixin {
 
   Widget _buildOtpField(int index) {
     final hasValue = _controllers[index].text.isNotEmpty;
-    final hasFocus = _focusNodes[index].hasFocus;
 
     return SizedBox(
       width: 48,

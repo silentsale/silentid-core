@@ -16,7 +16,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with TickerProviderStateMixin {
   final _authService = AuthService();
-  String? _userEmail;
   int _selectedIndex = 0;
 
   late AnimationController _scoreController;
@@ -25,7 +24,6 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    _loadUserEmail();
 
     _scoreController = AnimationController(
       vsync: this,
@@ -41,13 +39,6 @@ class _HomeScreenState extends State<HomeScreen>
   void dispose() {
     _scoreController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadUserEmail() async {
-    final email = await _authService.getCurrentUserEmail();
-    setState(() {
-      _userEmail = email;
-    });
   }
 
   Future<void> _handleLogout() async {

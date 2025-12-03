@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/haptics.dart';
-import '../../../services/auth_service.dart';
 
 /// SuperDesign Level 7+ Enhanced Home Screen
 /// This screen is wrapped by MainShellScreen which provides the bottom navigation
@@ -17,8 +16,6 @@ class EnhancedHomeScreen extends StatefulWidget {
 
 class _EnhancedHomeScreenState extends State<EnhancedHomeScreen>
     with TickerProviderStateMixin {
-  final _authService = AuthService();
-
   late AnimationController _scoreController;
   late AnimationController _pulseController;
   late Animation<double> _scoreAnimation;

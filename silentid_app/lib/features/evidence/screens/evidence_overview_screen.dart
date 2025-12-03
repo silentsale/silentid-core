@@ -81,11 +81,6 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
     }
   }
 
-  int get _totalEvidenceScore {
-    final score = (_receiptsCount * 5) + (_screenshotsCount * 3) + (_profileLinksCount * 10);
-    return score > 400 ? 400 : score;
-  }
-
   int get _totalItems => _receiptsCount + _screenshotsCount + _profileLinksCount;
 
   @override
