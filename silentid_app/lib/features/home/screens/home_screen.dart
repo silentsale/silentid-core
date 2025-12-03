@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:math' as math;
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/info_point_helper.dart';
-import '../../../core/data/info_point_data.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -13,15 +13,34 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with TickerProviderStateMixin {
   final _authService = AuthService();
   String? _userEmail;
   int _selectedIndex = 0;
+
+  late AnimationController _scoreController;
+  late Animation<double> _scoreAnimation;
 
   @override
   void initState() {
     super.initState();
     _loadUserEmail();
+
+    _scoreController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    _scoreAnimation = Tween<double>(begin: 0, end: 752).animate(
+      CurvedAnimation(parent: _scoreController, curve: Curves.easeOutCubic),
+    );
+    _scoreController.forward();
+  }
+
+  @override
+  void dispose() {
+    _scoreController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserEmail() async {
@@ -32,15 +51,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleLogout() async {
-    // Show confirmation dialog
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           'Logout',
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-          ),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
         ),
         content: Text(
           'Are you sure you want to logout?',
@@ -51,9 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(
               'Cancel',
-              style: GoogleFonts.inter(
-                color: AppTheme.neutralGray700,
-              ),
+              style: GoogleFonts.inter(color: AppTheme.neutralGray700),
             ),
           ),
           TextButton(
@@ -81,274 +96,657 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'SilentID',
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-          ),
+      backgroundColor: const Color(0xFFF9FAFB),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // App Bar
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'SilentID',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.deepBlack,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              height: 1,
+              color: AppTheme.neutralGray300,
+            ),
+
+            // Content
+            Expanded(
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: [
+                  _buildHomeTab(),
+                  _buildEvidenceTab(),
+                  _buildPassportTab(),
+                  _buildSecurityTab(),
+                  _buildSettingsTab(),
+                ],
+              ),
+            ),
+          ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _handleLogout,
-            tooltip: 'Logout',
-          ),
-        ],
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          _buildHomeTab(),
-          _buildEvidenceTab(),
-          _buildVerifyTab(),
-          _buildSettingsTab(),
-        ],
+      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: AppTheme.neutralGray300, width: 1),
+        ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppTheme.primaryPurple,
-        unselectedItemColor: AppTheme.neutralGray700,
-        selectedLabelStyle: GoogleFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
+      child: SafeArea(
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(0, Icons.home_outlined, Icons.home, 'Home'),
+              _buildNavItem(1, Icons.description_outlined, Icons.description, 'Evidence'),
+              _buildNavItem(2, Icons.person_outline, Icons.person, 'Profile'),
+              _buildNavItem(3, Icons.shield_outlined, Icons.shield, 'Security'),
+              _buildNavItem(4, Icons.settings_outlined, Icons.settings, 'Settings'),
+            ],
+          ),
         ),
-        unselectedLabelStyle: GoogleFonts.inter(
-          fontSize: 12,
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label) {
+    final isActive = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () {
+        AppHaptics.light();
+        setState(() => _selectedIndex = index);
+      },
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 64,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isActive ? activeIcon : icon,
+              color: isActive ? AppTheme.primaryPurple : AppTheme.neutralGray700,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                color: isActive ? AppTheme.primaryPurple : AppTheme.neutralGray700,
+              ),
+            ),
+          ],
         ),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.folder_outlined),
-            activeIcon: Icon(Icons.folder),
-            label: 'Evidence',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.verified_user_outlined),
-            activeIcon: Icon(Icons.verified_user),
-            label: 'Verify',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
       ),
     );
   }
 
   Widget _buildHomeTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Welcome message
-          Text(
-            'Welcome back!',
-            style: GoogleFonts.inter(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.deepBlack,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          if (_userEmail != null)
-            Text(
-              _userEmail!,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppTheme.neutralGray700,
-              ),
-            ),
-
-          const SizedBox(height: 32),
-
-          // TrustScore card - Interactive
-          InkWell(
-            onTap: () => context.push('/trust/overview'),
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppTheme.primaryPurple, AppTheme.darkModePurple],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryPurple.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Your TrustScore',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          color: AppTheme.pureWhite.withValues(alpha: 0.9),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      // Info Point (Section 40.4)
-                      InfoPointHelper(
-                        data: InfoPoints.trustScoreOverall,
-                        iconColor: AppTheme.pureWhite.withValues(alpha: 0.8),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '754',
-                    style: GoogleFonts.inter(
-                      fontSize: 64,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.pureWhite,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'High Trust',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: AppTheme.pureWhite.withValues(alpha: 0.8),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'View Details',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: AppTheme.pureWhite,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.arrow_forward,
-                        color: AppTheme.pureWhite,
-                        size: 16,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Quick actions
-          _buildQuickActionCard(
-            icon: Icons.shield_outlined,
-            title: 'Verify Identity',
-            subtitle: 'Complete your Stripe verification',
-            onTap: () {
-              context.push('/identity/intro');
-            },
-          ),
-
-          const SizedBox(height: 16),
-
-          _buildQuickActionCard(
-            icon: Icons.receipt_outlined,
-            title: 'Add Evidence',
-            subtitle: 'Upload receipts and screenshots',
-            onTap: () {
-              context.push('/evidence');
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.pureWhite,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppTheme.neutralGray300,
-          ),
-        ),
-        child: Row(
+        color: Colors.white,
+        child: Column(
           children: [
+            // TrustScore Hero Section
             Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.softLilac,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                color: AppTheme.primaryPurple,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Score Circle
+                  SizedBox(
+                    width: 128,
+                    height: 128,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Background ring
+                        Container(
+                          width: 128,
+                          height: 128,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppTheme.softLilac,
+                          ),
+                        ),
+                        // Progress ring
+                        AnimatedBuilder(
+                          animation: _scoreAnimation,
+                          builder: (context, child) {
+                            return CustomPaint(
+                              size: const Size(128, 128),
+                              painter: _ScoreRingPainter(
+                                progress: _scoreAnimation.value / 1000,
+                                color: AppTheme.primaryPurple,
+                              ),
+                            );
+                          },
+                        ),
+                        // Score text
+                        AnimatedBuilder(
+                          animation: _scoreAnimation,
+                          builder: (context, child) {
+                            return Text(
+                              '${_scoreAnimation.value.toInt()}',
+                              style: GoogleFonts.inter(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.deepBlack,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Score Label
                   Text(
-                    title,
+                    'Very High Trust',
                     style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
                       color: AppTheme.deepBlack,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    subtitle,
+                    'Your TrustScore is in the top 15%',
                     style: GoogleFonts.inter(
-                      fontSize: 14,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
                       color: AppTheme.neutralGray700,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Score Range Indicator
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '400',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.neutralGray700,
+                              ),
+                            ),
+                            Text(
+                              '1000',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.neutralGray700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: AppTheme.softLilac,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              return AnimatedBuilder(
+                                animation: _scoreAnimation,
+                                builder: (context, child) {
+                                  return Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Container(
+                                      width: constraints.maxWidth * (_scoreAnimation.value / 1000),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primaryPurple,
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppTheme.neutralGray700,
+
+            // Onboarding Checklist Card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.softLilac,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Complete Your Profile',
+                          style: GoogleFonts.inter(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.deepBlack,
+                          ),
+                        ),
+                        Text(
+                          '2/3',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryPurple,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Progress bar
+                    Container(
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: AppTheme.softLilac.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: 0.666,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryPurple,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Checklist Items
+                    _buildChecklistItem(
+                      'Verify your identity',
+                      '+100 TrustScore',
+                      true,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildChecklistItem(
+                      'Connect a marketplace profile',
+                      '+150 TrustScore',
+                      true,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildChecklistItem(
+                      'Add evidence to your vault',
+                      '+100 TrustScore',
+                      false,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Quick Actions Grid
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Quick Actions',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.deepBlack,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildQuickAction(
+                          icon: Icons.description_outlined,
+                          title: 'Add Evidence',
+                          subtitle: 'Upload receipts',
+                          onTap: () => context.push('/evidence'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildQuickAction(
+                          icon: Icons.link,
+                          title: 'Connect Profile',
+                          subtitle: 'Link marketplace',
+                          onTap: () => context.push('/profiles/connect'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildQuickAction(
+                          icon: Icons.share_outlined,
+                          title: 'Share Passport',
+                          subtitle: 'Generate link',
+                          onTap: () => context.push('/profile/share'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildQuickAction(
+                          icon: Icons.lock_outline,
+                          title: 'Security',
+                          subtitle: 'Manage devices',
+                          onTap: () => setState(() => _selectedIndex = 3),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Recent Activity
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Recent Activity',
+                        style: GoogleFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.deepBlack,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {},
+                        child: Text(
+                          'See All',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.primaryPurple,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  _buildActivityItem(
+                    icon: Icons.check_circle_outline,
+                    iconBgColor: AppTheme.successGreen.withValues(alpha: 0.1),
+                    iconColor: AppTheme.successGreen,
+                    title: 'Profile verified',
+                    subtitle: 'Vinted profile successfully connected',
+                    time: '2 hours ago',
+                    points: '+150',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildActivityItem(
+                    icon: Icons.shield_outlined,
+                    iconBgColor: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                    iconColor: AppTheme.primaryPurple,
+                    title: 'Identity verified',
+                    subtitle: 'Stripe Identity check completed',
+                    time: '1 day ago',
+                    points: '+100',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildActivityItem(
+                    icon: Icons.person_outline,
+                    iconBgColor: AppTheme.softLilac,
+                    iconColor: AppTheme.primaryPurple,
+                    title: 'Account created',
+                    subtitle: 'Welcome to SilentID',
+                    time: '3 days ago',
+                    points: null,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChecklistItem(String title, String points, bool completed) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: completed ? AppTheme.successGreen : Colors.transparent,
+            border: completed
+                ? null
+                : Border.all(color: AppTheme.neutralGray300, width: 2),
+          ),
+          child: completed
+              ? const Icon(Icons.check, color: Colors.white, size: 14)
+              : null,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: completed ? AppTheme.neutralGray700 : AppTheme.deepBlack,
+                  fontWeight: completed ? FontWeight.w400 : FontWeight.w500,
+                  decoration: completed ? TextDecoration.lineThrough : null,
+                ),
+              ),
+              Text(
+                points,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: completed ? AppTheme.neutralGray700 : AppTheme.primaryPurple,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickAction({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        AppHaptics.light();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.neutralGray300),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 3,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              String.fromCharCode(icon.codePoint),
+              style: TextStyle(
+                fontFamily: icon.fontFamily,
+                fontSize: 24,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.deepBlack,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.neutralGray700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActivityItem({
+    required IconData icon,
+    required Color iconBgColor,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String time,
+    String? points,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.neutralGray300),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconBgColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.deepBlack,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.neutralGray700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  time,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.neutralGray700.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (points != null)
+            Text(
+              points,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.successGreen,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -360,12 +758,20 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.folder_outlined,
-              size: 64,
-              color: AppTheme.neutralGray300,
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppTheme.softLilac,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.description_outlined,
+                size: 40,
+                color: AppTheme.primaryPurple,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Text(
               'Evidence Vault',
               style: GoogleFonts.inter(
@@ -384,12 +790,19 @@ class _HomeScreenState extends State<HomeScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            Text(
-              'Coming soon',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: AppTheme.primaryPurple,
-                fontWeight: FontWeight.w500,
+            ElevatedButton(
+              onPressed: () => context.push('/evidence'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryPurple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Add Evidence',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -398,21 +811,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildVerifyTab() {
+  Widget _buildPassportTab() {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.verified_user_outlined,
-              size: 64,
-              color: AppTheme.neutralGray300,
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppTheme.softLilac,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.person_outline,
+                size: 40,
+                color: AppTheme.primaryPurple,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Text(
-              'Mutual Verification',
+              'Trust Passport',
               style: GoogleFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -421,7 +842,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Confirm transactions with other users to build mutual trust.',
+              'Share your verified trust profile with others.',
               style: GoogleFonts.inter(
                 fontSize: 14,
                 color: AppTheme.neutralGray700,
@@ -429,12 +850,79 @@ class _HomeScreenState extends State<HomeScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            Text(
-              'Coming soon',
-              style: GoogleFonts.inter(
-                fontSize: 12,
+            ElevatedButton(
+              onPressed: () => context.push('/profile/passport'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryPurple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'View Passport',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSecurityTab() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppTheme.softLilac,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.shield_outlined,
+                size: 40,
                 color: AppTheme.primaryPurple,
-                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Security Center',
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.deepBlack,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Manage your security settings and connected devices.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: AppTheme.neutralGray700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => context.push('/security'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryPurple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'View Security',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -444,118 +932,311 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSettingsTab() {
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        Text(
-          'Settings',
-          style: GoogleFonts.inter(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.deepBlack,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Account Section
+          _buildSettingsSection(
+            'Account',
+            [
+              _buildSettingsItem(
+                Icons.person_outline,
+                'Account Details',
+                'Email, display name',
+                () => context.push('/settings/account'),
+              ),
+              _buildSettingsItem(
+                Icons.people_outline,
+                'Connected Accounts',
+                'Apple, Google',
+                () {},
+              ),
+            ],
           ),
-        ),
 
-        const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
-        _buildSettingsTile(
-          icon: Icons.person_outline,
-          title: 'Account Details',
-          onTap: () => context.push('/settings/account'),
-        ),
-
-        _buildSettingsTile(
-          icon: Icons.public_outlined,
-          title: 'My Public Profile',
-          onTap: () => context.push('/profile/public'),
-        ),
-
-        _buildSettingsTile(
-          icon: Icons.security_outlined,
-          title: 'Privacy Settings',
-          onTap: () => context.push('/settings/privacy'),
-        ),
-
-        _buildSettingsTile(
-          icon: Icons.devices_outlined,
-          title: 'Connected Devices',
-          onTap: () => context.push('/settings/devices'),
-        ),
-
-        const Divider(height: 32),
-
-        const Text(
-          'Data & Privacy',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.neutralGray700,
+          // Security Section
+          _buildSettingsSection(
+            'Security',
+            [
+              _buildSettingsItem(
+                Icons.lock_outline,
+                'Manage Passkeys',
+                '2 passkeys active',
+                () => context.push('/security/passkeys'),
+              ),
+              _buildSettingsItem(
+                Icons.devices_outlined,
+                'Connected Devices',
+                'Manage trusted devices',
+                () => context.push('/settings/devices'),
+              ),
+              _buildSettingsItem(
+                Icons.shield_outlined,
+                'Login Activity',
+                'Recent sessions & history',
+                () => context.push('/security/activity'),
+              ),
+            ],
           ),
-        ),
 
-        const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
-        _buildSettingsTile(
-          icon: Icons.download_outlined,
-          title: 'Export My Data',
-          onTap: () => context.push('/settings/export'),
-        ),
-
-        const Divider(height: 32),
-
-        const Text(
-          'Danger Zone',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.dangerRed,
+          // Data Section
+          _buildSettingsSection(
+            'Data',
+            [
+              _buildSettingsItem(
+                Icons.download_outlined,
+                'Export My Data',
+                'Download all your data',
+                () => context.push('/settings/export'),
+              ),
+              _buildSettingsItem(
+                Icons.delete_outline,
+                'Delete Account',
+                'Permanently delete your account',
+                () => context.push('/settings/delete'),
+                isDestructive: true,
+              ),
+            ],
           ),
-        ),
 
-        const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
-        _buildSettingsTile(
-          icon: Icons.delete_forever_outlined,
-          title: 'Delete Account',
-          textColor: AppTheme.dangerRed,
-          onTap: () => context.push('/settings/delete'),
-        ),
+          // App Info Section
+          _buildSettingsSection(
+            'App Info',
+            [
+              _buildSettingsItem(
+                Icons.help_outline,
+                'Help Center',
+                null,
+                () {},
+              ),
+              _buildSettingsItem(
+                Icons.description_outlined,
+                'Terms of Service',
+                null,
+                () {},
+              ),
+              _buildSettingsItem(
+                Icons.lock_outline,
+                'Privacy Policy',
+                null,
+                () {},
+              ),
+            ],
+          ),
 
-        const Divider(height: 32),
+          const SizedBox(height: 16),
 
-        _buildSettingsTile(
-          icon: Icons.logout,
-          title: 'Logout',
-          textColor: AppTheme.dangerRed,
-          onTap: _handleLogout,
-        ),
-      ],
+          // Version info
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.neutralGray300),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppTheme.softLilac,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Icon(
+                    Icons.info_outline,
+                    color: AppTheme.primaryPurple,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Version',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.deepBlack,
+                      ),
+                    ),
+                    Text(
+                      '1.0.0',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppTheme.neutralGray700,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Logout Button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: _handleLogout,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                side: BorderSide(color: AppTheme.neutralGray300, width: 2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Log Out',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.deepBlack,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 32),
+        ],
+      ),
     );
   }
 
-  Widget _buildSettingsTile({
-    required IconData icon,
-    required String title,
-    Color? textColor,
-    required VoidCallback onTap,
+  Widget _buildSettingsSection(String title, List<Widget> items) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.neutralGray300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.deepBlack,
+              ),
+            ),
+          ),
+          Divider(height: 1, color: AppTheme.neutralGray300),
+          ...items,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsItem(
+    IconData icon,
+    String title,
+    String? subtitle,
+    VoidCallback onTap, {
+    bool isDestructive = false,
   }) {
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: textColor ?? AppTheme.deepBlack,
-      ),
-      title: Text(
-        title,
-        style: GoogleFonts.inter(
-          fontSize: 16,
-          color: textColor ?? AppTheme.deepBlack,
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: AppTheme.neutralGray300.withValues(alpha: 0.5)),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isDestructive
+                    ? AppTheme.dangerRed.withValues(alpha: 0.1)
+                    : AppTheme.softLilac,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(
+                icon,
+                color: isDestructive ? AppTheme.dangerRed : AppTheme.primaryPurple,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: isDestructive ? AppTheme.dangerRed : AppTheme.deepBlack,
+                    ),
+                  ),
+                  if (subtitle != null)
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppTheme.neutralGray700,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: isDestructive ? AppTheme.dangerRed : AppTheme.neutralGray700,
+              size: 20,
+            ),
+          ],
         ),
       ),
-      trailing: const Icon(
-        Icons.chevron_right,
-        color: AppTheme.neutralGray700,
-      ),
-      onTap: onTap,
     );
   }
+}
+
+class _ScoreRingPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  _ScoreRingPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - 16) / 2;
+
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      2 * math.pi * progress,
+      false,
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ScoreRingPainter oldDelegate) =>
+      progress != oldDelegate.progress || color != oldDelegate.color;
 }

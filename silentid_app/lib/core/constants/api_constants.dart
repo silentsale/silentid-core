@@ -1,6 +1,8 @@
+import '../config/app_environment.dart';
+
 class ApiConstants {
-  // Base URL for local development
-  static const String baseUrl = 'http://localhost:5249';
+  // Base URL from environment configuration
+  static String get baseUrl => AppEnvironment.apiBaseUrl;
 
   // API version
   static const String apiVersion = 'v1';

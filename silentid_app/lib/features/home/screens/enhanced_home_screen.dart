@@ -1,21 +1,13 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:math' as math;
 import '../../../core/theme/app_theme.dart';
-import '../../../core/constants/app_spacing.dart';
-import '../../../core/widgets/empty_state.dart';
-import '../../../core/widgets/offline_indicator.dart';
-import '../../../core/widgets/onboarding_checklist.dart';
-import '../../../core/widgets/gamification/gamification.dart';
-import '../../../core/utils/animations.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../services/auth_service.dart';
-import '../../../services/user_api_service.dart';
-import '../../../services/evidence_service.dart';
-import '../../../services/profile_linking_service.dart';
 
+/// SuperDesign Level 7+ Enhanced Home Screen
+/// This screen is wrapped by MainShellScreen which provides the bottom navigation
 class EnhancedHomeScreen extends StatefulWidget {
   const EnhancedHomeScreen({super.key});
 
@@ -23,503 +15,122 @@ class EnhancedHomeScreen extends StatefulWidget {
   State<EnhancedHomeScreen> createState() => _EnhancedHomeScreenState();
 }
 
-class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
+class _EnhancedHomeScreenState extends State<EnhancedHomeScreen>
+    with TickerProviderStateMixin {
   final _authService = AuthService();
-  static const _storage = FlutterSecureStorage();
 
-  // API Services for data refresh
-  final _userApiService = UserApiService();
-  final _evidenceService = EvidenceService();
-  final _profileLinkingService = ProfileLinkingService();
+  late AnimationController _scoreController;
+  late AnimationController _pulseController;
+  late Animation<double> _scoreAnimation;
+  late Animation<double> _pulseAnimation;
 
-  String? _userEmail;
-  int _selectedIndex = 0;
-  bool _isOnline = true;
   bool _isRefreshing = false;
 
-  // Badge counts (placeholder - integrate with real data)
-  final int _evidenceBadgeCount = 0;
-  final int _verifyBadgeCount = 2; // Example: 2 pending verification requests
-  final int _profileBadgeCount = 1; // Example: 1 security alert
+  // Demo data
+  final int _trustScore = 752;
+  final String _trustLabel = 'Very High Trust';
+  final int _userLevel = 4;
 
-  // Section 50.2.2 - Onboarding checklist state
-  bool _showOnboardingChecklist = true;
-  bool _identityVerified = false;
-  bool _profileConnected = false;
-  bool _firstEvidenceAdded = false;
+  // Onboarding checklist state
+  final bool _identityVerified = true;
+  final bool _profileConnected = true;
+  final bool _firstEvidenceAdded = false;
 
   @override
   void initState() {
     super.initState();
-    _loadUserEmail();
-    _checkConnectivity();
-    _loadOnboardingState();
-  }
 
-  /// Load onboarding checklist state from secure storage
-  Future<void> _loadOnboardingState() async {
-    final dismissed = await _storage.read(key: 'onboarding_checklist_dismissed');
-    final identity = await _storage.read(key: 'identity_verified');
-    final profile = await _storage.read(key: 'profile_connected');
-    final evidence = await _storage.read(key: 'first_evidence_added');
-
-    setState(() {
-      _showOnboardingChecklist = dismissed != 'true';
-      _identityVerified = identity == 'true';
-      _profileConnected = profile == 'true';
-      _firstEvidenceAdded = evidence == 'true';
-    });
-  }
-
-  /// Dismiss the onboarding checklist permanently
-  Future<void> _dismissOnboardingChecklist() async {
-    await _storage.write(key: 'onboarding_checklist_dismissed', value: 'true');
-    setState(() {
-      _showOnboardingChecklist = false;
-    });
-  }
-
-  Future<void> _loadUserEmail() async {
-    final email = await _authService.getCurrentUserEmail();
-    setState(() {
-      _userEmail = email;
-    });
-  }
-
-  /// Check internet connectivity by attempting a lightweight HTTP request
-  /// Uses Google's connectivity check endpoint (similar to Android's approach)
-  Future<void> _checkConnectivity() async {
-    try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 5),
-        receiveTimeout: const Duration(seconds: 5),
-      ));
-
-      // Use Google's generate_204 endpoint - returns 204 No Content if online
-      // This is the same approach used by Android for connectivity checks
-      final response = await dio.get('https://www.google.com/generate_204');
-
-      if (mounted) {
-        setState(() {
-          _isOnline = response.statusCode == 204;
-        });
-      }
-    } on DioException catch (_) {
-      // Any network error means offline
-      if (mounted) {
-        setState(() {
-          _isOnline = false;
-        });
-      }
-    } catch (_) {
-      // Fallback: assume online if check fails unexpectedly
-      if (mounted) {
-        setState(() {
-          _isOnline = true;
-        });
-      }
-    }
-  }
-
-  Future<void> _handleLogout() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Logout',
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to logout?',
-          style: GoogleFonts.inter(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              'Cancel',
-              style: GoogleFonts.inter(
-                color: AppTheme.neutralGray700,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(
-              'Logout',
-              style: GoogleFonts.inter(
-                color: AppTheme.dangerRed,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
+    _scoreController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    _scoreAnimation = Tween<double>(begin: 0, end: _trustScore.toDouble()).animate(
+      CurvedAnimation(parent: _scoreController, curve: Curves.easeOutCubic),
     );
 
-    if (confirm == true && mounted) {
-      await _authService.logout();
-      if (mounted) {
-        context.go('/');
-      }
-    }
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.03).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _scoreController.forward();
   }
 
-  /// Refresh data based on the currently selected tab
-  /// Tab 0 (Home): Refresh user data, TrustScore, connectivity
-  /// Tab 1 (Evidence): Refresh evidence list (receipts, screenshots, profile links)
-  /// Tab 2 (Verify): Refresh verification requests (not implemented yet)
-  /// Tab 3 (Profile): Refresh user profile data
-  Future<void> _refreshTab() async {
+  @override
+  void dispose() {
+    _scoreController.dispose();
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleRefresh() async {
     if (_isRefreshing) return;
-
-    setState(() {
-      _isRefreshing = true;
-    });
-
-    try {
-      // Always check connectivity on refresh
-      await _checkConnectivity();
-
-      // If offline, don't attempt data refresh
-      if (!_isOnline) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('You are offline. Please check your connection.'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
-        return;
-      }
-
-      // Refresh based on current tab
-      switch (_selectedIndex) {
-        case 0:
-          // Home tab: Refresh user profile and TrustScore
-          await _refreshHomeData();
-          break;
-
-        case 1:
-          // Evidence tab: Refresh evidence list
-          await _refreshEvidenceData();
-          break;
-
-        case 2:
-          // Verify tab: Refresh verification requests
-          // Note: MutualVerificationService removed per specification
-          // Future: Add other verification-related refresh if needed
-          break;
-
-        case 3:
-          // Profile tab: Refresh profile data
-          await _refreshProfileData();
-          break;
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Refresh failed: ${e.toString().replaceAll('Exception: ', '')}'),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isRefreshing = false;
-        });
-      }
-    }
-  }
-
-  /// Refresh Home tab data: user info, TrustScore, onboarding state
-  Future<void> _refreshHomeData() async {
-    try {
-      // Fetch user profile (includes TrustScore)
-      final userProfile = await _userApiService.getUserProfile();
-
-      // Reload onboarding state
-      await _loadOnboardingState();
-
-      // Update user email if changed
-      if (mounted && userProfile.email != _userEmail) {
-        setState(() {
-          _userEmail = userProfile.email;
-        });
-      }
-    } catch (e) {
-      // Log error but don't crash - partial refresh is acceptable
-      debugPrint('Home refresh error: $e');
-      rethrow;
-    }
-  }
-
-  /// Refresh Evidence tab data: receipts, screenshots, profile links
-  Future<void> _refreshEvidenceData() async {
-    try {
-      // Fetch evidence summary (counts)
-      await _evidenceService.getEvidenceSummary();
-
-      // Fetch receipts list
-      await _evidenceService.getReceipts();
-
-      // Fetch connected profiles
-      await _profileLinkingService.getConnectedProfiles();
-    } catch (e) {
-      debugPrint('Evidence refresh error: $e');
-      rethrow;
-    }
-  }
-
-  /// Refresh Profile tab data: user profile, connected profiles
-  Future<void> _refreshProfileData() async {
-    try {
-      // Fetch full user profile
-      await _userApiService.getUserProfile();
-
-      // Fetch connected profiles for display
-      await _profileLinkingService.getConnectedProfiles();
-    } catch (e) {
-      debugPrint('Profile refresh error: $e');
-      rethrow;
-    }
+    setState(() => _isRefreshing = true);
+    await Future.delayed(const Duration(seconds: 1));
+    _scoreController.forward(from: 0);
+    if (mounted) setState(() => _isRefreshing = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'SilentID',
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        actions: [
-          // Connection status
-          if (!_isOnline)
-            const Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: InlineConnectionStatus(isOnline: false),
-            ),
-
-          // Logout button
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _handleLogout,
-            tooltip: 'Logout',
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Offline indicator
-          if (!_isOnline)
-            const OfflineIndicator(),
-
-          // Main content with fade transition
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: AppAnimations.normal,
-              child: IndexedStack(
-                key: ValueKey(_selectedIndex),
-                index: _selectedIndex,
-                children: [
-                  _buildHomeTab(),
-                  _buildEvidenceTab(),
-                  _buildVerifyTab(),
-                  _buildProfileTab(),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: _selectedIndex,
-      onTap: (index) {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: AppTheme.primaryPurple,
-      unselectedItemColor: AppTheme.neutralGray700,
-      selectedLabelStyle: GoogleFonts.inter(
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-      ),
-      unselectedLabelStyle: GoogleFonts.inter(
-        fontSize: 12,
-      ),
-      items: [
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: _buildBadge(
-            icon: const Icon(Icons.folder_outlined),
-            count: _evidenceBadgeCount,
-          ),
-          activeIcon: _buildBadge(
-            icon: const Icon(Icons.folder),
-            count: _evidenceBadgeCount,
-          ),
-          label: 'Evidence',
-        ),
-        BottomNavigationBarItem(
-          icon: _buildBadge(
-            icon: const Icon(Icons.verified_user_outlined),
-            count: _verifyBadgeCount,
-          ),
-          activeIcon: _buildBadge(
-            icon: const Icon(Icons.verified_user),
-            count: _verifyBadgeCount,
-          ),
-          label: 'Verify',
-        ),
-        BottomNavigationBarItem(
-          icon: _buildBadge(
-            icon: const Icon(Icons.person_outline),
-            count: _profileBadgeCount,
-          ),
-          activeIcon: _buildBadge(
-            icon: const Icon(Icons.person),
-            count: _profileBadgeCount,
-          ),
-          label: 'Profile',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBadge({
-    required Widget icon,
-    required int count,
-  }) {
-    if (count == 0) return icon;
-
-    return Badge(
-      label: Text('$count'),
-      backgroundColor: AppTheme.dangerRed,
-      child: icon,
-    );
-  }
-
-  Widget _buildHomeTab() {
-    // Check if all onboarding steps complete
-    final allStepsComplete = _identityVerified &&
-        _profileConnected &&
-        _firstEvidenceAdded;
-
-    return RefreshIndicator(
-      onRefresh: _refreshTab,
-      color: AppTheme.primaryPurple,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Welcome message with fade-in
-            AppAnimations.fadeSlideIn(
-              child: Text(
-                'Welcome back!',
+      backgroundColor: const Color(0xFFF9FAFB),
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: AppTheme.primaryPurple,
+        child: CustomScrollView(
+          slivers: [
+            // Custom App Bar
+            SliverAppBar(
+              expandedHeight: 60,
+              floating: true,
+              pinned: true,
+              backgroundColor: Colors.white,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              centerTitle: true,
+              title: Text(
+                'SilentID',
                 style: GoogleFonts.inter(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
                   color: AppTheme.deepBlack,
                 ),
               ),
-            ),
-
-            const SizedBox(height: 8),
-
-            if (_userEmail != null)
-              AppAnimations.fadeSlideIn(
-                child: Text(
-                  _userEmail!,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: AppTheme.neutralGray700,
-                  ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.notifications_outlined),
+                  color: AppTheme.neutralGray700,
+                  onPressed: () {
+                    AppHaptics.light();
+                    // TODO: Navigate to notifications
+                  },
                 ),
+              ],
+            ),
+
+            // Content
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  // TrustScore Hero Section
+                  _buildTrustScoreHero(),
+
+                  // Onboarding Checklist
+                  if (!_allOnboardingComplete) _buildOnboardingChecklist(),
+
+                  // Quick Actions
+                  _buildQuickActionsSection(),
+
+                  // Recent Activity
+                  _buildRecentActivitySection(),
+
+                  const SizedBox(height: 100), // Space for bottom nav
+                ],
               ),
-
-            const SizedBox(height: 24),
-
-            // Section 50.2.2 - Onboarding Checklist (show for new users)
-            if (_showOnboardingChecklist)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 24),
-                child: OnboardingChecklist(
-                  identityVerified: _identityVerified,
-                  profileConnected: _profileConnected,
-                  firstEvidenceAdded: _firstEvidenceAdded,
-                  onVerifyIdentityTap: () => context.push('/identity/intro'),
-                  onConnectProfileTap: () => context.push('/profiles/connect'),
-                  onAddEvidenceTap: () => context.push('/evidence'),
-                  onDismiss: allStepsComplete ? _dismissOnboardingChecklist : null,
-                ),
-              ),
-
-            // TrustScore card with animation
-            AppAnimations.scaleIn(
-              child: _buildTrustScoreCard(),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Quick actions with Level 7 gamification (reward points)
-            _buildQuickActionCard(
-              icon: Icons.shield_outlined,
-              title: 'Verify Identity',
-              subtitle: 'Complete your Stripe verification',
-              onTap: () => context.push('/identity/intro'),
-              rewardPoints: _identityVerified ? null : 50,
-            ),
-
-            const SizedBox(height: AppSpacing.md),
-
-            _buildQuickActionCard(
-              icon: Icons.link,
-              title: 'Connect Profiles',
-              subtitle: 'Link your Vinted, eBay, Depop ratings',
-              onTap: () => context.push('/profiles/connect'),
-              rewardPoints: _profileConnected ? null : 25,
-            ),
-
-            const SizedBox(height: AppSpacing.md),
-
-            // NEW: Share-Import feature card (Section 55)
-            _buildQuickActionCard(
-              icon: Icons.ios_share_outlined,
-              title: 'Import From Share',
-              subtitle: 'Share any profile link to connect',
-              onTap: () => context.push('/sharing/education'),
-              rewardPoints: 25,
-            ),
-
-            const SizedBox(height: AppSpacing.md),
-
-            _buildQuickActionCard(
-              icon: Icons.receipt_outlined,
-              title: 'Add Evidence',
-              subtitle: 'Upload receipts and screenshots',
-              onTap: () => context.push('/evidence'),
-              rewardPoints: _firstEvidenceAdded ? null : 10,
             ),
           ],
         ),
@@ -527,223 +138,711 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen> {
     );
   }
 
-  Widget _buildTrustScoreCard() {
-    // Level 7 Gamification: Use TrustScoreHeroCard with animations
-    return TrustScoreHeroCard(
-      trustScore: 754,
-      userLevel: _calculateUserLevel(),
-      trustLabel: 'High Trust',
-      showLevel: true,
-      animate: true,
-      onTap: () {
-        AppHaptics.light();
-        context.push('/trust/overview');
-      },
+  bool get _allOnboardingComplete =>
+      _identityVerified && _profileConnected && _firstEvidenceAdded;
+
+  int get _completedSteps {
+    int count = 0;
+    if (_identityVerified) count++;
+    if (_profileConnected) count++;
+    if (_firstEvidenceAdded) count++;
+    return count;
+  }
+
+  Widget _buildTrustScoreHero() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+      child: Column(
+        children: [
+          // Animated Score Circle
+          GestureDetector(
+            onTap: () {
+              AppHaptics.medium();
+              context.push('/trust/overview');
+            },
+            child: AnimatedBuilder(
+              animation: _pulseAnimation,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _pulseAnimation.value,
+                  child: SizedBox(
+                    width: 140,
+                    height: 140,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Background ring
+                        Container(
+                          width: 140,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppTheme.softLilac,
+                          ),
+                        ),
+                        // Progress ring
+                        AnimatedBuilder(
+                          animation: _scoreAnimation,
+                          builder: (context, child) {
+                            return CustomPaint(
+                              size: const Size(140, 140),
+                              painter: _ScoreRingPainter(
+                                progress: _scoreAnimation.value / 1000,
+                                color: AppTheme.primaryPurple,
+                                strokeWidth: 10,
+                              ),
+                            );
+                          },
+                        ),
+                        // Score text
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AnimatedBuilder(
+                              animation: _scoreAnimation,
+                              builder: (context, child) {
+                                return Text(
+                                  '${_scoreAnimation.value.toInt()}',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.deepBlack,
+                                  ),
+                                );
+                              },
+                            ),
+                            Text(
+                              'TrustScore',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.neutralGray700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Trust Label
+          Text(
+            _trustLabel,
+            style: GoogleFonts.inter(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.deepBlack,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Your TrustScore is in the top 15%',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.neutralGray700,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Level Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.primaryPurple,
+                  AppTheme.primaryPurple.withValues(alpha: 0.8),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.star, color: Colors.white, size: 18),
+                const SizedBox(width: 6),
+                Text(
+                  'Level $_userLevel',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Score Range Bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '0',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.neutralGray700,
+                      ),
+                    ),
+                    Text(
+                      '1000',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.neutralGray700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: AppTheme.softLilac,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return AnimatedBuilder(
+                        animation: _scoreAnimation,
+                        builder: (context, child) {
+                          return Align(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              width: constraints.maxWidth * (_scoreAnimation.value / 1000),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppTheme.primaryPurple,
+                                    AppTheme.primaryPurple.withValues(alpha: 0.7),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  /// Calculate user level based on actions completed (Level 7 Gamification)
-  int _calculateUserLevel() {
-    int level = 1;
-    if (_identityVerified) level += 2;
-    if (_profileConnected) level += 2;
-    if (_firstEvidenceAdded) level += 1;
-    // Add more level calculations based on TrustScore, evidence count, etc.
-    return level.clamp(1, 10);
+  Widget _buildOnboardingChecklist() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.softLilac,
+              AppTheme.softLilac.withValues(alpha: 0.5),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Complete Your Profile',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.deepBlack,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryPurple,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '$_completedSteps/3',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Progress bar
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: _completedSteps / 3),
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, child) {
+                return Container(
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FractionallySizedBox(
+                      widthFactor: value,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryPurple,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+            // Checklist Items
+            _buildChecklistItem(
+              'Verify your identity',
+              '+100 TrustScore',
+              _identityVerified,
+              () => context.push('/identity/intro'),
+            ),
+            const SizedBox(height: 14),
+            _buildChecklistItem(
+              'Connect a marketplace profile',
+              '+150 TrustScore',
+              _profileConnected,
+              () => context.push('/profiles/connect'),
+            ),
+            const SizedBox(height: 14),
+            _buildChecklistItem(
+              'Add evidence to your vault',
+              '+100 TrustScore',
+              _firstEvidenceAdded,
+              () => context.push('/evidence'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChecklistItem(
+    String title,
+    String points,
+    bool completed,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: completed ? null : () {
+        AppHaptics.light();
+        onTap();
+      },
+      child: Row(
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: completed ? AppTheme.successGreen : Colors.white,
+              border: completed
+                  ? null
+                  : Border.all(color: AppTheme.neutralGray300, width: 2),
+            ),
+            child: completed
+                ? const Icon(Icons.check, color: Colors.white, size: 16)
+                : null,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    color: completed ? AppTheme.neutralGray700 : AppTheme.deepBlack,
+                    fontWeight: completed ? FontWeight.w400 : FontWeight.w500,
+                    decoration: completed ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+                Text(
+                  points,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: completed ? AppTheme.neutralGray700 : AppTheme.primaryPurple,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!completed)
+            Icon(
+              Icons.chevron_right,
+              color: AppTheme.primaryPurple,
+              size: 20,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionsSection() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Quick Actions',
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.deepBlack,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildQuickActionCard(
+                  icon: Icons.description_outlined,
+                  title: 'Add Evidence',
+                  subtitle: 'Upload receipts',
+                  color: AppTheme.primaryPurple,
+                  onTap: () => context.push('/evidence'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildQuickActionCard(
+                  icon: Icons.link,
+                  title: 'Connect Profile',
+                  subtitle: 'Link marketplace',
+                  color: const Color(0xFF3B82F6),
+                  onTap: () => context.push('/profiles/connect'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildQuickActionCard(
+                  icon: Icons.share_outlined,
+                  title: 'Share Passport',
+                  subtitle: 'Generate link',
+                  color: AppTheme.successGreen,
+                  onTap: () => context.push('/profile/public'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildQuickActionCard(
+                  icon: Icons.shield_outlined,
+                  title: 'Security',
+                  subtitle: 'Manage devices',
+                  color: const Color(0xFFE65100),
+                  onTap: () => context.push('/security'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildQuickActionCard({
     required IconData icon,
     required String title,
     required String subtitle,
+    required Color color,
     required VoidCallback onTap,
-    int? rewardPoints,
   }) {
-    // Level 7 Interactivity: Use QuickActionCard with haptics and lift effect
-    return QuickActionCard(
-      icon: icon,
-      title: title,
-      subtitle: subtitle,
-      onTap: onTap,
-      trailing: rewardPoints != null
-          ? RewardIndicator(points: rewardPoints, compact: true)
-          : null,
-    );
-  }
-
-  Widget _buildEvidenceTab() {
-    return RefreshIndicator(
-      onRefresh: _refreshTab,
-      color: AppTheme.primaryPurple,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height - 200,
-          child: EmptyState.evidence(
-            onAction: () => context.push('/evidence/receipts/upload'),
-          ),
+    return GestureDetector(
+      onTap: () {
+        AppHaptics.light();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.neutralGray300),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildVerifyTab() {
-    return RefreshIndicator(
-      onRefresh: _refreshTab,
-      color: AppTheme.primaryPurple,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height - 200,
-          child: EmptyState.profileLinks(
-            onAction: () => context.push('/profiles/connect'),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileTab() {
-    return RefreshIndicator(
-      onRefresh: _refreshTab,
-      color: AppTheme.primaryPurple,
-      child: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          Text(
-            'Profile & Settings',
-            style: GoogleFonts.inter(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.deepBlack,
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          _buildSettingsTile(
-            icon: Icons.person_outline,
-            title: 'Account Details',
-            onTap: () => context.push('/settings/account'),
-          ),
-
-          _buildSettingsTile(
-            icon: Icons.public_outlined,
-            title: 'My Public Profile',
-            onTap: () => context.push('/profile/public'),
-          ),
-
-          _buildSettingsTile(
-            icon: Icons.security_outlined,
-            title: 'Privacy Settings',
-            badge: _profileBadgeCount > 0 ? _profileBadgeCount : null,
-            onTap: () => context.push('/settings/privacy'),
-          ),
-
-          _buildSettingsTile(
-            icon: Icons.devices_outlined,
-            title: 'Connected Devices',
-            onTap: () => context.push('/settings/devices'),
-          ),
-
-          const Divider(height: 32),
-
-          const Text(
-            'Data & Privacy',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.neutralGray700,
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          _buildSettingsTile(
-            icon: Icons.download_outlined,
-            title: 'Export My Data',
-            onTap: () => context.push('/settings/export'),
-          ),
-
-          const Divider(height: 32),
-
-          const Text(
-            'Danger Zone',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.dangerRed,
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          _buildSettingsTile(
-            icon: Icons.delete_forever_outlined,
-            title: 'Delete Account',
-            textColor: AppTheme.dangerRed,
-            onTap: () => context.push('/settings/delete'),
-          ),
-
-          const Divider(height: 32),
-
-          _buildSettingsTile(
-            icon: Icons.logout,
-            title: 'Logout',
-            textColor: AppTheme.dangerRed,
-            onTap: _handleLogout,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettingsTile({
-    required IconData icon,
-    required String title,
-    Color? textColor,
-    required VoidCallback onTap,
-    int? badge,
-  }) {
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: textColor ?? AppTheme.deepBlack,
-      ),
-      title: Row(
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              color: textColor ?? AppTheme.deepBlack,
-            ),
-          ),
-          if (badge != null) ...[
-            const SizedBox(width: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: AppTheme.dangerRed,
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Text(
-                '$badge',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.pureWhite,
-                ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.deepBlack,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: AppTheme.neutralGray700,
               ),
             ),
           ],
-        ],
+        ),
       ),
-      trailing: const Icon(
-        Icons.chevron_right,
-        color: AppTheme.neutralGray700,
-      ),
-      onTap: onTap,
     );
   }
+
+  Widget _buildRecentActivitySection() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Recent Activity',
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.deepBlack,
+                ),
+              ),
+              TextButton(
+                onPressed: () {},
+                child: Text(
+                  'See All',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryPurple,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildActivityItem(
+            icon: Icons.check_circle_outline,
+            iconBgColor: AppTheme.successGreen.withValues(alpha: 0.1),
+            iconColor: AppTheme.successGreen,
+            title: 'Profile verified',
+            subtitle: 'Vinted profile successfully connected',
+            time: '2 hours ago',
+            points: '+150',
+          ),
+          const SizedBox(height: 12),
+          _buildActivityItem(
+            icon: Icons.shield_outlined,
+            iconBgColor: AppTheme.primaryPurple.withValues(alpha: 0.1),
+            iconColor: AppTheme.primaryPurple,
+            title: 'Identity verified',
+            subtitle: 'Stripe Identity check completed',
+            time: '1 day ago',
+            points: '+100',
+          ),
+          const SizedBox(height: 12),
+          _buildActivityItem(
+            icon: Icons.person_add_outlined,
+            iconBgColor: AppTheme.softLilac,
+            iconColor: AppTheme.primaryPurple,
+            title: 'Account created',
+            subtitle: 'Welcome to SilentID',
+            time: '3 days ago',
+            points: null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityItem({
+    required IconData icon,
+    required Color iconBgColor,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String time,
+    String? points,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.neutralGray300),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: iconBgColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.deepBlack,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppTheme.neutralGray700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  time,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppTheme.neutralGray700.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (points != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.successGreen.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                points,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.successGreen,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScoreRingPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  final double strokeWidth;
+
+  _ScoreRingPainter({
+    required this.progress,
+    required this.color,
+    this.strokeWidth = 8,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth * 2) / 2;
+
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      2 * math.pi * progress,
+      false,
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ScoreRingPainter oldDelegate) =>
+      progress != oldDelegate.progress || color != oldDelegate.color;
 }

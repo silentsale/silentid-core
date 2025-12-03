@@ -75,14 +75,30 @@ class _ProfileScreenState extends State<ProfileScreen>
         setState(() {
           _profile = profile;
         });
-        // Level 7: Start animation after data loads
         _animController.forward();
       }
     } catch (e) {
+      // Use demo data when API is unavailable
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load profile: $e')),
-        );
+        setState(() {
+          _profile = UserProfile(
+            id: 'demo-user',
+            email: 'demo@silentid.co.uk',
+            displayName: 'Demo User',
+            username: 'demouser',
+            isEmailVerified: true,
+            isPhoneVerified: false,
+            isPasskeyEnabled: true,
+            accountStatus: 'Active',
+            trustScore: 752,
+            trustLevel: 'Very High',
+            accountType: 'Premium',
+            riskScore: 5,
+            evidenceCount: 12,
+            createdAt: DateTime.now().subtract(const Duration(days: 90)),
+          );
+        });
+        _animController.forward();
       }
     }
   }

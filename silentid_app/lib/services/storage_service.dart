@@ -100,4 +100,21 @@ class StorageService {
   Future<void> clearAll() async {
     await _storage.deleteAll();
   }
+
+  // Demo mode - creates fake auth data for testing
+  Future<void> enableDemoMode() async {
+    await saveAuthData(
+      accessToken: 'demo_access_token_${DateTime.now().millisecondsSinceEpoch}',
+      refreshToken: 'demo_refresh_token_${DateTime.now().millisecondsSinceEpoch}',
+      userId: 'demo_user_12345',
+      email: 'demo@silentid.app',
+      username: 'DemoUser',
+    );
+  }
+
+  // Check if in demo mode
+  Future<bool> isDemoMode() async {
+    final userId = await getUserId();
+    return userId == 'demo_user_12345';
+  }
 }

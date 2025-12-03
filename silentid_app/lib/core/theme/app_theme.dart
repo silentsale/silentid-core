@@ -11,7 +11,11 @@ class AppTheme {
   static const Color pureWhite = Color(0xFFFFFFFF);
   static const Color neutralGray900 = Color(0xFF111111);
   static const Color neutralGray700 = Color(0xFF4C4C4C);
+  static const Color neutralGray600 = Color(0xFF6B6B6B);
+  static const Color neutralGray500 = Color(0xFF8A8A8A);
   static const Color neutralGray300 = Color(0xFFDADADA);
+  static const Color neutralGray200 = Color(0xFFE5E5E5);
+  static const Color neutralGray100 = Color(0xFFF5F5F5);
   static const Color successGreen = Color(0xFF1FBF71);
   static const Color warningAmber = Color(0xFFFFC043);
   static const Color dangerRed = Color(0xFFD04C4C);
