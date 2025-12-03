@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_messages.dart';
+import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../services/referral_api_service.dart';
@@ -87,9 +89,7 @@ class _ReferralScreenState extends State<ReferralScreen>
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load referral data: $e')),
-        );
+        AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'load referral data'));
       }
     }
   }
@@ -101,13 +101,7 @@ class _ReferralScreenState extends State<ReferralScreen>
     AppHaptics.light();
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Referral code copied!'),
-          backgroundColor: AppTheme.successGreen,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      AppMessages.showSuccess(context, ErrorMessages.referralCodeCopied);
     }
   }
 

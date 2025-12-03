@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_messages.dart';
+import '../../../core/utils/error_messages.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/widgets/info_modal.dart';
 import '../../../core/widgets/gamification/gamification.dart';
@@ -57,9 +59,7 @@ class _ConnectedProfilesScreenState extends State<ConnectedProfilesScreen> {
       } catch (e) {
         setState(() => _isLoading = false);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to load profiles: $e')),
-          );
+          AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'load profiles'));
         }
       }
     }

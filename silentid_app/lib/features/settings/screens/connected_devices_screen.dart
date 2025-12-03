@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/utils/app_messages.dart';
+import '../../../core/utils/error_messages.dart';
 import '../../../services/api_service.dart';
 
 /// Connected Devices Screen
@@ -60,12 +62,7 @@ class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen>
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load devices: $e'),
-            backgroundColor: AppTheme.dangerRed,
-          ),
-        );
+        AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'load devices'));
       }
     }
   }
@@ -99,21 +96,11 @@ class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen>
           _devices.removeWhere((device) => device['id'] == deviceId);
         });
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Device access revoked'),
-              backgroundColor: AppTheme.successGreen,
-            ),
-          );
+          AppMessages.showSuccess(context, ErrorMessages.deviceRevoked);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to revoke device: $e'),
-              backgroundColor: AppTheme.dangerRed,
-            ),
-          );
+          AppMessages.showError(context, ErrorMessages.deviceRevokeFailed);
         }
       }
     }

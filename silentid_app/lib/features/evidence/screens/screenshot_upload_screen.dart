@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_messages.dart';
+import '../../../core/utils/error_messages.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/info_point_helper.dart';
 import '../../../core/widgets/gamification/gamification.dart';
@@ -83,39 +85,14 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_getFriendlyErrorMessage(e)),
-            backgroundColor: AppTheme.dangerRed,
-          ),
-        );
+        AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'select image'));
       }
     }
   }
 
-
-  String _getFriendlyErrorMessage(dynamic error) {
-    final errorStr = error.toString().toLowerCase();
-    if (errorStr.contains('socket') || errorStr.contains('network') || errorStr.contains('connection')) {
-      return 'Check your internet connection and try again';
-    } else if (errorStr.contains('timeout')) {
-      return 'Upload took too long. Please try again';
-    } else if (errorStr.contains('permission')) {
-      return 'Permission denied. Please allow camera/gallery access';
-    } else if (errorStr.contains('size') || errorStr.contains('large')) {
-      return 'Image is too large. Try a smaller image';
-    }
-    return 'Something went wrong. Please try again';
-  }
-
   Future<void> _uploadScreenshot() async {
     if (_selectedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a screenshot first'),
-          backgroundColor: AppTheme.dangerRed,
-        ),
-      );
+      AppMessages.showError(context, 'Please select a screenshot first');
       return;
     }
 
@@ -167,22 +144,12 @@ class _ScreenshotUploadScreenState extends State<ScreenshotUploadScreen>
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Screenshot uploaded successfully'),
-            backgroundColor: AppTheme.successGreen,
-          ),
-        );
+        AppMessages.showSuccess(context, ErrorMessages.screenshotUploaded);
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_getFriendlyErrorMessage(e)),
-            backgroundColor: AppTheme.dangerRed,
-          ),
-        );
+        AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'upload screenshot'));
       }
     } finally {
       if (mounted) {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_messages.dart';
+import '../../../core/utils/error_messages.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../services/api_service.dart';
@@ -51,24 +53,11 @@ class _DataExportScreenState extends State<DataExportScreen>
       await _api.post(ApiConstants.dataExportRequest);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Export requested. We\'ll email you a download link when ready.',
-            ),
-            duration: Duration(seconds: 4),
-            backgroundColor: AppTheme.successGreen,
-          ),
-        );
+        AppMessages.showSuccess(context, ErrorMessages.exportStarted);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to request export: $e'),
-            backgroundColor: AppTheme.dangerRed,
-          ),
-        );
+        AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'request data export'));
       }
     } finally {
       setState(() => _isRequesting = false);

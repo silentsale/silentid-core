@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_messages.dart';
+import '../../../core/utils/error_messages.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../services/subscription_api_service.dart';
 
@@ -64,23 +66,13 @@ class _UpgradeProScreenState extends State<UpgradeProScreen>
         );
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Welcome to SilentID Pro!'),
-              backgroundColor: AppTheme.successGreen,
-            ),
-          );
+          AppMessages.showSuccess(context, 'Welcome to SilentID Pro!');
           Navigator.pop(context, true); // Return success
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Upgrade failed: ${e.toString()}'),
-            backgroundColor: AppTheme.dangerRed,
-          ),
-        );
+        AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'upgrade to Pro'));
       }
     } finally {
       if (mounted) {

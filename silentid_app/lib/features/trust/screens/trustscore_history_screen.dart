@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_messages.dart';
+import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../services/trustscore_api_service.dart';
 
@@ -89,9 +91,7 @@ class _TrustScoreHistoryScreenState extends State<TrustScoreHistoryScreen>
       setState(() => _isLoading = false);
       _animController.forward();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load history: $e')),
-        );
+        AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'load history'));
       }
     }
   }

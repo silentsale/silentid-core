@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/haptics.dart';
+import '../../../core/utils/app_messages.dart';
+import '../../../core/utils/error_messages.dart';
 import '../../../core/widgets/info_modal.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../services/api_service.dart';
@@ -101,12 +103,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
       await _api.patch(ApiConstants.privacySettings, data: {key: value});
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save setting: $e'),
-            backgroundColor: AppTheme.dangerRed,
-          ),
-        );
+        AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'save setting'));
       }
     }
   }
@@ -126,12 +123,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save visibility: $e'),
-            backgroundColor: AppTheme.dangerRed,
-          ),
-        );
+        AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'save visibility setting'));
       }
     }
   }

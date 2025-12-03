@@ -5,6 +5,8 @@ import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/enums/button_variant.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/utils/app_messages.dart';
+import '../../../core/utils/error_messages.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
 
@@ -107,12 +109,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen>
     } catch (e) {
       setState(() => _isDeleting = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete account: $e'),
-            backgroundColor: AppTheme.dangerRed,
-          ),
-        );
+        AppMessages.showError(context, ErrorMessages.accountDeleteFailed);
       }
     }
   }

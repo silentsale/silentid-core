@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_messages.dart';
+import '../../../core/utils/error_messages.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/gamification/gamification.dart';
@@ -94,22 +96,12 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen>
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Receipt added successfully'),
-            backgroundColor: AppTheme.successGreen,
-          ),
-        );
+        AppMessages.showSuccess(context, ErrorMessages.receiptUploaded);
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to add receipt: ${e.toString()}'),
-            backgroundColor: AppTheme.dangerRed,
-          ),
-        );
+        AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'add receipt'));
       }
     } finally {
       if (mounted) {

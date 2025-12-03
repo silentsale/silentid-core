@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_messages.dart';
+import '../../../core/utils/error_messages.dart';
 import '../../../core/widgets/info_point_helper.dart';
 import '../../../core/widgets/public_connected_profiles.dart';
 import '../../../core/widgets/connected_profiles_trust_contribution.dart';
@@ -98,9 +100,7 @@ class _TrustScoreBreakdownScreenState
       });
       _animController.forward();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load breakdown: $e')),
-        );
+        AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'load breakdown'));
       }
     }
   }

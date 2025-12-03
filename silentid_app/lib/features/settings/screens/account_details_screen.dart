@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_messages.dart';
+import '../../../core/utils/error_messages.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../services/user_api_service.dart';
@@ -103,21 +105,11 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen>
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account details updated successfully'),
-            backgroundColor: AppTheme.successGreen,
-          ),
-        );
+        AppMessages.showSuccess(context, ErrorMessages.accountUpdated);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save changes: $e'),
-            backgroundColor: AppTheme.dangerRed,
-          ),
-        );
+        AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'save changes'));
       }
     } finally {
       setState(() => _isSaving = false);
@@ -341,12 +333,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen>
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Phone number verified successfully!'),
-            backgroundColor: AppTheme.successGreen,
-          ),
-        );
+        AppMessages.showSuccess(context, 'Phone number verified successfully!');
       }
     }
   }
