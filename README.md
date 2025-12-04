@@ -7,7 +7,7 @@
 **100% Passwordless • Evidence-Based • Privacy-First • GDPR-Compliant**
 
 [![Status](https://img.shields.io/badge/status-pre--production-orange)]()
-[![Version](https://img.shields.io/badge/version-1.8.0-purple)]()
+[![Version](https://img.shields.io/badge/version-1.9.0-purple)]()
 [![License](https://img.shields.io/badge/license-proprietary-red)]()
 
 [Website](https://silentid.co.uk) • [API Docs](https://api.silentid.co.uk) • [Admin](https://admin.silentid.co.uk)
@@ -66,6 +66,7 @@ Billing:      Stripe Billing
 Storage:      Azure Blob Storage (UK region)
 Hosting:      Azure (UK South - GDPR compliant)
 AI:           Azure OpenAI (GPT-4 Turbo for fraud analysis)
+Scraping:     Playwright Capture Service (Node.js/Express)
 ```
 
 #### Frontend
@@ -262,6 +263,23 @@ npm run dev
 
 Landing page will be available at `http://localhost:3000`
 
+### 5. Playwright Capture Service Setup
+
+```bash
+cd services/playwright-capture
+
+# Install dependencies
+npm install
+
+# Install Playwright browsers
+npx playwright install chromium
+
+# Run service
+node index.js
+```
+
+Capture service will be available at `http://localhost:3000`
+
 ---
 
 ## 📚 Documentation
@@ -394,6 +412,11 @@ SILENTID/
 │       ├── Models/             # Database entities
 │       ├── Data/               # DbContext & migrations
 │       └── Migrations/         # EF Core migrations
+├── services/
+│   └── playwright-capture/    # Profile scraping service (Node.js)
+│       ├── index.js           # Express server
+│       ├── services/          # Capture logic
+│       └── screenshots/       # Captured screenshots
 ├── silentid_app/              # Flutter mobile app
 │   ├── lib/
 │   │   ├── features/          # Feature modules
@@ -416,6 +439,7 @@ SILENTID/
 - Azure Blob Storage
 - Stripe SDK
 - Azure OpenAI SDK
+- Playwright (Profile Scraping)
 
 **Frontend (Mobile):**
 - Flutter 3.x
@@ -517,9 +541,9 @@ This software and associated documentation are confidential and proprietary to S
 
 | Metric | Value |
 |--------|-------|
-| **Version** | 1.8.0 |
+| **Version** | 1.9.0 |
 | **Status** | Pre-Production Development |
-| **Last Updated** | 2025-11-24 |
+| **Last Updated** | 2025-12-04 |
 | **Spec Sections** | 48 sections |
 | **Total Lines** | ~11,318 lines (CLAUDE.md) |
 | **Target Launch** | Q1 2026 |

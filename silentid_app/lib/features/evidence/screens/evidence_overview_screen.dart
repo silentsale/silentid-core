@@ -26,10 +26,15 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
   late Animation<double> _fadeAnimation;
   late Animation<double> _pulseAnimation;
 
-  // Demo gamification data
-  final int _currentXP = 302;
-  final int _maxXP = 400;
-  final int _dayStreak = 7;
+  // XP constants - each verified profile earns 25 XP
+  static const int _xpPerProfile = 25;
+  static const int _maxXP = 400; // Level cap (16 profiles = max level)
+
+  // Calculated XP based on actual profile count
+  int get _currentXP => (_profileLinksCount * _xpPerProfile).clamp(0, _maxXP);
+
+  // Day streak (TODO: implement actual streak tracking)
+  final int _dayStreak = 0;
 
   @override
   void initState() {

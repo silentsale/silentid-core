@@ -330,6 +330,36 @@ TrustScore = Identity + Evidence + Behaviour (max 1000)
 
 **Regenerates weekly.**
 
+#### Evidence XP System (UI Gamification)
+
+**Purpose:** XP is a gamification layer that helps users understand their progress toward building trust. XP directly contributes to the TrustScore.
+
+**XP Calculation:**
+```
+XP = (Verified Profiles × 25) + (Identity Bonuses)
+Level Cap = 400 XP (16 verified profiles)
+```
+
+**XP Rewards:**
+| Action | XP Earned |
+|--------|-----------|
+| Verify a marketplace profile (Vinted, eBay, Depop, etc.) | +25 XP |
+| Verify a social profile (Instagram, TikTok, etc.) | +25 XP |
+| Complete Stripe Identity verification | +50 XP |
+| Enable Passkey authentication | +25 XP |
+
+**XP → TrustScore Relationship:**
+- XP contributes to the **Evidence** component of TrustScore (up to 400 pts)
+- Each verified profile adds to both XP and TrustScore
+- XP is a user-friendly visualization of TrustScore progress
+- XP level cap (400) matches the Evidence component max (400 pts)
+
+**UI Display:** Evidence Vault screen shows:
+- XP progress ring (current/max)
+- "Evidence Master" level label
+- Per-category XP breakdown
+- Recent achievements with XP earned
+
 ### Public Profile System
 **URL format:** `https://silentid.app/u/sarahtrusted`
 
@@ -629,14 +659,36 @@ SignupDeviceId VARCHAR(200) NULL    -- For duplicate detection
 - Reference ID
 - Timestamp
 
-### Evidence Collection (3 Streams)
-**1. Email Receipts:**
+### Evidence Collection (MVP: Profile Verification Only)
+
+**MVP Focus:** SilentID MVP focuses exclusively on **verified profile links** from marketplaces and social platforms. This provides the core "reputation insurance" value - backing up your star ratings and reviews.
+
+**1. Public Profile Verification (IMPLEMENTED - MVP):**
+- Input: Vinted, Depop, eBay, Etsy, Poshmark, Instagram, TikTok, LinkedIn URLs
+- Verification: Token-in-Bio method (user adds unique code to profile)
+- Scraping: Playwright Capture Service (`services/playwright-capture/`)
+- Data extracted: Username, ratings, reviews, follower counts, transaction history
+- Result: Verified profile badge, ratings contribute to TrustScore
+
+---
+
+### DEFERRED FEATURES (Post-MVP)
+
+The following features are documented for future implementation but are **NOT included in MVP**:
+
+#### Email Receipt Forwarding (DEFERRED)
+
+> **Status:** Deferred to post-MVP. Infrastructure complexity vs. value for MVP.
+> **Reason:** Profile verification already proves seller reputation via star ratings.
+
+<details>
+<summary>Click to expand Email Receipts specification (for future reference)</summary>
 
 **Expensify-Inspired Email Model:**
 
-SilentID uses a **unique forwarding alias** system inspired by Expensify's receipt scanning approach. This ensures maximum privacy while enabling automated receipt detection.
+SilentID would use a **unique forwarding alias** system inspired by Expensify's receipt scanning approach.
 
-**How It Works:**
+**How It Would Work:**
 
 **1. Unique Forwarding Alias:**
 - Each user receives a unique email forwarding address:
@@ -650,7 +702,7 @@ SilentID uses a **unique forwarding alias** system inspired by Expensify's recei
 - Email alias used to identify user (no inbox connection required)
 
 **3. Metadata-Only Extraction:**
-SilentID extracts ONLY:
+SilentID would extract ONLY:
 - **Seller/Platform:** eBay, Vinted, Depop, Etsy, PayPal, Stripe
 - **Transaction Date:** When order was placed
 - **Amount:** Transaction value (£, €, $)
@@ -658,18 +710,13 @@ SilentID extracts ONLY:
 - **Order ID:** Platform's order reference number
 - **Buyer/Seller Role:** Whether user was buyer or seller
 
-**SilentID does NOT store:**
+**SilentID would NOT store:**
 - ❌ Full email body
 - ❌ Email subject lines (beyond sender detection)
 - ❌ Sender's personal email address
 - ❌ Any personal correspondence
 
-**4. Immediate Deletion:**
-- After extraction, raw email is **immediately deleted** from server
-- Only metadata summary is stored in `ReceiptEvidence` table
-- Retention: Summary stored until user deletes account (max 7 years for legal compliance)
-
-**5. Supported Senders:**
+**Supported Senders (future):**
 - Vinted: `noreply@vinted.com`, `receipts@vinted.co.uk`
 - eBay: `ebay@ebay.com`, `ebay@ebay.co.uk`
 - Depop: `hello@depop.com`, `receipts@depop.com`
@@ -678,38 +725,29 @@ SilentID extracts ONLY:
 - Stripe: `receipts@stripe.com`
 - Facebook Marketplace: `notification@facebookmail.com`
 
-**Optional: Limited Gmail API (Alternative Method):**
-
-If user prefers NOT to forward emails:
-
-**Gmail OAuth Scope (Read-Only, Receipt-Only):**
+**Optional: Limited Gmail API (Alternative Method - future):**
 - Scope: `https://www.googleapis.com/auth/gmail.readonly`
 - Filter: Only emails from known marketplace senders
 - Query: `from:(vinted.com OR ebay.com OR depop.com OR etsy.com OR paypal.com OR stripe.com)`
-- Frequency: Daily batch scan (not real-time)
-- Same extraction + immediate deletion rules apply
 
-**User chooses ONE method:**
-1. **Forwarding Alias** (recommended, no inbox access required)
-2. **Gmail OAuth** (requires limited inbox permission)
+</details>
 
-**Privacy Guarantees:**
-- No access to personal emails
-- No storage of full email content
-- DKIM/SPF validation for authenticity
-- Immediate deletion after metadata extraction
+#### Screenshot OCR (DEFERRED)
 
-**2. Screenshot OCR:**
+> **Status:** Deferred to post-MVP.
+
+<details>
+<summary>Click to expand Screenshot OCR specification (for future reference)</summary>
+
 - Upload: marketplace reviews, profile stats, sales history, ratings, badges
 - Processing: Azure OCR, image forensics, screen consistency checks, metadata verification
 - Must be tamper-resistant
 
-**3. Public Profile URL Scraper:**
-- Input: Vinted, Depop, eBay, Etsy, Facebook Marketplace, LinkedIn URLs
-- Scraping: Playwright-based, headless, rate-limited, anti-fraud aware
-- Extracts: ratings, review count, join date, listing patterns, username consistency
+</details>
 
-### Level 3 Profile Verification (v1.8.0 NEW)
+---
+
+### Level 3 Profile Verification (IMPLEMENTED)
 
 **Purpose:** Cryptographically prove ownership of external marketplace profiles to prevent impersonation and fake profile linking.
 
