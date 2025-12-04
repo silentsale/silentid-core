@@ -181,11 +181,8 @@ public class PublicController : ControllerBase
             .Distinct()
             .ToListAsync();
 
-        // Count verified transactions (receipts)
-        var verifiedTransactionCount = await _context.ReceiptEvidences
-            .AsNoTracking()
-            .Where(r => r.UserId == user.Id && r.EvidenceState == EvidenceState.Valid)
-            .CountAsync();
+        // v2.0: Receipts removed - transaction count now comes from profile link data
+        var verifiedTransactionCount = 0;
 
         // Calculate account age
         var accountAgeDays = (DateTime.UtcNow - user.CreatedAt).Days;

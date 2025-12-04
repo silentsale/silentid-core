@@ -306,12 +306,7 @@ public class SecurityCenterService : ISecurityCenterService
 
     public async Task<VaultHealthResponse> GetVaultHealthAsync(Guid userId)
     {
-        var receiptsCount = await _context.ReceiptEvidences
-            .CountAsync(r => r.UserId == userId);
-
-        var screenshotsCount = await _context.ScreenshotEvidences
-            .CountAsync(s => s.UserId == userId);
-
+        // v2.0: Receipts and screenshots removed - only profile links remain
         var profileLinksCount = await _context.ProfileLinkEvidences
             .CountAsync(p => p.UserId == userId);
 
@@ -319,10 +314,10 @@ public class SecurityCenterService : ISecurityCenterService
         return new VaultHealthResponse
         {
             IsHealthy = true,
-            ReceiptsCount = receiptsCount,
-            ScreenshotsCount = screenshotsCount,
+            ReceiptsCount = 0, // v2.0: removed
+            ScreenshotsCount = 0, // v2.0: removed
             ProfileLinksCount = profileLinksCount,
-            TotalEvidenceCount = receiptsCount + screenshotsCount + profileLinksCount,
+            TotalEvidenceCount = profileLinksCount,
             LastCheckedAt = DateTime.UtcNow,
             Issues = new List<string>() // Would contain integrity issues if any
         };

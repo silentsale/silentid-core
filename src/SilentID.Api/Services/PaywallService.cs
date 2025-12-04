@@ -78,9 +78,9 @@ public class PaywallService : IPaywallService
     private readonly SilentIdDbContext _db;
     private readonly ILogger<PaywallService> _logger;
 
-    // Free tier limits per Section 50.3.2
-    private const int FreeEvidenceLimit = 15;
-    private const int FreeProfileLimit = 3;
+    // Free tier limits per Section 50.3.2 (v2.0: 5 profiles for free tier)
+    private const int FreeEvidenceLimit = 15; // Legacy - not used in v2.0
+    private const int FreeProfileLimit = 5;
     private const int TrustScoreMilestone = 500;
     private const int EvidenceMilestone = 10;
 
@@ -134,9 +134,8 @@ public class PaywallService : IPaywallService
 
         var isPremium = subscription != null && subscription.Tier != SubscriptionTier.Free;
 
-        var evidenceCount = await _db.ReceiptEvidences.CountAsync(e => e.UserId == userId) +
-                           await _db.ScreenshotEvidences.CountAsync(e => e.UserId == userId);
-
+        // v2.0: Receipts and screenshots removed - only profile links remain
+        var evidenceCount = 0; // Legacy field - no longer tracked
         var linkedProfiles = await _db.ProfileLinkEvidences.CountAsync(p => p.UserId == userId);
 
         return new UserLimitsStatus
@@ -187,20 +186,20 @@ public class PaywallService : IPaywallService
 
     private async Task<PaywallCheckResult> CheckEvidenceMilestoneAsync(Guid userId)
     {
-        var evidenceCount = await _db.ReceiptEvidences.CountAsync(e => e.UserId == userId) +
-                           await _db.ScreenshotEvidences.CountAsync(e => e.UserId == userId);
+        // v2.0: Receipts and screenshots removed - check profile link milestone instead
+        var profileLinksCount = await _db.ProfileLinkEvidences.CountAsync(e => e.UserId == userId);
 
-        if (evidenceCount == EvidenceMilestone)
+        if (profileLinksCount == EvidenceMilestone)
         {
             return new PaywallCheckResult
             {
                 ShouldShowPaywall = true,
                 Trigger = PaywallTrigger.Evidence10thUploaded,
-                Message = "You've uploaded 10 pieces of evidence! Upgrade to premium for unlimited evidence uploads and advanced features.",
-                CtaText = "Go Premium",
+                Message = "You've connected 10 profiles! Upgrade to Pro for unlimited profile connections and advanced features.",
+                CtaText = "Go Pro",
                 IsHardBlock = false,
-                CurrentUsage = evidenceCount,
-                FeatureName = "Evidence Milestone"
+                CurrentUsage = profileLinksCount,
+                FeatureName = "Profile Milestone"
             };
         }
 
@@ -209,21 +208,21 @@ public class PaywallService : IPaywallService
 
     private async Task<PaywallCheckResult> CheckEvidenceLimitAsync(Guid userId)
     {
-        var evidenceCount = await _db.ReceiptEvidences.CountAsync(e => e.UserId == userId) +
-                           await _db.ScreenshotEvidences.CountAsync(e => e.UserId == userId);
+        // v2.0: Check profile link limit (receipts/screenshots removed)
+        var profileLinksCount = await _db.ProfileLinkEvidences.CountAsync(e => e.UserId == userId);
 
-        if (evidenceCount >= FreeEvidenceLimit)
+        if (profileLinksCount >= FreeProfileLimit)
         {
             return new PaywallCheckResult
             {
                 ShouldShowPaywall = true,
                 Trigger = PaywallTrigger.UnlimitedEvidence,
-                Message = $"You've reached the free limit of {FreeEvidenceLimit} evidence items. Upgrade to continue building your trust profile.",
+                Message = $"You've reached the free limit of {FreeProfileLimit} profile connections. Upgrade to Pro for unlimited profiles.",
                 CtaText = "Upgrade Now",
                 IsHardBlock = true, // Hard block - can't continue without subscription
-                CurrentUsage = evidenceCount,
-                Limit = FreeEvidenceLimit,
-                FeatureName = "Evidence Storage"
+                CurrentUsage = profileLinksCount,
+                Limit = FreeProfileLimit,
+                FeatureName = "Profile Connections"
             };
         }
 

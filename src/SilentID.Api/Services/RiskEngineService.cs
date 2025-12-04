@@ -114,43 +114,29 @@ public class RiskEngineService : IRiskEngineService
 
     public async Task CheckEvidenceIntegrityAsync(Guid evidenceId, string evidenceType)
     {
-        if (evidenceType == "receipt")
+        // v2.0: Receipts and screenshots removed - check profile links only
+        if (evidenceType == "profile_link")
         {
-            var receipt = await _context.ReceiptEvidences
-                .FirstOrDefaultAsync(r => r.Id == evidenceId);
+            var profileLink = await _context.ProfileLinkEvidences
+                .FirstOrDefaultAsync(p => p.Id == evidenceId);
 
-            if (receipt != null && receipt.IntegrityScore < 50)
+            if (profileLink != null && profileLink.IntegrityScore < 50)
             {
                 await CreateRiskSignalAsync(
-                    receipt.UserId,
-                    RiskType.FakeReceipt,
-                    severity: 8,
-                    message: $"Receipt failed integrity check (score: {receipt.IntegrityScore})"
+                    profileLink.UserId,
+                    RiskType.ProfileMismatch,
+                    severity: 5,
+                    message: $"Profile link failed integrity check (score: {profileLink.IntegrityScore})"
                 );
 
-                receipt.EvidenceState = EvidenceState.Suspicious;
-                receipt.FraudFlag = true;
+                profileLink.EvidenceState = EvidenceState.Suspicious;
                 await _context.SaveChangesAsync();
             }
         }
-        else if (evidenceType == "screenshot")
+        // Legacy evidence types - log warning but do nothing
+        else if (evidenceType == "receipt" || evidenceType == "screenshot")
         {
-            var screenshot = await _context.ScreenshotEvidences
-                .FirstOrDefaultAsync(s => s.Id == evidenceId);
-
-            if (screenshot != null && screenshot.IntegrityScore < 50)
-            {
-                await CreateRiskSignalAsync(
-                    screenshot.UserId,
-                    RiskType.FakeScreenshot,
-                    severity: 8,
-                    message: $"Screenshot failed integrity check (score: {screenshot.IntegrityScore})"
-                );
-
-                screenshot.EvidenceState = EvidenceState.Suspicious;
-                screenshot.FraudFlag = true;
-                await _context.SaveChangesAsync();
-            }
+            _logger.LogWarning("v2.0: {EvidenceType} evidence type is deprecated and no longer processed", evidenceType);
         }
     }
 }

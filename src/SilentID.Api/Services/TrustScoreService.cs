@@ -49,14 +49,8 @@ public class TrustScoreService : ITrustScoreService
             .AsNoTracking() // Read-only query
             .FirstOrDefaultAsync(iv => iv.UserId == userId);
 
-        // Get all evidence counts (CountAsync doesn't need AsNoTracking)
-        var receiptsCount = await _context.ReceiptEvidences
-            .Where(r => r.UserId == userId && r.EvidenceState == EvidenceState.Valid)
-            .CountAsync();
-
-        var screenshotsCount = await _context.ScreenshotEvidences
-            .Where(s => s.UserId == userId && s.EvidenceState == EvidenceState.Valid)
-            .CountAsync();
+        // Evidence counts removed in v2.0 - receipts and screenshots no longer part of product
+        // Only profile links contribute to TrustScore now
 
         // Section 52.7: Count Linked vs Verified profiles separately
         var linkedProfilesCount = await _context.ProfileLinkEvidences
@@ -73,11 +67,12 @@ public class TrustScoreService : ITrustScoreService
 
         var accountAgeDays = (DateTime.UtcNow - user.CreatedAt).Days;
 
-        // Build breakdown (3 components: Identity 250, Evidence 400, Behaviour 350 = max 1000)
+        // Build breakdown (3 components: Identity 300, Profiles 400, Behaviour 300 = max 1000)
+        // v2.0: Receipts and screenshots removed - only profile links count for Evidence
         var breakdown = new TrustScoreBreakdown
         {
             Identity = BuildIdentityBreakdown(user, identityVerification, accountAgeDays),
-            Evidence = BuildEvidenceBreakdown(receiptsCount, screenshotsCount, linkedProfilesCount, verifiedProfilesCount),
+            Evidence = BuildEvidenceBreakdown(0, 0, linkedProfilesCount, verifiedProfilesCount), // receipts/screenshots = 0
             Behaviour = BuildBehaviourBreakdown(reportsCount, accountAgeDays)
         };
 

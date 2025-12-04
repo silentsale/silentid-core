@@ -187,9 +187,9 @@ public class SoftLimitsService : ISoftLimitsService
 
         return limitType switch
         {
+            // v2.0: Receipts and screenshots removed - evidence upload now means profile links
             LimitType.EvidenceUpload =>
-                await _db.ReceiptEvidences.CountAsync(e => e.UserId == userId) +
-                await _db.ScreenshotEvidences.CountAsync(e => e.UserId == userId),
+                await _db.ProfileLinkEvidences.CountAsync(p => p.UserId == userId),
 
             LimitType.ProfileLinks =>
                 await _db.ProfileLinkEvidences.CountAsync(p => p.UserId == userId),

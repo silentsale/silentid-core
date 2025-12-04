@@ -231,11 +231,8 @@ public class AnomalyDetectionService : IAnomalyDetectionService
         var result = new AnomalyResult();
         var anomalies = new List<DetectedAnomaly>();
 
-        // Check upload rate
-        var recentUploads = await _db.ReceiptEvidences
-            .CountAsync(e => e.UserId == userId && e.CreatedAt > DateTime.UtcNow.AddHours(-1));
-
-        recentUploads += await _db.ScreenshotEvidences
+        // v2.0: Check profile link upload rate (receipts/screenshots removed)
+        var recentUploads = await _db.ProfileLinkEvidences
             .CountAsync(e => e.UserId == userId && e.CreatedAt > DateTime.UtcNow.AddHours(-1));
 
         if (recentUploads >= MaxEvidenceUploadsPerHour)
@@ -248,20 +245,20 @@ public class AnomalyDetectionService : IAnomalyDetectionService
             });
         }
 
-        // Check for duplicate patterns (potential manipulation)
-        var recentReceipts = await _db.ReceiptEvidences
+        // v2.0: Check for duplicate profile link patterns (receipts removed)
+        var recentProfileLinks = await _db.ProfileLinkEvidences
             .Where(e => e.UserId == userId && e.CreatedAt > DateTime.UtcNow.AddDays(-1))
-            .Select(e => e.RawHash)
+            .Select(e => e.URL)
             .ToListAsync();
 
-        var duplicateHashes = recentReceipts.GroupBy(h => h).Where(g => g.Count() > 1).Count();
-        if (duplicateHashes > 0)
+        var duplicateUrls = recentProfileLinks.GroupBy(u => u).Where(g => g.Count() > 1).Count();
+        if (duplicateUrls > 0)
         {
             anomalies.Add(new DetectedAnomaly
             {
                 Type = AnomalyType.SuspiciousEvidencePattern,
-                Description = $"{duplicateHashes} duplicate evidence items detected",
-                Severity = duplicateHashes * 3
+                Description = $"{duplicateUrls} duplicate profile links detected",
+                Severity = duplicateUrls * 3
             });
         }
 

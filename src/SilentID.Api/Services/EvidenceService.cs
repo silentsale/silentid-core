@@ -4,25 +4,22 @@ using SilentID.Api.Models;
 
 namespace SilentID.Api.Services;
 
+/// <summary>
+/// Evidence Service - v2.0
+/// Profile Links only (receipts and screenshots removed in v2.0)
+/// </summary>
 public interface IEvidenceService
 {
-    Task<ReceiptEvidence> AddReceiptEvidenceAsync(Guid userId, ReceiptEvidence receipt);
-    Task<ScreenshotEvidence> AddScreenshotEvidenceAsync(Guid userId, ScreenshotEvidence screenshot);
+    // Profile Link Methods (v2.0 - Only profile links remain)
     Task<ProfileLinkEvidence> AddProfileLinkEvidenceAsync(Guid userId, ProfileLinkEvidence profileLink);
-    Task<List<ReceiptEvidence>> GetUserReceiptsAsync(Guid userId, int page = 1, int pageSize = 20);
-    Task<List<ScreenshotEvidence>> GetUserScreenshotsAsync(Guid userId, int page = 1, int pageSize = 20);
-    Task<ScreenshotEvidence?> GetScreenshotAsync(Guid id, Guid userId);
     Task<ProfileLinkEvidence?> GetProfileLinkAsync(Guid id, Guid userId);
-    Task<int> GetTotalReceiptsCountAsync(Guid userId);
-    Task<int> GetTotalScreenshotsCountAsync(Guid userId);
-    Task<bool> IsDuplicateReceiptAsync(string rawHash);
+    Task<List<ProfileLinkEvidence>> GetUserProfileLinksAsync(Guid userId);
 
     // Level 3 Verification Methods (Section 5 - Core Features)
     Task<string> GenerateVerificationTokenAsync(Guid profileLinkId, Guid userId);
     Task<ProfileLinkEvidence?> ConfirmTokenInBioAsync(Guid profileLinkId, Guid userId, string scrapedBioText);
     Task<ProfileLinkEvidence?> VerifyShareIntentAsync(Guid profileLinkId, Guid userId, string sharedUrl, string deviceFingerprint);
     Task<bool> IsProfileAlreadyVerifiedByAnotherUserAsync(string url);
-    Task<List<ProfileLinkEvidence>> GetUserProfileLinksAsync(Guid userId);
 
     // Section 52 Methods
     Task<bool> DeleteProfileLinkAsync(Guid profileLinkId, Guid userId);
@@ -43,48 +40,6 @@ public class EvidenceService : IEvidenceService
         _context = context;
         _platformService = platformService;
         _logger = logger;
-    }
-
-    public async Task<ReceiptEvidence> AddReceiptEvidenceAsync(Guid userId, ReceiptEvidence receipt)
-    {
-        receipt.Id = Guid.NewGuid();
-        receipt.UserId = userId;
-        receipt.CreatedAt = DateTime.UtcNow;
-
-        // Basic fraud checks (placeholder - enhance later with real validation)
-        if (receipt.IntegrityScore < 70)
-        {
-            receipt.FraudFlag = true;
-            receipt.EvidenceState = EvidenceState.Suspicious;
-            _logger.LogWarning("Low integrity score for receipt {ReceiptId}: {Score}", receipt.Id, receipt.IntegrityScore);
-        }
-
-        _context.ReceiptEvidences.Add(receipt);
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Receipt evidence {ReceiptId} added for user {UserId}", receipt.Id, userId);
-        return receipt;
-    }
-
-    public async Task<ScreenshotEvidence> AddScreenshotEvidenceAsync(Guid userId, ScreenshotEvidence screenshot)
-    {
-        screenshot.Id = Guid.NewGuid();
-        screenshot.UserId = userId;
-        screenshot.CreatedAt = DateTime.UtcNow;
-
-        // Basic fraud checks (placeholder - enhance later with OCR/EXIF validation)
-        if (screenshot.IntegrityScore < 70)
-        {
-            screenshot.FraudFlag = true;
-            screenshot.EvidenceState = EvidenceState.Suspicious;
-            _logger.LogWarning("Low integrity score for screenshot {ScreenshotId}: {Score}", screenshot.Id, screenshot.IntegrityScore);
-        }
-
-        _context.ScreenshotEvidences.Add(screenshot);
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Screenshot evidence {ScreenshotId} added for user {UserId}", screenshot.Id, userId);
-        return screenshot;
     }
 
     public async Task<ProfileLinkEvidence> AddProfileLinkEvidenceAsync(Guid userId, ProfileLinkEvidence profileLink)
@@ -138,24 +93,6 @@ public class EvidenceService : IEvidenceService
         return profileLink;
     }
 
-    public async Task<List<ReceiptEvidence>> GetUserReceiptsAsync(Guid userId, int page = 1, int pageSize = 20)
-    {
-        return await _context.ReceiptEvidences
-            .AsNoTracking() // Read-only pagination query
-            .Where(r => r.UserId == userId)
-            .OrderByDescending(r => r.Date)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-    }
-
-    public async Task<ScreenshotEvidence?> GetScreenshotAsync(Guid id, Guid userId)
-    {
-        return await _context.ScreenshotEvidences
-            .AsNoTracking() // Read-only query
-            .FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
-    }
-
     public async Task<ProfileLinkEvidence?> GetProfileLinkAsync(Guid id, Guid userId)
     {
         return await _context.ProfileLinkEvidences
@@ -163,33 +100,17 @@ public class EvidenceService : IEvidenceService
             .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
     }
 
-    public async Task<int> GetTotalReceiptsCountAsync(Guid userId)
+    /// <summary>
+    /// Gets all profile link evidence for a user.
+    /// </summary>
+    public async Task<List<ProfileLinkEvidence>> GetUserProfileLinksAsync(Guid userId)
     {
-        return await _context.ReceiptEvidences
-            .CountAsync(r => r.UserId == userId);
-    }
-
-    public async Task<List<ScreenshotEvidence>> GetUserScreenshotsAsync(Guid userId, int page = 1, int pageSize = 20)
-    {
-        return await _context.ScreenshotEvidences
+        return await _context.ProfileLinkEvidences
             .AsNoTracking()
-            .Where(s => s.UserId == userId)
-            .OrderByDescending(s => s.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Where(p => p.UserId == userId)
+            .OrderByDescending(p => p.VerificationLevel)
+            .ThenByDescending(p => p.CreatedAt)
             .ToListAsync();
-    }
-
-    public async Task<int> GetTotalScreenshotsCountAsync(Guid userId)
-    {
-        return await _context.ScreenshotEvidences
-            .CountAsync(s => s.UserId == userId);
-    }
-
-    public async Task<bool> IsDuplicateReceiptAsync(string rawHash)
-    {
-        return await _context.ReceiptEvidences
-            .AnyAsync(r => r.RawHash == rawHash);
     }
 
     // ========== LEVEL 3 VERIFICATION METHODS ==========
@@ -354,19 +275,6 @@ public class EvidenceService : IEvidenceService
                 p.VerificationLevel == 3 &&
                 p.OwnershipLockedAt != null &&
                 NormalizeUrl(p.URL) == normalizedUrl);
-    }
-
-    /// <summary>
-    /// Gets all profile link evidence for a user.
-    /// </summary>
-    public async Task<List<ProfileLinkEvidence>> GetUserProfileLinksAsync(Guid userId)
-    {
-        return await _context.ProfileLinkEvidences
-            .AsNoTracking()
-            .Where(p => p.UserId == userId)
-            .OrderByDescending(p => p.VerificationLevel)
-            .ThenByDescending(p => p.CreatedAt)
-            .ToListAsync();
     }
 
     // ========== HELPER METHODS ==========

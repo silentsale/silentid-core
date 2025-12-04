@@ -66,11 +66,7 @@ public class AdminController : ControllerBase
                 .OrderByDescending(ts => ts.CreatedAt)
                 .FirstOrDefaultAsync();
 
-            // Get evidence counts
-            var receiptsCount = await _context.ReceiptEvidences
-                .CountAsync(r => r.UserId == id);
-            var screenshotsCount = await _context.ScreenshotEvidences
-                .CountAsync(s => s.UserId == id);
+            // Get evidence counts (v2.0: receipts and screenshots removed)
             var profileLinksCount = await _context.ProfileLinkEvidences
                 .CountAsync(p => p.UserId == id);
 
@@ -181,10 +177,8 @@ public class AdminController : ControllerBase
                 } : null,
                 evidence = new
                 {
-                    receiptsCount,
-                    screenshotsCount,
                     profileLinksCount,
-                    totalCount = receiptsCount + screenshotsCount + profileLinksCount
+                    totalCount = profileLinksCount // v2.0: receipts/screenshots removed
                 },
                 risk = new
                 {

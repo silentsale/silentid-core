@@ -56,7 +56,7 @@ builder.Services.AddScoped<IExtractionService, ExtractionService>();
 builder.Services.AddScoped<IOcrService, MockOcrService>(); // TODO: Replace with AzureComputerVisionOcrService in production
 builder.Services.AddScoped<IReferralService, ReferralService>();
 builder.Services.AddScoped<IForwardingAliasService, ForwardingAliasService>();
-builder.Services.AddScoped<IReceiptParsingService, ReceiptParsingService>();
+// v2.0: ReceiptParsingService removed - receipts no longer part of product
 builder.Services.AddScoped<ISecurityCenterService, SecurityCenterService>();
 builder.Services.AddScoped<IStepUpAuthService, StepUpAuthService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
