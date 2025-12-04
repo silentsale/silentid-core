@@ -75,7 +75,7 @@ public class SoftLimitsService : ISoftLimitsService
     private static readonly Dictionary<LimitType, (int Soft, int Hard, string Name)> FreeLimits = new()
     {
         { LimitType.EvidenceUpload, (10, 15, "Evidence Uploads") },
-        { LimitType.ProfileLinks, (2, 3, "Profile Connections") },
+        { LimitType.ProfileLinks, (4, 5, "Profile Connections") }, // Free tier: up to 5 profiles
         { LimitType.PassportShares, (3, 5, "Passport Shares (monthly)") },
         { LimitType.QrDownloads, (1, 1, "QR Badge Downloads") },
         { LimitType.SupportTickets, (2, 3, "Support Tickets (monthly)") },

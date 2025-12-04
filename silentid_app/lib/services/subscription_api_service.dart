@@ -80,11 +80,10 @@ class SubscriptionInfo {
   bool get isPro => tier.toLowerCase() == 'pro';
 
   /// Get display price based on tier
+  /// Only two tiers: Free (£0) and Pro (£4.99)
   double get monthlyPrice {
     switch (tier.toLowerCase()) {
       case 'pro':
-        return 9.99;
-      case 'premium':
         return 4.99;
       default:
         return 0.0;

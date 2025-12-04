@@ -576,21 +576,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                 Divider(height: 1, color: AppTheme.neutralGray300),
                 SettingsListItem(
                   icon: Icons.arrow_upward_outlined,
-                  title: "Upgrade to Premium",
-                  subtitle: "£4.99/month",
-                  iconColor: AppTheme.primaryPurple,
-                  onTap: () {
-                    context.push('/subscriptions/premium');
-                  },
-                ),
-              ],
-
-              if (accountType == "Premium") ...[
-                Divider(height: 1, color: AppTheme.neutralGray300),
-                SettingsListItem(
-                  icon: Icons.arrow_upward_outlined,
                   title: "Upgrade to Pro",
-                  subtitle: "£14.99/month",
+                  subtitle: "£4.99/month",
                   iconColor: AppTheme.primaryPurple,
                   onTap: () {
                     context.push('/subscriptions/pro');

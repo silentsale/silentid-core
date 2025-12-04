@@ -324,11 +324,9 @@ We recommend extra caution.''',
   static InfoPointData get subscriptionTiers => const InfoPointData(
         title: 'What\'s the difference?',
         icon: Icons.card_membership_outlined,
-        body: '''Free: Basic TrustScore, limited evidence (10 receipts, 5 screenshots)
+        body: '''Free (£0): Identity verification, basic TrustScore, connect up to 5 profiles, public Trust Passport, basic verified badge
 
-Premium (£4.99/mo): Unlimited evidence, advanced analytics, 100GB vault
-
-Pro (£14.99/mo): Everything in Premium + bulk checks, dispute tools, 500GB vault''',
+Pro (£4.99/mo): Everything in Free + unlimited profile connections, premium verified badge with QR code, combined star rating, rating drop alerts, trust timeline, dispute evidence pack, platform watchdog, custom passport URL, priority support''',
         learnMoreText: 'Learn More',
         learnMoreUrl: 'https://help.silentid.co.uk/subscriptions',
       );

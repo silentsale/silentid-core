@@ -94,7 +94,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'You are upgrading to SilentID Pro at £14.99/month.',
+              'You are upgrading to SilentID Pro at £4.99/month.',
               style: GoogleFonts.inter(),
             ),
             const SizedBox(height: 16),
@@ -203,7 +203,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen>
                     child: Column(
                       children: [
                         Text(
-                          '£14.99',
+                          '£4.99',
                           style: GoogleFonts.inter(
                             fontSize: 48,
                             fontWeight: FontWeight.w700,
@@ -431,7 +431,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen>
                             color: AppTheme.pureWhite,
                           ),
                         )
-                      : const Text('Get Pro — £14.99/month'),
+                      : const Text('Get Pro — £4.99/month'),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
