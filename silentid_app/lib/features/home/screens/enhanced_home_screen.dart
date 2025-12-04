@@ -546,19 +546,19 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen>
             children: [
               Expanded(
                 child: _buildQuickActionCard(
-                  icon: Icons.link_rounded,
-                  title: 'Connect Profile',
-                  subtitle: 'Link accounts',
+                  icon: Icons.ios_share_rounded,
+                  title: 'Share to Import',
+                  subtitle: 'From any app',
                   color: AppTheme.primaryPurple,
-                  onTap: () => context.push('/evidence'),
+                  onTap: () => context.push('/profiles/connect'),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildQuickActionCard(
-                  icon: Icons.link,
+                  icon: Icons.link_rounded,
                   title: 'Connect Profile',
-                  subtitle: 'Link marketplace',
+                  subtitle: 'Add manually',
                   color: const Color(0xFF3B82F6),
                   onTap: () => context.push('/profiles/connect'),
                 ),

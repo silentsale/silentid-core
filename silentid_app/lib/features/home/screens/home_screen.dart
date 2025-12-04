@@ -438,18 +438,18 @@ class _HomeScreenState extends State<HomeScreen>
                     children: [
                       Expanded(
                         child: _buildQuickAction(
-                          icon: Icons.link_rounded,
-                          title: 'Connect Profile',
-                          subtitle: 'Link accounts',
-                          onTap: () => context.push('/evidence'),
+                          icon: Icons.ios_share_rounded,
+                          title: 'Share to Import',
+                          subtitle: 'From any app',
+                          onTap: () => context.push('/profiles/connect'),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildQuickAction(
-                          icon: Icons.link,
+                          icon: Icons.link_rounded,
                           title: 'Connect Profile',
-                          subtitle: 'Link marketplace',
+                          subtitle: 'Add manually',
                           onTap: () => context.push('/profiles/connect'),
                         ),
                       ),
