@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Screenshots (generated at runtime)
+screenshots/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/

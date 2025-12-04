@@ -22,6 +22,7 @@
 - Auth: 100% Passwordless (Apple Sign-In, Google Sign-In, Passkeys, Email OTP)
 - Identity Verification: Stripe Identity
 - Billing: Stripe Billing
+- Profile Scraping: Playwright Capture Service (`services/playwright-capture/`)
 - Primary Color: Royal Purple #5A3EB8
 
 **Key Principles:**
@@ -62,6 +63,8 @@
 **Purpose:** Prove ownership of external marketplace profiles (Vinted, eBay, Depop, Instagram, etc.)
 
 **Methods:** Token-in-Bio (add code to profile) or Share-Intent (mobile deep link)
+
+**Implementation:** Playwright Capture Service (`services/playwright-capture/`) handles profile scraping and token verification via headless browser.
 
 **After Verification:** Profile locked, star ratings extracted for Trust Passport
 

@@ -45,6 +45,7 @@
 - **Auth:** 100% Passwordless (Apple Sign-In, Google Sign-In, Passkeys, Email OTP)
 - **Identity Verification:** Stripe Identity
 - **Billing:** Stripe Billing
+- **Profile Scraping:** Playwright Capture Service (Node.js/Express)
 - **Primary Color:** Royal Purple `#5A3EB8`
 - **UI Style:** Bank-grade, clean, secure, serious
 
@@ -722,8 +723,8 @@ If user prefers NOT to forward emails:
 2. SilentID generates unique verification token: `SILENTID-VERIFY-{random-8-chars}`
 3. User instructed to add token to their profile bio/description
 4. User confirms "I've added the token"
-5. SilentID scrapes profile via Playwright MCP
-6. System checks for exact token match in bio text
+5. SilentID calls Playwright Capture Service (`services/playwright-capture/`) via HTTP
+6. Service captures profile screenshot and checks for exact token match in page content
 7. If match found:
    - Profile marked as **Level 3 Verified**
    - Ownership locked (cannot be claimed by another SilentID account)
@@ -786,6 +787,67 @@ VerificationToken VARCHAR(100) (for Token-in-Bio)
 OwnershipLockedAt TIMESTAMP
 SnapshotHash VARCHAR(64) (SHA-256 of profile at verification time)
 NextReverifyAt TIMESTAMP (90 days from verification)
+```
+
+### Playwright Capture Service (IMPLEMENTED)
+
+**Location:** `services/playwright-capture/`
+
+**Purpose:** Headless browser service for capturing marketplace profile screenshots and verifying Token-in-Bio tokens.
+
+**Technology:**
+- Node.js 18+ with Express
+- Playwright (Chromium headless browser)
+- REST API on port 3000 (configurable via PORT env var)
+
+**Endpoints:**
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check - returns service status |
+| `/capture` | POST | Capture profile screenshots and verify tokens |
+
+**POST /capture Request:**
+```json
+{
+  "url": "https://www.vinted.co.uk/member/123456",
+  "mode": "TOKEN_IN_BIO",
+  "token": "SILENTID-VERIFY-ABC12345",
+  "maxScreenshots": 3,
+  "viewport": { "width": 1280, "height": 800 }
+}
+```
+
+**Modes:**
+- `PROFILE_EXTRACTION` - Capture screenshots for evidence/display
+- `TOKEN_IN_BIO` - Verify token presence in profile page content
+
+**Supported Platforms:**
+- Vinted (.com, .co.uk, .fr, .de, .es, .it, .pl, .lt, .cz, .nl, .be, .at, .pt)
+- eBay (.com, .co.uk, .de, .fr, .es, .it, .com.au)
+- Depop, Etsy, Poshmark
+
+**Response:**
+```json
+{
+  "success": true,
+  "sessionId": "1705312200000-abc123",
+  "platform": "vinted",
+  "screenshots": [{ "name": "main_profile", "filename": "...", "timestamp": "..." }],
+  "tokenVerification": { "token": "...", "found": true, "location": "bio" },
+  "profileData": { "username": "seller_name", "pageTitle": "..." }
+}
+```
+
+**ASP.NET Integration:** See `services/playwright-capture/AspNetIntegration.cs` for ready-to-use C# client.
+
+**Running the Service:**
+```bash
+cd services/playwright-capture
+npm install
+npm run install-browsers
+npm start  # Production
+npm run dev  # Development with hot reload
 ```
 
 ### URS: Universal Reputation Score (v1.8.0 NEW)
