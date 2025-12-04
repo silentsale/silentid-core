@@ -117,4 +117,53 @@ class StorageService {
     final userId = await getUserId();
     return userId == 'demo_user_12345';
   }
+
+  // Privacy Settings Keys
+  static const String _trustScoreVisibilityKey = 'privacy_trustscore_visibility';
+  static const String _showTransactionCountKey = 'privacy_show_transaction_count';
+  static const String _showPlatformListKey = 'privacy_show_platform_list';
+  static const String _showAccountAgeKey = 'privacy_show_account_age';
+
+  // Save TrustScore visibility mode
+  Future<void> saveTrustScoreVisibility(String mode) async {
+    await _storage.write(key: _trustScoreVisibilityKey, value: mode);
+  }
+
+  // Get TrustScore visibility mode
+  Future<String?> getTrustScoreVisibility() async {
+    return await _storage.read(key: _trustScoreVisibilityKey);
+  }
+
+  // Save show transaction count setting
+  Future<void> saveShowTransactionCount(bool value) async {
+    await _storage.write(key: _showTransactionCountKey, value: value.toString());
+  }
+
+  // Get show transaction count setting
+  Future<bool> getShowTransactionCount() async {
+    final value = await _storage.read(key: _showTransactionCountKey);
+    return value == null || value == 'true'; // Default to true
+  }
+
+  // Save show platform list setting
+  Future<void> saveShowPlatformList(bool value) async {
+    await _storage.write(key: _showPlatformListKey, value: value.toString());
+  }
+
+  // Get show platform list setting
+  Future<bool> getShowPlatformList() async {
+    final value = await _storage.read(key: _showPlatformListKey);
+    return value == null || value == 'true'; // Default to true
+  }
+
+  // Save show account age setting
+  Future<void> saveShowAccountAge(bool value) async {
+    await _storage.write(key: _showAccountAgeKey, value: value.toString());
+  }
+
+  // Get show account age setting
+  Future<bool> getShowAccountAge() async {
+    final value = await _storage.read(key: _showAccountAgeKey);
+    return value == null || value == 'true'; // Default to true
+  }
 }

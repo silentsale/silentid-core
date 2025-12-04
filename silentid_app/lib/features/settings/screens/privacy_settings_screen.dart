@@ -3,10 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/utils/app_messages.dart';
-import '../../../core/utils/error_messages.dart';
 import '../../../core/widgets/info_modal.dart';
-import '../../../core/constants/api_constants.dart';
-import '../../../services/api_service.dart';
+import '../../../services/storage_service.dart';
 
 /// TrustScore visibility mode per Section 51.5
 enum TrustScoreVisibility {
@@ -29,14 +27,13 @@ class PrivacySettingsScreen extends StatefulWidget {
 
 class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
     with SingleTickerProviderStateMixin {
-  final _api = ApiService();
+  final _storage = StorageService();
 
   // Level 7: Animation controller
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
 
   bool _isLoading = true;
-  String? _errorMessage;
 
   // TrustScore Visibility Mode (Section 51.5)
   TrustScoreVisibility _trustScoreVisibility = TrustScoreVisibility.publicMode;
@@ -71,27 +68,29 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
     setState(() => _isLoading = true);
 
     try {
-      final response = await _api.get(ApiConstants.privacySettings);
-      final data = response.data as Map<String, dynamic>;
+      // Load settings from local storage
+      final visibilityValue = await _storage.getTrustScoreVisibility();
+      final showTransactionCount = await _storage.getShowTransactionCount();
+      final showPlatformList = await _storage.getShowPlatformList();
+      final showAccountAge = await _storage.getShowAccountAge();
 
       setState(() {
-        _trustScoreVisibility = _parseVisibility(data['trustScoreVisibility']);
-        _showTransactionCount = data['showTransactionCount'] ?? true;
-        _showPlatformList = data['showPlatformList'] ?? true;
-        _showAccountAge = data['showAccountAge'] ?? true;
+        _trustScoreVisibility = _parseVisibility(visibilityValue);
+        _showTransactionCount = showTransactionCount;
+        _showPlatformList = showPlatformList;
+        _showAccountAge = showAccountAge;
         _isLoading = false;
       });
       // Level 7: Start animation after data loads
       _animController.forward();
     } catch (e) {
-      // Use mock/default data when API fails
+      // Use default values on error
       setState(() {
         _trustScoreVisibility = TrustScoreVisibility.publicMode;
         _showTransactionCount = true;
         _showPlatformList = true;
         _showAccountAge = true;
         _isLoading = false;
-        _errorMessage = null;
       });
       _animController.forward();
     }
@@ -110,10 +109,23 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
 
   Future<void> _saveSetting(String key, bool value) async {
     try {
-      await _api.patch(ApiConstants.privacySettings, data: {key: value});
+      switch (key) {
+        case 'showTransactionCount':
+          await _storage.saveShowTransactionCount(value);
+          break;
+        case 'showPlatformList':
+          await _storage.saveShowPlatformList(value);
+          break;
+        case 'showAccountAge':
+          await _storage.saveShowAccountAge(value);
+          break;
+      }
+      if (mounted) {
+        AppMessages.showSuccess(context, 'Setting saved');
+      }
     } catch (e) {
       if (mounted) {
-        AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'save setting'));
+        AppMessages.showError(context, 'Failed to save setting');
       }
     }
   }
@@ -128,12 +140,13 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
 
   Future<void> _saveVisibilitySetting(TrustScoreVisibility mode) async {
     try {
-      await _api.patch(ApiConstants.privacySettings, data: {
-        'trustScoreVisibility': mode.name,
-      });
+      await _storage.saveTrustScoreVisibility(mode.name);
+      if (mounted) {
+        AppMessages.showSuccess(context, 'Visibility mode saved');
+      }
     } catch (e) {
       if (mounted) {
-        AppMessages.showError(context, ErrorMessages.fromException(e, fallbackAction: 'save visibility setting'));
+        AppMessages.showError(context, 'Failed to save visibility setting');
       }
     }
   }
@@ -169,43 +182,6 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: AppTheme.neutralGray500,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _errorMessage!,
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  color: AppTheme.neutralGray600,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _errorMessage = null;
-                  });
-                  _loadSettings();
-                },
-                child: const Text('Try Again'),
-              ),
-            ],
-          ),
-        ),
-      );
     }
 
     return FadeTransition(
@@ -730,7 +706,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
 
       case TrustScoreVisibility.badgeOnlyMode:
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
             color: AppTheme.neutralGray300.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(10),
@@ -740,33 +716,35 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
             children: [
               Icon(
                 Icons.shield_rounded,
-                size: 20,
+                size: 18,
                 color: AppTheme.successGreen,
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.successGreen.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  'Very High Trust',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.successGreen,
+              const SizedBox(width: 6),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.successGreen.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'Very High Trust',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.successGreen,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildMiniBadge(Icons.verified_user_rounded),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 3),
                   _buildMiniBadge(Icons.link_rounded),
-                  const SizedBox(width: 4),
-                  _buildMiniBadge(Icons.people_rounded),
                 ],
               ),
             ],

@@ -945,90 +945,92 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.pureWhite,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppTheme.neutralGray300,
-                borderRadius: BorderRadius.circular(2),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.neutralGray300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Icon(Icons.folder_open, size: 48, color: AppTheme.primaryPurple),
-            const SizedBox(height: 16),
-            Text(
-              'Evidence Vault',
-              style: GoogleFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.neutralGray900,
+              const SizedBox(height: 24),
+              Icon(Icons.folder_open, size: 48, color: AppTheme.primaryPurple),
+              const SizedBox(height: 16),
+              Text(
+                'Evidence Vault',
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.neutralGray900,
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Build your trust profile by adding evidence of your verified transactions and marketplace activity. Each piece of evidence earns you XP and contributes to your TrustScore.',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppTheme.neutralGray700,
-                height: 1.5,
+              const SizedBox(height: 12),
+              Text(
+                'Build your trust profile by adding evidence of your verified transactions and marketplace activity. Each piece of evidence earns you XP and contributes to your TrustScore.',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppTheme.neutralGray700,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.softLilac,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.security, color: AppTheme.primaryPurple, size: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'All evidence is verified and your private data is never shared.',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppTheme.neutralGray900,
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.softLilac,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.security, color: AppTheme.primaryPurple, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'All evidence is verified and your private data is never shared.',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppTheme.neutralGray900,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryPurple,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  'Got It',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.pureWhite,
-                  ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-          ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryPurple,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Got It',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.pureWhite,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
