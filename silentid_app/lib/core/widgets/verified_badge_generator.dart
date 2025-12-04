@@ -243,11 +243,11 @@ class _BadgeCard extends StatelessWidget {
   Size get _dimensions {
     switch (size) {
       case BadgeSize.small:
-        return const Size(280, 480);
+        return const Size(280, 580); // Increased to prevent overflow
       case BadgeSize.standard:
-        return const Size(320, 540);
+        return const Size(320, 620); // Increased to prevent overflow
       case BadgeSize.story:
-        return const Size(360, 640);
+        return const Size(360, 720); // Increased to prevent overflow
     }
   }
 
