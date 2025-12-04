@@ -74,11 +74,11 @@ export const howItWorks = {
     },
     {
       number: '03',
-      title: 'Connect Your Profiles',
-      description: 'Link your Vinted, eBay, Depop, Instagram, and other profiles. We verify ownership and back up your ratings.',
-      icon: 'link',
+      title: 'Share to Import',
+      description: 'Open Vinted, eBay, or any profile → tap Share → "Import to SilentID". We verify you own it in seconds.',
+      icon: 'share-import',
       color: 'amber',
-      screen: 'connect-profiles',
+      screen: 'share-import',
     },
     {
       number: '04',
@@ -88,6 +88,49 @@ export const howItWorks = {
       color: 'blue',
       screen: 'share-passport',
     },
+  ],
+};
+
+// Share Import Feature - PRIMARY Level 3 Verification
+export const shareImport = {
+  title: 'Import From Any App',
+  subtitle: 'The fastest way to verify your profiles',
+  tagline: 'Share → Import → Verified in 10 seconds',
+  description: 'Open any profile on your phone, tap Share, select "Import to SilentID". We detect the platform, verify you own the profile, and back up your ratings automatically.',
+  steps: [
+    {
+      number: '1',
+      title: 'Open Any Profile',
+      description: 'Open Vinted, eBay, Depop, Instagram, or any supported app on your phone.',
+    },
+    {
+      number: '2',
+      title: 'Tap Share',
+      description: 'Tap the share button and select "Import to SilentID" from the share sheet.',
+    },
+    {
+      number: '3',
+      title: 'Verified Instantly',
+      description: 'SilentID detects the platform, verifies ownership, and backs up your rating.',
+    },
+  ],
+  platforms: [
+    { name: 'Vinted', color: '#09B1BA' },
+    { name: 'eBay', color: '#E53238' },
+    { name: 'Depop', color: '#FF2300' },
+    { name: 'Etsy', color: '#F56400' },
+    { name: 'Instagram', color: '#E4405F' },
+    { name: 'TikTok', color: '#000000' },
+    { name: 'Twitter/X', color: '#1DA1F2' },
+    { name: 'LinkedIn', color: '#0A66C2' },
+    { name: 'Discord', color: '#5865F2' },
+    { name: 'YouTube', color: '#FF0000' },
+  ],
+  benefits: [
+    'No passwords needed—share directly from your device',
+    'Automatic platform detection—we know Vinted from eBay from Instagram',
+    'Instant ownership verification—prove it\'s your profile in seconds',
+    'Rating backup—your stars are saved the moment you connect',
   ],
 };
 

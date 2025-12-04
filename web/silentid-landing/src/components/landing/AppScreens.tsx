@@ -304,6 +304,134 @@ export function VerifiedBadgeScreen() {
   );
 }
 
+// Share Import Screen - PRIMARY Level 3 Verification
+export function ShareImportScreen() {
+  return (
+    <div className="w-full h-full bg-white flex flex-col">
+      <div className="h-12 bg-white" />
+
+      <div className="flex-1 px-5 pt-4">
+        {/* Header */}
+        <div className="text-center mb-4">
+          <motion.div
+            className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.4 }}
+          >
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+          </motion.div>
+          <h2 className="text-lg font-bold text-neutral-900">Import From Any App</h2>
+          <p className="text-xs text-neutral-500 mt-1">Share any profile link to verify</p>
+        </div>
+
+        {/* Share Sheet Preview */}
+        <motion.div
+          className="bg-neutral-50 rounded-2xl p-4 mb-4 border border-neutral-200"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="text-[10px] text-neutral-500 uppercase tracking-wide mb-3">Share to...</div>
+          <div className="flex gap-3 justify-center flex-wrap">
+            {[
+              { icon: '📱', name: 'Messages', bg: 'bg-green-500' },
+              { icon: '📧', name: 'Mail', bg: 'bg-blue-500' },
+              { icon: '✈️', name: 'AirDrop', bg: 'bg-blue-400' },
+            ].map((app, i) => (
+              <div key={i} className="text-center">
+                <div className={`w-10 h-10 ${app.bg} rounded-xl flex items-center justify-center text-white text-lg shadow-sm`}>
+                  {app.icon}
+                </div>
+                <div className="text-[9px] text-neutral-500 mt-1">{app.name}</div>
+              </div>
+            ))}
+            <div className="text-center">
+              <motion.div
+                className="w-10 h-10 bg-gradient-to-br from-[#5A3EB8] to-[#462F8F] rounded-xl flex items-center justify-center text-white text-lg shadow-lg ring-2 ring-[#5A3EB8]/30"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 2, repeatDelay: 1 }}
+              >
+                🔒
+              </motion.div>
+              <div className="text-[9px] text-[#5A3EB8] mt-1 font-medium">SilentID</div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Platform Detection */}
+        <motion.div
+          className="bg-teal-50 rounded-xl p-3 border border-teal-200 mb-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#09B1BA] rounded-xl flex items-center justify-center text-white font-bold text-sm shadow">
+              V
+            </div>
+            <div className="flex-1">
+              <div className="text-sm font-medium text-neutral-900">Vinted Profile Detected</div>
+              <div className="text-xs text-teal-600 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Ready to verify
+              </div>
+            </div>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+              className="w-5 h-5 border-2 border-teal-300 border-t-teal-600 rounded-full"
+            />
+          </div>
+        </motion.div>
+
+        {/* Supported Platforms */}
+        <div className="mt-2">
+          <div className="text-[10px] text-neutral-500 mb-2">Works with</div>
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { name: 'Vinted', color: 'bg-teal-500' },
+              { name: 'eBay', color: 'bg-red-500' },
+              { name: 'Depop', color: 'bg-orange-500' },
+              { name: 'Instagram', color: 'bg-pink-500' },
+              { name: 'TikTok', color: 'bg-black' },
+              { name: '+15', color: 'bg-neutral-400' },
+            ].map((platform, i) => (
+              <motion.div
+                key={i}
+                className={`${platform.color} text-white text-[9px] px-2 py-0.5 rounded-full font-medium`}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.5 + i * 0.05 }}
+              >
+                {platform.name}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom button */}
+      <div className="px-5 pb-6">
+        <motion.div
+          className="w-full h-12 bg-[#5A3EB8] rounded-xl flex items-center justify-center gap-2 shadow-lg"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+          <span className="text-white font-medium text-sm">Connect Profile</span>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
 // Trust Passport Screen (Public Profile)
 export function TrustPassportScreen() {
   return (

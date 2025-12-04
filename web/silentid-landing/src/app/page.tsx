@@ -1,6 +1,7 @@
 import HeroSection from '@/sections/HeroSection';
 import ProblemSection from '@/sections/ProblemSection';
 import HowItWorksSection from '@/sections/HowItWorksSection';
+import ShareImportSection from '@/sections/ShareImportSection';
 import AppWalkthroughSection from '@/sections/AppWalkthroughSection';
 import TrustScoreSection from '@/sections/TrustScoreSection';
 import PasskeySection from '@/sections/PasskeySection';
@@ -25,15 +26,16 @@ import FooterSection from '@/sections/FooterSection';
  * 1. Hero - Fear hook + insurance messaging with primary CTA
  * 2. Problem - Horror stats + pain points (reputation at risk)
  * 3. How It Works - 4-step journey with real app screen illustrations
- * 4. App Walkthrough - Interactive demo with 5 app screens
- * 5. TrustScore - Core value proposition with animated score card
- * 6. Passkey - 100% passwordless authentication
- * 7. Identity - Stripe verification process
- * 8. Passport - Portable trust (QR codes, verified badge)
- * 9. Pricing - Free + Pro tiers with new features
- * 10. Testimonials - Social proof and user stats
- * 11. FAQ - Comprehensive SEO-optimized FAQ (15 questions)
- * 12. Footer - Legal links, company info, navigation
+ * 4. Share Import - PRIMARY feature: Share any profile to SilentID
+ * 5. App Walkthrough - Interactive demo with 5 app screens
+ * 6. TrustScore - Core value proposition with animated score card
+ * 7. Passkey - 100% passwordless authentication
+ * 8. Identity - Stripe verification process
+ * 9. Passport - Portable trust (QR codes, verified badge)
+ * 10. Pricing - Free + Pro tiers with new features
+ * 11. Testimonials - Social proof and user stats
+ * 12. FAQ - Comprehensive SEO-optimized FAQ (15 questions)
+ * 13. Footer - Legal links, company info, navigation
  *
  * Removed Sections (simplified):
  * - Evidence Vault (consolidated into Pro features)
@@ -50,6 +52,9 @@ export default function Home() {
 
       {/* Solution Overview - How it works */}
       <HowItWorksSection />
+
+      {/* Share Import - PRIMARY feature showcase */}
+      <ShareImportSection />
 
       {/* Interactive Demo - See the app in action */}
       <AppWalkthroughSection />

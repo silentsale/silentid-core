@@ -29,10 +29,10 @@ export default function Hero() {
               </p>
             </div>
 
-            {/* Brand Promise */}
+            {/* Brand Promise / Tagline */}
             <div className="p-6 bg-white/90 backdrop-blur-sm rounded-xl border-2 border-primary/30 max-w-xl shadow-lg hover:shadow-xl hover:border-primary/50 transition-all duration-300">
               <p className="text-lg text-neutral-900 font-medium">
-                {hero.brandPromise}
+                {hero.tagline}
               </p>
             </div>
 
