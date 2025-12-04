@@ -16,9 +16,7 @@ public class SilentIdDbContext : DbContext
     public DbSet<AuthDevice> AuthDevices { get; set; } = null!;
     public DbSet<IdentityVerification> IdentityVerifications { get; set; } = null!;
 
-    // Evidence tables
-    public DbSet<ReceiptEvidence> ReceiptEvidences { get; set; } = null!;
-    public DbSet<ScreenshotEvidence> ScreenshotEvidences { get; set; } = null!;
+    // Evidence tables (v2.0 - Profile links only, receipts/screenshots removed)
     public DbSet<ProfileLinkEvidence> ProfileLinkEvidences { get; set; } = null!;
     public DbSet<ExternalRating> ExternalRatings { get; set; } = null!;
 
@@ -142,32 +140,7 @@ public class SilentIdDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ReceiptEvidence configuration
-        modelBuilder.Entity<ReceiptEvidence>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.UserId);
-            entity.HasIndex(e => e.RawHash);
-
-            entity.HasOne(e => e.User)
-                .WithMany()
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // ScreenshotEvidence configuration
-        modelBuilder.Entity<ScreenshotEvidence>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.UserId);
-
-            entity.HasOne(e => e.User)
-                .WithMany()
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // ProfileLinkEvidence configuration
+        // ProfileLinkEvidence configuration (v2.0 - receipts/screenshots removed)
         modelBuilder.Entity<ProfileLinkEvidence>(entity =>
         {
             entity.HasKey(e => e.Id);

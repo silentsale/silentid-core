@@ -438,9 +438,9 @@ class _HomeScreenState extends State<HomeScreen>
                     children: [
                       Expanded(
                         child: _buildQuickAction(
-                          icon: Icons.description_outlined,
-                          title: 'Add Evidence',
-                          subtitle: 'Upload receipts',
+                          icon: Icons.link_rounded,
+                          title: 'Connect Profile',
+                          subtitle: 'Link accounts',
                           onTap: () => context.push('/evidence'),
                         ),
                       ),
@@ -773,7 +773,7 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Upload receipts, screenshots, and profile links to build your trust profile.',
+              'Connect your marketplace and social profiles to build your trust reputation.',
               style: GoogleFonts.inter(
                 fontSize: 14,
                 color: AppTheme.neutralGray700,

@@ -150,10 +150,10 @@ export default function RiskSignalsSection() {
               </svg>
               <div>
                 <h3 className="font-semibold text-white mb-1">
-                  Premium Security Features
+                  Pro Security Features
                 </h3>
                 <p className="text-sm text-neutral-400 leading-relaxed">
-                  Real-time breach monitoring, detailed login history, and advanced risk analytics included in Premium and Pro plans.
+                  Real-time breach monitoring, detailed login history, and advanced risk analytics included in the Pro plan.
                 </p>
               </div>
             </div>

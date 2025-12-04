@@ -1,0 +1,15 @@
+<svg viewBox="0 0 180 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shield with keyhole -->
+  <path
+    d="M4 8C4 6.89543 4.89543 6 6 6H26C27.1046 6 28 6.89543 28 8V20C28 28 16 34 16 34C16 34 4 28 4 20V8Z"
+    fill="#5A3EB8"
+  />
+  <!-- Keyhole -->
+  <circle cx="16" cy="15" r="4" fill="white"/>
+  <path d="M14 18H18V25H14V18Z" fill="white"/>
+
+  <!-- SilentID text -->
+  <text x="36" y="26" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="600" fill="#5A3EB8">
+    SilentID
+  </text>
+</svg>

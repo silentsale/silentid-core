@@ -146,8 +146,8 @@ class _TrustScoreBreakdownScreenState
                     const SizedBox(height: 24),
 
                     _buildComponentSection(
-                      'Evidence Score',
-                      Icons.receipt_long,
+                      'Profiles Score',
+                      Icons.link_rounded,
                       _breakdownData!['components']['evidence'],
                       infoPoint: InfoPoints.evidenceComponent,
                     ),

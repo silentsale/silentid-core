@@ -75,14 +75,10 @@ class ErrorMessages {
   static const String logoutSuccess = 'You have been logged out.';
   static const String sessionExpired = 'Your session has expired. Please log in again.';
 
-  // --- Evidence Upload ---
-  static const String receiptUploaded = 'Receipt uploaded successfully.';
-  static const String receiptUploadFailed = 'Unable to upload receipt. Please try again.';
-  static const String screenshotUploaded = 'Screenshot uploaded successfully.';
-  static const String screenshotUploadFailed = 'Unable to upload screenshot. Please try again.';
+  // --- Profile Linking ---
   static const String profileLinkAdded = 'Profile link added successfully.';
   static const String profileLinkFailed = 'Unable to add profile link. Please check the URL and try again.';
-  static const String evidenceDeleted = 'Evidence removed successfully.';
+  static const String profileDeleted = 'Profile removed successfully.';
 
   // --- Profile Verification ---
   static const String verificationStarted = 'Verification started. Please follow the instructions.';

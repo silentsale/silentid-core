@@ -2,11 +2,13 @@
 
 import { motion } from 'framer-motion';
 import CTAButton from '@/components/landing/CTAButton';
-import DeviceMockup from '@/components/landing/DeviceMockup';
+import PhoneMockup from '@/components/landing/PhoneMockup';
+import { TrustPassportScreen } from '@/components/landing/AppScreens';
+import { hero } from '@/config/content';
 
 export default function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-white via-[#E8E2FF]/30 to-white">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-white via-[#E8E2FF]/30 to-white pt-20">
       {/* Animated background blobs */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
@@ -45,42 +47,43 @@ export default function HeroSection() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            {/* Overline */}
+            {/* Fear Hook Overline */}
             <motion.div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#E8E2FF] text-[#5A3EB8] text-sm font-medium mb-6"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-50 text-red-600 text-sm font-medium mb-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
-              100% Passwordless · Bank-Grade Security
+              {hero.fearHook}
             </motion.div>
 
-            {/* Main headline */}
+            {/* Main headline - Insurance angle */}
             <motion.h1
               className="text-5xl md:text-6xl lg:text-7xl font-bold text-neutral-900 leading-tight mb-6"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
-              Your Passport to{' '}
+              Never Lose Your{' '}
               <span className="bg-gradient-to-r from-[#5A3EB8] to-[#462F8F] bg-clip-text text-transparent">
-                Digital Trust
-              </span>
+                Reputation
+              </span>{' '}
+              Again
             </motion.h1>
 
-            {/* Subheadline */}
+            {/* Subheadline - Solution */}
             <motion.p
               className="text-xl md:text-2xl text-neutral-600 mb-8 leading-relaxed"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.8 }}
             >
-              Build a verified reputation that works everywhere you trade online.
+              {hero.subheadline}
               <span className="block mt-2 text-[#5A3EB8] font-semibold">
-                Honest people rise. Scammers fail.
+                {hero.tagline}
               </span>
             </motion.p>
 
@@ -92,49 +95,46 @@ export default function HeroSection() {
               transition={{ delay: 0.5, duration: 0.8 }}
             >
               <CTAButton variant="primary" size="lg">
-                Get Your SilentID
+                {hero.primaryCTA}
               </CTAButton>
-              <CTAButton variant="secondary" size="lg">
-                How It Works
+              <CTAButton variant="secondary" size="lg" href="#how-it-works">
+                {hero.secondaryCTA}
               </CTAButton>
             </motion.div>
 
-            {/* Trust signals */}
+            {/* Trust signals - More compelling */}
             <motion.div
               className="mt-12 flex flex-wrap gap-6 text-sm text-neutral-600"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6, duration: 0.8 }}
             >
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#1FBF71]" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>Stripe Identity Verified</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#1FBF71]" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>UK GDPR Compliant</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#1FBF71]" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>Evidence-Based Trust</span>
-              </div>
+              {hero.trustSignals.map((signal, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-[#1FBF71]" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>{signal}</span>
+                </div>
+              ))}
             </motion.div>
           </motion.div>
 
-          {/* Right: Device mockup with 3D parallax */}
+          {/* Right: Phone mockup with real app screen */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
             className="relative"
           >
-            <DeviceMockup enableParallax className="lg:scale-110" />
+            <div className="relative lg:scale-110">
+              <PhoneMockup variant="floating">
+                <TrustPassportScreen />
+              </PhoneMockup>
+
+              {/* Glow effect behind phone */}
+              <div className="absolute inset-0 -z-10 blur-3xl opacity-30 bg-gradient-to-br from-[#5A3EB8] to-[#462F8F] rounded-full scale-75" />
+            </div>
           </motion.div>
         </div>
       </div>

@@ -43,73 +43,82 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen>
   late Animation<double> _fadeAnimation;
 
   final List<OnboardingPage> _pages = [
+    // PAGE 1: FEAR HOOK - The Problem
+    OnboardingPage(
+      icon: Icons.warning_amber_rounded,
+      title: 'Your Stars Can Vanish',
+      subtitle: 'The Hidden Risk',
+      description:
+          'Platforms ban accounts without warning. Markets shut down overnight. That 4.9★ rating you spent years building? Gone in seconds.',
+      color: AppTheme.dangerRed,
+      rewardPoints: 0,
+      showHorrorStats: true,
+    ),
+    // PAGE 2: THE SOLUTION
     OnboardingPage(
       icon: Icons.shield_outlined,
-      title: 'Welcome to SilentID',
-      subtitle: 'Your Digital Trust Identity',
+      title: 'Never Lose Your Reputation',
+      subtitle: 'Reputation Backup',
       description:
-          'Build a portable reputation that follows you across marketplaces, dating apps, and online communities.',
+          'SilentID backs up your trust history from every platform. If the worst happens, you have proof of who you really are.',
       color: AppTheme.primaryPurple,
       rewardPoints: 0,
     ),
+    // PAGE 3: HOW IT WORKS - TrustScore
     OnboardingPage(
       icon: Icons.emoji_events_outlined,
-      title: 'Your TrustScore',
-      subtitle: 'Your Digital Reputation Passport',
+      title: 'One Score. All Platforms.',
+      subtitle: 'Your Combined Reputation',
       description:
-          'Your TrustScore (0-1000) shows how trustworthy you are online. Higher score = more trust = better opportunities.',
+          'We aggregate your ratings from Vinted, eBay, Depop, Instagram, and more into one powerful TrustScore (0-1000).',
       color: AppTheme.successGreen,
       rewardPoints: 0,
       showTrustPreview: true,
+      showAggregatedRating: true,
     ),
-    OnboardingPage(
-      icon: Icons.verified_user_outlined,
-      title: 'Verify Your Identity',
-      subtitle: 'Prove You\'re Real',
-      description:
-          'Quick identity verification via Stripe. Your documents are never stored by SilentID—only the result.',
-      color: AppTheme.primaryPurple,
-      rewardPoints: 50,
-    ),
+    // PAGE 4: CONNECT PROFILES
     OnboardingPage(
       icon: Icons.link,
       title: 'Connect Your Profiles',
       subtitle: 'Bring Your Stars With You',
       description:
-          'Link your Vinted, eBay, Depop, Instagram, TikTok ratings. Your reputation from one platform boosts your TrustScore everywhere.\n\nOr import directly using your phone\'s Share button.',
+          'Link your marketplace and social profiles. Each verified connection strengthens your combined reputation.',
       color: AppTheme.warningAmber,
       rewardPoints: 25,
       showPlatformIcons: true,
     ),
-    OnboardingPage(
-      icon: Icons.receipt_long_outlined,
-      title: 'Evidence Vault',
-      subtitle: 'Prove Your Transactions',
-      description:
-          'Upload receipts and screenshots from your transactions. Each piece of evidence strengthens your reputation.',
-      color: AppTheme.successGreen,
-      rewardPoints: 10,
-    ),
-    // NEW: Share-Import page (Section 55)
+    // PAGE 5: SHARE IMPORT
     OnboardingPage(
       icon: Icons.ios_share_outlined,
-      title: 'Import Profiles From Any App',
-      subtitle: 'Share to Connect',
+      title: 'Import From Any App',
+      subtitle: 'One Tap to Connect',
       description:
-          'Open any profile → Share → Import to SilentID.\n\nSupports marketplaces, socials, and professional platforms.',
+          'Open any profile → Share → Import to SilentID.\n\nIt\'s that simple.',
       color: const Color(0xFF3B82F6),
       rewardPoints: 25,
       showShareImportDemo: true,
     ),
+    // PAGE 6: VERIFY IDENTITY
+    OnboardingPage(
+      icon: Icons.verified_user_outlined,
+      title: 'Verify Your Identity',
+      subtitle: 'Prove You\'re Real',
+      description:
+          'Quick ID verification via Stripe. Your documents are never stored—only the result. Takes under 2 minutes.',
+      color: AppTheme.primaryPurple,
+      rewardPoints: 50,
+    ),
+    // PAGE 7: SHARE EVERYWHERE
     OnboardingPage(
       icon: Icons.share_outlined,
       title: 'Share Your Trust',
-      subtitle: 'One Identity. Everywhere.',
+      subtitle: 'Proof That Works Everywhere',
       description:
-          'Share your Digital Trust Passport anywhere—even on platforms that block links. Prove who you are instantly.',
+          'Share your Trust Passport on dating apps, marketplaces, anywhere. Even platforms that block links can see your QR badge.',
       color: AppTheme.primaryPurple,
       isLast: true,
       rewardPoints: 0,
+      showBadgePreview: true,
     ),
   ];
 
@@ -332,10 +341,22 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen>
               textAlign: TextAlign.center,
             ),
 
+            // Show Horror Stats (Fear page)
+            if (page.showHorrorStats) ...[
+              const SizedBox(height: 28),
+              _buildHorrorStats(),
+            ],
+
             // Show TrustScore preview
             if (page.showTrustPreview) ...[
               const SizedBox(height: 28),
               _buildTrustScorePreview(),
+            ],
+
+            // Show Aggregated Rating
+            if (page.showAggregatedRating) ...[
+              const SizedBox(height: 20),
+              _buildAggregatedRating(),
             ],
 
             // Show Platform Icons (Connect Profiles page)
@@ -348,6 +369,12 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen>
             if (page.showShareImportDemo) ...[
               const SizedBox(height: 28),
               _buildShareImportDemo(),
+            ],
+
+            // Show Badge Preview
+            if (page.showBadgePreview) ...[
+              const SizedBox(height: 28),
+              _buildBadgePreview(),
             ],
 
             const SizedBox(height: 24),
@@ -431,6 +458,254 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen>
         color: isActive ? AppTheme.primaryPurple : AppTheme.neutralGray300,
         borderRadius: BorderRadius.circular(4),
       ),
+    );
+  }
+
+  /// Horror stats widget for fear-driven onboarding
+  Widget _buildHorrorStats() {
+    final stats = [
+      {'value': '50K+', 'label': 'Vinted accounts banned in 2024', 'icon': Icons.block},
+      {'value': '3.2 yrs', 'label': 'Average feedback history lost', 'icon': Icons.history},
+      {'value': '89%', 'label': 'Never recover their ratings', 'icon': Icons.trending_down},
+    ];
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.dangerRed.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppTheme.dangerRed.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Column(
+              children: stats.asMap().entries.map((entry) {
+                final index = entry.key;
+                final stat = entry.value;
+                final delay = index * 0.15;
+                final itemOpacity = ((value - delay) / 0.7).clamp(0.0, 1.0);
+
+                return Opacity(
+                  opacity: itemOpacity,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: index < stats.length - 1 ? 12 : 0),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: AppTheme.dangerRed.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            stat['icon'] as IconData,
+                            color: AppTheme.dangerRed,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                stat['value'] as String,
+                                style: GoogleFonts.inter(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.dangerRed,
+                                ),
+                              ),
+                              Text(
+                                stat['label'] as String,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: AppTheme.neutralGray700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Aggregated rating widget showing combined stars
+  Widget _buildAggregatedRating() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.scale(
+            scale: 0.9 + (0.1 * value),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.warningAmber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.warningAmber.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Stars
+                  Row(
+                    children: List.generate(5, (index) {
+                      return Icon(
+                        index < 4 ? Icons.star_rounded : Icons.star_half_rounded,
+                        color: AppTheme.warningAmber,
+                        size: 22,
+                      );
+                    }),
+                  ),
+                  const SizedBox(width: 10),
+                  // Rating text
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '4.8',
+                        style: GoogleFonts.inter(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.neutralGray900,
+                        ),
+                      ),
+                      Text(
+                        'from 5 platforms',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: AppTheme.neutralGray700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Badge preview widget
+  Widget _buildBadgePreview() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.scale(
+            scale: 0.8 + (0.2 * value),
+            child: Container(
+              width: 200,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryPurple.withValues(alpha: 0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+                border: Border.all(
+                  color: AppTheme.primaryPurple.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Header
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.primaryPurple,
+                          AppTheme.primaryPurple.withValues(alpha: 0.8),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.verified_rounded, color: Colors.white, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          'SilentID Verified',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Score
+                  Text(
+                    '754',
+                    style: GoogleFonts.inter(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryPurple,
+                    ),
+                  ),
+                  Text(
+                    'TrustScore',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: AppTheme.neutralGray700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // QR placeholder
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: AppTheme.neutralGray300.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.qr_code_2_rounded,
+                      size: 40,
+                      color: AppTheme.neutralGray700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -682,6 +957,9 @@ class OnboardingPage {
   final bool showTrustPreview;
   final bool showPlatformIcons;
   final bool showShareImportDemo;
+  final bool showHorrorStats;
+  final bool showAggregatedRating;
+  final bool showBadgePreview;
 
   const OnboardingPage({
     required this.icon,
@@ -694,5 +972,8 @@ class OnboardingPage {
     this.showTrustPreview = false,
     this.showPlatformIcons = false,
     this.showShareImportDemo = false,
+    this.showHorrorStats = false,
+    this.showAggregatedRating = false,
+    this.showBadgePreview = false,
   });
 }

@@ -159,6 +159,11 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen>
       isScrollControlled: true,
       builder: (context) => ShareProfileSheet(
         username: _profile!.cleanUsername,
+        displayName: _profile!.displayName,
+        trustScore: _profile!.trustScoreVisible ? _profile!.trustScore : null,
+        trustScoreLabel: _profile!.trustScoreLabel,
+        isIdentityVerified: _profile!.identityVerified,
+        connectedPlatforms: _profile!.verifiedPlatforms,
       ),
     );
   }

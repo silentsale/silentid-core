@@ -7,7 +7,7 @@ interface SectionShellProps {
   children: ReactNode;
   className?: string;
   id?: string;
-  background?: 'white' | 'subtle' | 'dark';
+  background?: 'white' | 'subtle' | 'dark' | 'gradient';
 }
 
 export default function SectionShell({
@@ -19,7 +19,8 @@ export default function SectionShell({
   const bgColors = {
     white: 'bg-white',
     subtle: 'bg-gradient-to-b from-white via-[#E8E2FF]/10 to-white',
-    dark: 'bg-neutral-900'
+    dark: 'bg-neutral-900',
+    gradient: 'bg-gradient-to-br from-[#5A3EB8] via-[#462F8F] to-[#2D1F5C]'
   };
 
   return (

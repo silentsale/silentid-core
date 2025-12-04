@@ -14,13 +14,36 @@
  */
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 
+// Inline SVG Logo component for crisp rendering
+const Logo = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 180 40"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    {/* Shield with keyhole */}
+    <path
+      d="M4 8C4 6.89543 4.89543 6 6 6H26C27.1046 6 28 6.89543 28 8V20C28 28 16 34 16 34C16 34 4 28 4 20V8Z"
+      fill="#5A3EB8"
+    />
+    {/* Keyhole */}
+    <circle cx="16" cy="15" r="4" fill="white"/>
+    <path d="M14 18H18V25H14V18Z" fill="white"/>
+
+    {/* SilentID text */}
+    <text x="36" y="26" fontFamily="Inter, system-ui, sans-serif" fontSize="22" fontWeight="600" fill="#5A3EB8">
+      SilentID
+    </text>
+  </svg>
+);
+
 const navLinks = [
+  { href: '/#problem', label: 'The Problem' },
   { href: '/#how-it-works', label: 'How It Works' },
-  { href: '/#features', label: 'Features' },
-  { href: '/#safety', label: 'Security' },
+  { href: '/#pricing', label: 'Pricing' },
   { href: '/#faq', label: 'FAQ' },
 ];
 
@@ -69,17 +92,10 @@ export default function Header() {
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center space-x-2 transition-opacity hover:opacity-80"
+            className="flex items-center transition-opacity hover:opacity-80"
             onClick={handleLinkClick}
           >
-            <Image
-              src="/logo.svg"
-              alt="SilentID Logo"
-              width={160}
-              height={40}
-              priority
-              className="h-10 w-auto"
-            />
+            <Logo className="h-10 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}

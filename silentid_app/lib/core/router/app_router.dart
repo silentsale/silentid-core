@@ -8,10 +8,6 @@ import '../../features/identity/screens/identity_intro_screen.dart';
 import '../../features/identity/screens/identity_webview_screen.dart';
 import '../../features/identity/screens/identity_status_screen.dart';
 import '../../features/evidence/screens/evidence_overview_screen.dart';
-import '../../features/evidence/screens/receipt_upload_screen.dart';
-import '../../features/evidence/screens/receipt_list_screen.dart';
-import '../../features/evidence/screens/email_receipts_setup_screen.dart';
-import '../../features/evidence/screens/screenshot_upload_screen.dart';
 import '../../features/evidence/screens/profile_link_screen.dart';
 import '../../features/evidence/screens/level3_verification_screen.dart';
 import '../../features/trust/screens/trustscore_overview_screen.dart';
@@ -29,7 +25,6 @@ import '../../features/safety/screens/report_user_screen.dart';
 import '../../features/safety/screens/my_reports_screen.dart';
 import '../../features/safety/screens/report_details_screen.dart';
 import '../../features/subscriptions/screens/subscription_overview_screen.dart';
-import '../../features/subscriptions/screens/upgrade_premium_screen.dart';
 import '../../features/subscriptions/screens/upgrade_pro_screen.dart';
 import '../../features/profile/screens/public_profile_viewer_screen.dart';
 import '../../features/profiles/screens/connect_profiles_screen.dart';
@@ -146,26 +141,6 @@ class AppRouter {
             path: '/evidence',
             name: 'evidence',
             builder: (context, state) => const EvidenceOverviewScreen(),
-          ),
-          GoRoute(
-            path: '/evidence/receipts',
-            name: 'receipt-list',
-            builder: (context, state) => const ReceiptListScreen(),
-          ),
-          GoRoute(
-            path: '/evidence/receipts/upload',
-            name: 'receipt-upload',
-            builder: (context, state) => const ReceiptUploadScreen(),
-          ),
-          GoRoute(
-            path: '/evidence/receipts/email-setup',
-            name: 'email-receipts-setup',
-            builder: (context, state) => const EmailReceiptsSetupScreen(),
-          ),
-          GoRoute(
-            path: '/evidence/screenshots',
-            name: 'screenshot-upload',
-            builder: (context, state) => const ScreenshotUploadScreen(),
           ),
           GoRoute(
             path: '/evidence/profile-links',
@@ -291,7 +266,7 @@ class AppRouter {
           GoRoute(
             path: '/subscriptions/premium',
             name: 'upgrade-premium',
-            builder: (context, state) => const UpgradePremiumScreen(),
+            redirect: (context, state) => '/subscriptions/pro',
           ),
           GoRoute(
             path: '/subscriptions/pro',

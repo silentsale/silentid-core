@@ -19,8 +19,6 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
   final _evidenceApi = EvidenceApiService();
 
   bool _isLoading = true;
-  int _receiptsCount = 0;
-  int _screenshotsCount = 0;
   int _profileLinksCount = 0;
 
   late AnimationController _fadeController;
@@ -32,8 +30,6 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
   final int _currentXP = 302;
   final int _maxXP = 400;
   final int _dayStreak = 7;
-  final int _dailyChallengeProgress = 1;
-  final int _dailyChallengeTarget = 2;
 
   @override
   void initState() {
@@ -69,8 +65,6 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
     try {
       final summary = await _evidenceApi.getEvidenceSummary();
       setState(() {
-        _receiptsCount = summary.receiptsCount;
-        _screenshotsCount = summary.screenshotsCount;
         _profileLinksCount = summary.profileLinksCount;
         _isLoading = false;
       });
@@ -81,7 +75,7 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
     }
   }
 
-  int get _totalItems => _receiptsCount + _screenshotsCount + _profileLinksCount;
+  int get _totalItems => _profileLinksCount;
 
   @override
   Widget build(BuildContext context) {
@@ -147,10 +141,6 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
 
                         // Stats Cards Row
                         _buildStatsCardsRow(),
-                        const SizedBox(height: 24),
-
-                        // Daily Challenge Card
-                        _buildDailyChallengeCard(),
                         const SizedBox(height: 24),
 
                         // Evidence Categories
@@ -337,18 +327,11 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
             scrollDirection: Axis.horizontal,
             children: [
               _buildAchievementBadge(
-                icon: Icons.receipt_long,
-                title: '5 Receipts',
-                xp: 75,
+                icon: Icons.link,
+                title: 'First Profile',
+                xp: 25,
                 color: AppTheme.primaryPurple,
                 isPulsing: true,
-              ),
-              const SizedBox(width: 12),
-              _buildAchievementBadge(
-                icon: Icons.image,
-                title: 'First Screenshot',
-                xp: 10,
-                color: AppTheme.successGreen,
               ),
               const SizedBox(width: 12),
               _buildAchievementBadge(
@@ -363,6 +346,13 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
                 title: 'Verified',
                 xp: 50,
                 color: const Color(0xFF3B82F6),
+              ),
+              const SizedBox(width: 12),
+              _buildAchievementBadge(
+                icon: Icons.security,
+                title: 'Trusted',
+                xp: 150,
+                color: AppTheme.successGreen,
               ),
             ],
           ),
@@ -444,15 +434,7 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
         Expanded(
           child: _buildStatCard(
             value: '$_totalItems',
-            label: 'Total Items',
-            color: AppTheme.primaryPurple,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            value: '3',
-            label: 'Types',
+            label: 'Total Profiles',
             color: AppTheme.primaryPurple,
           ),
         ),
@@ -567,153 +549,17 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
     );
   }
 
-  Widget _buildDailyChallengeCard() {
-    final progress = _dailyChallengeProgress / _dailyChallengeTarget;
-
-    return GestureDetector(
-      onTap: () {
-        AppHaptics.light();
-        context.push('/evidence/receipts');
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppTheme.primaryPurple, const Color(0xFF7C3AED)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryPurple.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Daily Challenge',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Expires in 8h 42m',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.9),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '+25 XP',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Add 2 receipts today',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: progress,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '$_dailyChallengeProgress/$_dailyChallengeTarget',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildEvidenceCategoriesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Evidence Categories',
+          'Connected Profiles',
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: AppTheme.neutralGray900,
           ),
-        ),
-        const SizedBox(height: 12),
-
-        _buildEvidenceCategoryCard(
-          icon: Icons.receipt_long,
-          title: 'Receipts',
-          count: _isLoading ? 0 : _receiptsCount,
-          xpEarned: _receiptsCount * 15,
-          xpPerItem: 15,
-          onTap: () => context.push('/evidence/receipts'),
-        ),
-        const SizedBox(height: 12),
-
-        _buildEvidenceCategoryCard(
-          icon: Icons.image,
-          title: 'Screenshots',
-          count: _isLoading ? 0 : _screenshotsCount,
-          xpEarned: _screenshotsCount * 10,
-          xpPerItem: 10,
-          onTap: () => context.push('/evidence/screenshots'),
         ),
         const SizedBox(height: 12),
 
@@ -724,7 +570,7 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
           xpEarned: _profileLinksCount * 25,
           xpPerItem: 25,
           isVerified: _profileLinksCount > 0,
-          onTap: () => context.push('/evidence/profile-links'),
+          onTap: () => context.push('/profiles/connect'),
         ),
       ],
     );
@@ -878,10 +724,10 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
         const SizedBox(height: 12),
 
         _buildRecentEvidenceItem(
-          icon: Icons.receipt_long,
-          title: 'Vinted Receipt',
+          icon: Icons.link,
+          title: 'Vinted Profile Verified',
           subtitle: 'Added today at 2:34 PM',
-          xp: 15,
+          xp: 25,
         ),
         const SizedBox(height: 8),
         _buildRecentEvidenceItem(
@@ -892,10 +738,10 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
         ),
         const SizedBox(height: 8),
         _buildRecentEvidenceItem(
-          icon: Icons.image,
-          title: 'Chat Screenshot',
+          icon: Icons.link,
+          title: 'eBay Profile Verified',
           subtitle: 'Added 2 days ago',
-          xp: 10,
+          xp: 25,
         ),
       ],
     );
@@ -1006,18 +852,8 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
               const SizedBox(height: 20),
 
               _buildAddEvidenceOption(
-                icon: Icons.image,
-                title: 'Upload Screenshot',
-                subtitle: '+10 XP per screenshot',
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/evidence/screenshots');
-                },
-              ),
-              const SizedBox(height: 12),
-              _buildAddEvidenceOption(
                 icon: Icons.link,
-                title: 'Link Profile',
+                title: 'Connect Profile',
                 subtitle: '+25 XP per verified profile',
                 onTap: () {
                   Navigator.pop(context);
@@ -1026,12 +862,12 @@ class _EvidenceOverviewScreenState extends State<EvidenceOverviewScreen>
               ),
               const SizedBox(height: 12),
               _buildAddEvidenceOption(
-                icon: Icons.email_outlined,
-                title: 'Email Scanner',
-                subtitle: 'Forward receipts to verify purchases',
+                icon: Icons.verified,
+                title: 'View Connected Profiles',
+                subtitle: 'Manage your verified accounts',
                 onTap: () {
                   Navigator.pop(context);
-                  context.push('/evidence/receipts/email-setup');
+                  context.push('/profiles/connected');
                 },
               ),
               const SizedBox(height: 16),

@@ -3,7 +3,8 @@ using System.ComponentModel.DataAnnotations;
 namespace SilentID.Api.Models;
 
 /// <summary>
-/// User subscription to Premium or Pro tier (Stripe Billing).
+/// User subscription to Pro tier (Stripe Billing).
+/// v2.0: Simplified to Free + Pro only. Premium tier removed.
 /// </summary>
 public class Subscription
 {
@@ -49,9 +50,13 @@ public class Subscription
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 
+/// <summary>
+/// v2.0: Simplified to Free + Pro only
+/// </summary>
 public enum SubscriptionTier
 {
     Free,
+    [Obsolete("Premium tier removed in v2.0. Use Pro instead.")]
     Premium,
     Pro
 }

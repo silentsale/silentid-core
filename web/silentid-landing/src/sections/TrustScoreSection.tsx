@@ -7,31 +7,24 @@ import SectionShell from '@/components/landing/SectionShell';
 const components = [
   {
     name: 'Identity',
-    max: 200,
-    description: 'Stripe Identity verification, email confirmed, phone verified',
+    max: 300,
+    description: 'Stripe Identity verification, email confirmed, passkey setup',
     color: '#5A3EB8',
-    example: 200
+    example: 280
   },
   {
-    name: 'Evidence',
-    max: 300,
-    description: 'Receipts, screenshots, public profiles verified',
+    name: 'Profiles',
+    max: 400,
+    description: 'Verified marketplace and social profiles (Vinted, eBay, Instagram, etc.)',
     color: '#1FBF71',
-    example: 240
+    example: 320
   },
   {
     name: 'Behaviour',
     max: 300,
     description: 'No safety reports, consistent activity, account longevity',
     color: '#FFC043',
-    example: 267
-  },
-  {
-    name: 'Peer Verification',
-    max: 200,
-    description: 'Mutual confirmations from trading partners',
-    color: '#7C3AED',
-    example: 140
+    example: 247
   }
 ];
 

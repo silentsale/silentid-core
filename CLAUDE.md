@@ -1,6 +1,6 @@
 # SILENTID / SILENTSALE - WORKING SPECIFICATION
 
-**Version:** 1.8.0 (Condensed)
+**Version:** 2.0.0 (Simplified)
 **Company:** SILENTSALE LTD (Company No. 16457502, England & Wales)
 **Full Specification:** See CLAUDE_FULL.md (do NOT load entire file - open specific sections only)
 
@@ -8,7 +8,12 @@
 
 ## WHAT IS SILENTID?
 
-**SilentID** is a standalone **passwordless trust-identity application** that allows users to build a portable reputation profile across marketplaces, dating apps, rental platforms, and community groups.
+**SilentID** is **reputation insurance for online sellers**. It backs up your hard-earned ratings from Vinted, eBay, Depop, and other marketplaces—so if the worst happens (account ban, platform shutdown, unfair removal), you have permanent proof of who you really are.
+
+**Core Value Proposition:**
+- "Never lose your reputation again"
+- "Your stars, backed up forever"
+- "Reputation insurance for serious sellers"
 
 **Core Technology Stack:**
 - Frontend: Flutter (iOS + Android)
@@ -22,7 +27,8 @@
 **Key Principles:**
 - NO passwords stored - ever
 - NO ID documents stored - Stripe Identity handles this
-- Evidence-based trust - receipts, screenshots, public profiles
+- Profile-based trust - verified external profiles from marketplaces
+- Aggregated rating - combined star rating from all platforms
 - Anti-fraud first - comprehensive risk engine
 - GDPR compliant - privacy by design
 
@@ -37,7 +43,7 @@
 **Relationship:**
 - Both products owned by SILENTSALE LTD
 - Same Stripe account used for both
-- Future integration planned post-MVP
+- Future integration planned post-MVP (SilentID will connect to SilentSale marketplace for secondhand goods)
 
 ---
 
@@ -53,7 +59,7 @@
 
 ### 2. LEVEL 3 PROFILE VERIFICATION
 
-**Purpose:** Prove ownership of external marketplace profiles (Vinted, eBay, Depop)
+**Purpose:** Prove ownership of external marketplace profiles (Vinted, eBay, Depop, Instagram, etc.)
 
 **Methods:** Token-in-Bio (add code to profile) or Share-Intent (mobile deep link)
 
@@ -63,35 +69,68 @@
 
 **Calculation Formula:**
 ```
-TrustScore = Identity + Evidence + Behaviour (max 1000)
+TrustScore = Identity + Profiles + Behaviour (max 1000)
 ```
 
 **Components:**
-- **Identity (250 pts):** Email verification, Stripe Identity verification, passkey setup
-- **Evidence (400 pts):** Receipts, screenshots, verified profile links from marketplaces
-- **Behaviour (350 pts):** Account age, login patterns, platform engagement, risk signals
+- **Identity (300 pts):** Email verification, Stripe Identity verification, passkey setup
+- **Profiles (400 pts):** Verified profile links from marketplaces and social platforms
+- **Behaviour (300 pts):** Account age, login patterns, platform engagement, risk signals
 
 **Labels:** 850-1000 Exceptional | 700-849 Very High | 550-699 High | 400-549 Moderate | 250-399 Low | 0-249 High Risk
 
 **Regenerates weekly.**
 
-### 4. USER GROWTH STRATEGY
+### 4. SUBSCRIPTION MODEL (FREE + PRO)
 
-**5 Phases (Section 50):**
+**Two tiers only:**
 
-- **Phase 1 - Activation (5 min):** Interactive onboarding tour, quick wins checklist, demo mode
-- **Phase 2 - Engagement (2 weeks):** Push notifications, TrustScore gamification, social proof
-- **Phase 3 - Monetization (2+ weeks):** Smart paywall triggers at value points (500+ score, 10th evidence)
-- **Phase 4 - Retention (1+ month):** Weekly digest, achievement badges, sharing features
-- **Phase 5 - Network Growth:** Referral bonuses (+50 TrustScore), viral loop mechanics
+**Free (£0 forever):**
+- Identity verification via Stripe
+- Basic TrustScore (0-1000)
+- Connect up to 5 marketplace profiles
+- Public Trust Passport URL
+- Basic verified badge for social profiles
+- File safety reports
 
-### 5. PUBLIC TRUST PASSPORT SHARING & VISIBILITY
+**Pro (£4.99/month) - Full Reputation Protection:**
+- Everything in Free
+- Unlimited profile connections
+- Premium verified badge with QR code and combined star rating
+- **Combined star rating** from all platforms (e.g., "4.8★ across 5 platforms")
+- **Rating drop alerts** - instant notification if any rating changes
+- **Trust timeline** - historical graph of your reputation over time
+- **Dispute evidence pack** - legal-ready PDF proof of your reputation history
+- **Platform watchdog** - alerts when markets have mass bans/shutdowns
+- Custom passport URL (silentid.co.uk/your-name)
+- Priority verification & support
 
-Users can share their identity via a public link or a QR-enabled Verified Badge image. Smart fallback chooses the correct format depending on platform restrictions. TrustScore can be public or private; badges and passport adapt automatically. Includes landing-page marketing, QR demos, and in-app education.
+### 5. PUBLIC TRUST PASSPORT & VERIFIED BADGE
+
+**Trust Passport:** Users share their identity via a public link (silentid.co.uk/u/username) or QR code. Shows TrustScore, verified platforms, combined rating, and badges.
+
+**Verified Badge for Social Profiles (Self-Explanatory Design):**
+- Shareable badge image optimized for Instagram/Twitter/LinkedIn bios
+- Contains QR code linking to full Trust Passport
+- **Self-explanatory proof** - shows actual data without needing SilentID recognition:
+  - Combined star rating (e.g., "4.8★")
+  - Platform count (e.g., "5 Platforms")
+  - ID Verified checkmark
+  - TrustScore (if public)
+- Available in light/dark modes and multiple sizes (profile, story, card)
+- One-tap download and share to any platform
+- Works even if viewers don't know what SilentID is
 
 ### 6. UNIFIED PROFILE LINKING & PLATFORM VERIFICATION
 
-SilentID lets users connect any external profile (Instagram, TikTok, LinkedIn, Depop, eBay, Discord, etc.) using a simple link-first flow. Profiles appear as **Linked** (user added) or **Verified** (SilentID confirmed ownership via token or screenshot). Clear info-points explain everything. Verified profiles boost TrustScore; users control what is shown on their public Passport.
+SilentID lets users connect any external profile (Instagram, TikTok, LinkedIn, Depop, eBay, Discord, etc.) using a simple link-first flow. Profiles appear as **Linked** (user added) or **Verified** (SilentID confirmed ownership via token). Verified profiles boost TrustScore; users control what is shown on their public Passport.
+
+**Supported Platforms:**
+- **Marketplaces:** Vinted, eBay, Depop, Etsy, Poshmark, Facebook Marketplace
+- **Social:** Instagram, TikTok, Twitter/X, YouTube, LinkedIn
+- **Professional:** GitHub, Behance, Dribbble
+- **Gaming:** Discord, Twitch, Steam
+- **Community:** Reddit, other platforms
 
 ### 7. SILENTID UI DESIGN LANGUAGE
 
@@ -99,7 +138,7 @@ SilentID uses a locked, premium Apple-style UI based on unified spacing (16px gr
 
 ### 8. LOGIN, DEVICES & SESSION SECURITY
 
-**100% passwordless authentication** with intelligent method selection: Passkey → Apple/Google → Email OTP (fallback only). New or suspicious devices trigger step-up authentication using stronger methods. High-risk patterns may temporarily restrict OTP access. Sessions are short-lived, device-bound (fingerprint + app version), and renew silently only on trusted devices. Login events feed into TrustScore (stable logins boost score) and RiskScore (suspicious patterns flagged). **Full rules in Section 54 of CLAUDE_FULL.md.**
+**100% passwordless authentication** with intelligent method selection: Passkey → Apple/Google → Email OTP (fallback only). New or suspicious devices trigger step-up authentication using stronger methods. Sessions are short-lived, device-bound (fingerprint + app version), and renew silently only on trusted devices.
 
 ### 9. SHARE TARGET INTEGRATION
 
@@ -112,15 +151,6 @@ SilentID is a **native share target** on both iOS and Android. Users can share p
 4. Shows "Profile Link Detected" modal with Connect option
 5. Routes to Connect Profile flow with pre-filled data
 
-**Technical Implementation:**
-- **Android:** intent-filter for ACTION_SEND in AndroidManifest.xml + receive_sharing_intent package
-- **iOS:** Share Extension with URL scheme bridge (silentid://import?url=ENCODED_URL)
-- **Flutter:** SharedLinkController service listens for incoming intents
-
-**Supported Platforms:** All platforms in ProfileLinkingService (marketplaces, social, professional, gaming, community)
-
-**Security:** URL validation, localhost/internal IP blocking, rate limiting via existing abuse detection
-
 ---
 
 ## GLOBAL RULES (MANDATORY)
@@ -132,8 +162,8 @@ SilentID is a **native share target** on both iOS and Android. Users can share p
 3. **EMAIL = IDENTITY ANCHOR:** One email per account. Duplicate detection enforced.
 4. **OWNERSHIP FIRST:** NEVER extract data from marketplace profile until ownership verified.
 5. **DEFAMATION-SAFE LANGUAGE:** Never say "scammer", "fraudster". Use "safety concern flagged", "risk signals detected".
-6. **EVIDENCE VAULT CAP:** Max 15% of TrustScore. Cannot override verified behavior.
-7. **LEVEL 3 FOR TRUST BOOST:** Only Level 3 verified profiles contribute maximum points to Evidence score.
+6. **LEVEL 3 FOR TRUST BOOST:** Only Level 3 verified profiles contribute maximum points to TrustScore.
+7. **TWO TIERS ONLY:** Free and Pro. No other subscription tiers.
 
 ---
 
@@ -146,7 +176,7 @@ Instead:
 - Use Grep to search for specific topics
 - Read specific line ranges using offset/limit parameters
 
-**Full master specification:** CLAUDE_FULL.md (443.8KB)
+**Full master specification:** CLAUDE_FULL.md
 
 ---
 

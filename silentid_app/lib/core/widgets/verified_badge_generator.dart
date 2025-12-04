@@ -42,6 +42,9 @@ class VerifiedBadgeData {
   final bool isIdentityVerified;
   final String publicPassportUrl;
   final List<String> connectedPlatforms;
+  final double? aggregatedRating; // Combined star rating from all platforms
+  final int? totalTransactions; // Total sales/reviews across platforms
+  final String? memberSince; // e.g., "2022"
 
   const VerifiedBadgeData({
     required this.username,
@@ -51,9 +54,13 @@ class VerifiedBadgeData {
     required this.isIdentityVerified,
     required this.publicPassportUrl,
     this.connectedPlatforms = const [],
+    this.aggregatedRating,
+    this.totalTransactions,
+    this.memberSince,
   });
 
   bool get isTrustScorePublic => trustScore != null;
+  bool get hasAggregatedRating => aggregatedRating != null && aggregatedRating! > 0;
 }
 
 class VerifiedBadgeGenerator extends StatefulWidget {
@@ -545,6 +552,23 @@ class _BadgeCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        // Aggregated Rating (if available) - SELF-EXPLANATORY
+        if (data.hasAggregatedRating) ...[
+          _StatItem(
+            icon: Icons.star_rounded,
+            value: data.aggregatedRating!.toStringAsFixed(1),
+            label: 'Combined Rating',
+            textColor: _textColor,
+            subtitleColor: _subtitleColor,
+            valueColor: const Color(0xFFFFB800),
+          ),
+          Container(
+            width: 1,
+            height: 30,
+            color: _cardBorderColor,
+            margin: const EdgeInsets.symmetric(horizontal: 12),
+          ),
+        ],
         _StatItem(
           icon: Icons.link_rounded,
           value: '${data.connectedPlatforms.length}',
@@ -557,7 +581,7 @@ class _BadgeCard extends StatelessWidget {
             width: 1,
             height: 30,
             color: _cardBorderColor,
-            margin: const EdgeInsets.symmetric(horizontal: 20),
+            margin: const EdgeInsets.symmetric(horizontal: 12),
           ),
           _StatItem(
             icon: Icons.verified_user_rounded,
@@ -565,6 +589,7 @@ class _BadgeCard extends StatelessWidget {
             label: 'ID Verified',
             textColor: _textColor,
             subtitleColor: _subtitleColor,
+            valueColor: AppTheme.successGreen,
           ),
         ],
       ],
@@ -627,6 +652,7 @@ class _StatItem extends StatelessWidget {
   final String label;
   final Color textColor;
   final Color subtitleColor;
+  final Color? valueColor;
 
   const _StatItem({
     required this.icon,
@@ -634,20 +660,21 @@ class _StatItem extends StatelessWidget {
     required this.label,
     required this.textColor,
     required this.subtitleColor,
+    this.valueColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, size: 18, color: AppTheme.primaryPurple),
+        Icon(icon, size: 18, color: valueColor ?? AppTheme.primaryPurple),
         const SizedBox(height: 4),
         Text(
           value,
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: textColor,
+            color: valueColor ?? textColor,
           ),
         ),
         Text(

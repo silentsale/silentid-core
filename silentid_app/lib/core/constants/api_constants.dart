@@ -42,10 +42,6 @@ class ApiConstants {
   static String profileLinkGenerateToken(String id) => '$apiBaseUrl/evidence/profile-links/$id/generate-token';
   static String profileLinkConfirmToken(String id) => '$apiBaseUrl/evidence/profile-links/$id/confirm-token';
 
-  // Evidence endpoints
-  static String get evidenceReceipts => '$apiBaseUrl/evidence/receipts';
-  static String get evidenceScreenshots => '$apiBaseUrl/evidence/screenshots';
-
   // Subscription endpoints
   static String get subscriptionMe => '$apiBaseUrl/subscriptions/me';
   static String get subscriptionUpgrade => '$apiBaseUrl/subscriptions/upgrade';

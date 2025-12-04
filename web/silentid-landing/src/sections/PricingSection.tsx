@@ -9,16 +9,13 @@ const pricingTiers = [
     name: 'Free',
     price: '£0',
     period: 'forever',
-    description: 'Get started with basic trust verification',
+    description: 'Back up your reputation and start building trust',
     features: [
-      'Create account',
-      'Identity verification (Stripe)',
+      'Identity verification via Stripe',
       'Basic TrustScore (0-1000)',
-      'Up to 10 manual receipts',
-      'Up to 5 screenshots',
-      'Up to 2 public profile links',
-      'Evidence Vault: 250MB',
-      'Public profile URL',
+      'Connect up to 5 marketplace profiles',
+      'Public Trust Passport URL',
+      'Basic verified badge for social bios',
       'File safety reports'
     ],
     cta: 'Get Started Free',
@@ -26,50 +23,31 @@ const pricingTiers = [
     color: 'neutral'
   },
   {
-    name: 'Premium',
+    name: 'Pro',
     price: '£4.99',
     period: 'per month',
-    description: 'Perfect for active traders and sellers',
+    description: 'Full reputation protection for serious sellers',
     features: [
       'Everything in Free',
-      'Evidence Vault: 100GB',
-      'Unlimited evidence sources',
-      'Advanced TrustScore breakdown',
-      'Trust timeline & analytics',
-      'Premium profile badge',
-      'Priority evidence processing',
-      'Email receipt scanning',
-      'Detailed risk insights'
+      'Unlimited profile connections',
+      'Premium verified badge with QR code',
+      'Combined star rating from all platforms',
+      'Rating drop alerts—know instantly if something changes',
+      'Trust timeline—see your reputation history over time',
+      'Dispute evidence pack—legal-ready PDF proof of your history',
+      'Platform watchdog—alerts when markets have mass bans',
+      'Custom passport URL (silentid.co.uk/your-name)',
+      'Priority verification & support'
     ],
-    cta: 'Upgrade to Premium',
+    cta: 'Protect Your Reputation',
     popular: true,
     color: 'purple'
-  },
-  {
-    name: 'Pro',
-    price: '£14.99',
-    period: 'per month',
-    description: 'For power sellers and professionals',
-    features: [
-      'Everything in Premium',
-      'Evidence Vault: 500GB',
-      'Bulk profile checks (50 at once)',
-      'Dispute & evidence pack generator',
-      'Trust certificate PDF export',
-      'White-label sharing options',
-      'Priority support',
-      'Advanced analytics dashboard',
-      'API access (coming soon)'
-    ],
-    cta: 'Upgrade to Pro',
-    popular: false,
-    color: 'gold'
   }
 ];
 
 export default function PricingSection() {
   return (
-    <SectionShell background="subtle" className="py-24">
+    <SectionShell background="subtle" className="py-24" id="pricing">
       {/* Header */}
       <div className="text-center mb-16">
         <motion.div
@@ -93,9 +71,9 @@ export default function PricingSection() {
           transition={{ delay: 0.1, duration: 0.6 }}
           className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6"
         >
-          Choose Your{' '}
+          Protect Your{' '}
           <span className="bg-gradient-to-r from-[#5A3EB8] to-[#462F8F] bg-clip-text text-transparent">
-            Trust Plan
+            Reputation
           </span>
         </motion.h2>
 
@@ -106,12 +84,12 @@ export default function PricingSection() {
           transition={{ delay: 0.2, duration: 0.6 }}
           className="text-xl text-neutral-600 max-w-3xl mx-auto"
         >
-          Start free, upgrade when you need more. All plans include identity verification and core trust features.
+          Start backing up your ratings for free. Upgrade for full protection with alerts, history, and legal-ready proof.
         </motion.p>
       </div>
 
       {/* Pricing Cards */}
-      <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto mb-12">
+      <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
         {pricingTiers.map((tier, index) => (
           <motion.div
             key={tier.name}
@@ -215,10 +193,10 @@ export default function PricingSection() {
                 Important: Your TrustScore Cannot Be Bought
               </h3>
               <p className="text-neutral-700 leading-relaxed mb-3">
-                Paid subscriptions <strong>do NOT increase your TrustScore</strong> or override safety systems. Your score is based purely on evidence and behavior, never on what you pay.
+                Paid subscriptions <strong>do NOT increase your TrustScore</strong> or override safety systems. Your score is based purely on verified profiles and behavior, never on what you pay.
               </p>
               <p className="text-sm text-neutral-600 leading-relaxed">
-                Premium and Pro plans unlock features like larger storage, advanced analytics, and professional tools—but your trustworthiness is always earned, never purchased.
+                Pro unlocks unlimited profile connections, advanced analytics, and professional tools—but your trustworthiness is always earned through real verification, never purchased.
               </p>
             </div>
           </div>

@@ -103,7 +103,7 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen>
                   color: AppTheme.neutralGray700,
                   onPressed: () {
                     AppHaptics.light();
-                    // TODO: Navigate to notifications
+                    context.push('/security/alerts');
                   },
                 ),
               ],
@@ -546,9 +546,9 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen>
             children: [
               Expanded(
                 child: _buildQuickActionCard(
-                  icon: Icons.description_outlined,
-                  title: 'Add Evidence',
-                  subtitle: 'Upload receipts',
+                  icon: Icons.link_rounded,
+                  title: 'Connect Profile',
+                  subtitle: 'Link accounts',
                   color: AppTheme.primaryPurple,
                   onTap: () => context.push('/evidence'),
                 ),
