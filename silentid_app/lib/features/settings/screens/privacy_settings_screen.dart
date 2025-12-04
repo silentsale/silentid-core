@@ -124,8 +124,9 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
         AppMessages.showSuccess(context, 'Setting saved');
       }
     } catch (e) {
+      debugPrint('Error saving setting $key: $e');
       if (mounted) {
-        AppMessages.showError(context, 'Failed to save setting');
+        AppMessages.showError(context, 'Failed to save setting: $e');
       }
     }
   }
@@ -145,8 +146,9 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
         AppMessages.showSuccess(context, 'Visibility mode saved');
       }
     } catch (e) {
+      debugPrint('Error saving visibility setting: $e');
       if (mounted) {
-        AppMessages.showError(context, 'Failed to save visibility setting');
+        AppMessages.showError(context, 'Failed to save visibility setting: $e');
       }
     }
   }
@@ -647,7 +649,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
     switch (_trustScoreVisibility) {
       case TrustScoreVisibility.publicMode:
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -657,50 +659,46 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
             ),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'TrustScore: ',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.neutralGray700,
-                ),
-              ),
-              Text(
-                '754',
-                style: GoogleFonts.inter(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.primaryPurple,
-                ),
-              ),
-              Text(
-                '/1000',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.neutralGray700,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppTheme.successGreen.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'Very High',
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '754',
                   style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.successGreen,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.primaryPurple,
                   ),
                 ),
-              ),
-            ],
+                Text(
+                  '/1000',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.neutralGray700,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.successGreen.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'Very High',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.successGreen,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
 
