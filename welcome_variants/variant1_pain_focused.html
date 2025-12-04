@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SilentID - Never Lose Your Reputation Again</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-purple: #5A3EB8;
+            --primary-purple-light: #7B5FD3;
+            --soft-lilac: #F3F0FF;
+            --text-dark: #1A1A2E;
+            --text-muted: #6B7280;
+            --white: #FFFFFF;
+            --danger-red: #DC2626;
+            --success-green: #10B981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(180deg, #FFFFFF 0%, #F8F6FF 50%, var(--soft-lilac) 100%);
+            min-height: 100vh;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 393px;
+            margin: 0 auto;
+            padding: 24px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Logo Section */
+        .logo-section {
+            text-align: center;
+            padding: 32px 0 24px;
+        }
+
+        .logo-container {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 16px;
+            background: var(--white);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px rgba(90, 62, 184, 0.15);
+        }
+
+        .logo-container svg {
+            width: 48px;
+            height: 48px;
+        }
+
+        /* Pain Point Banner */
+        .pain-banner {
+            background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+            border: 1px solid #FECACA;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .pain-banner-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .pain-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--danger-red);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pain-icon svg {
+            width: 18px;
+            height: 18px;
+            color: white;
+        }
+
+        .pain-banner h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--danger-red);
+        }
+
+        .pain-stats {
+            display: flex;
+            gap: 12px;
+        }
+
+        .pain-stat {
+            flex: 1;
+            background: var(--white);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .pain-stat-number {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--danger-red);
+        }
+
+        .pain-stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .hero h1 {
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 12px;
+            color: var(--text-dark);
+        }
+
+        .hero h1 span {
+            color: var(--primary-purple);
+        }
+
+        .hero p {
+            font-size: 15px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Solution Card */
+        .solution-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .solution-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .solution-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-light) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .solution-icon svg {
+            width: 22px;
+            height: 22px;
+            color: white;
+        }
+
+        .solution-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .solution-features {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .feature-check {
+            width: 24px;
+            height: 24px;
+            background: #ECFDF5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .feature-check svg {
+            width: 14px;
+            height: 14px;
+            color: var(--success-green);
+        }
+
+        .feature-text {
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .feature-text strong {
+            font-weight: 600;
+        }
+
+        /* Platform Logos */
+        .platforms {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 16px 0;
+            margin-bottom: 24px;
+        }
+
+        .platform-logo {
+            width: 36px;
+            height: 36px;
+            background: var(--white);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        /* CTA Buttons */
+        .cta-section {
+            margin-top: auto;
+            padding-bottom: 24px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 16px rgba(90, 62, 184, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(90, 62, 184, 0.4);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 16px;
+            background: var(--white);
+            color: var(--text-dark);
+            border: 1px solid #E5E7EB;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--soft-lilac);
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .login-link a {
+            color: var(--primary-purple);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        /* Trust Badge */
+        .trust-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 12px;
+            background: var(--soft-lilac);
+            border-radius: 12px;
+        }
+
+        .trust-badge svg {
+            width: 16px;
+            height: 16px;
+            color: var(--primary-purple);
+        }
+
+        .trust-badge span {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .trust-badge strong {
+            color: var(--primary-purple);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Logo -->
+        <div class="logo-section">
+            <div class="logo-container">
+                <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M24 4L6 12V22C6 33.1 13.64 43.26 24 46C34.36 43.26 42 33.1 42 22V12L24 4Z" fill="#5A3EB8"/>
+                    <circle cx="24" cy="22" r="6" fill="white"/>
+                    <rect x="21" y="26" width="6" height="10" rx="2" fill="white"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Pain Point Banner -->
+        <div class="pain-banner">
+            <div class="pain-banner-header">
+                <div class="pain-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <h3>The Problem We're Solving</h3>
+            </div>
+            <div class="pain-stats">
+                <div class="pain-stat">
+                    <div class="pain-stat-number">847K</div>
+                    <div class="pain-stat-label">Accounts banned yearly on Vinted alone</div>
+                </div>
+                <div class="pain-stat">
+                    <div class="pain-stat-number">4.2★</div>
+                    <div class="pain-stat-label">Average rating lost forever</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hero -->
+        <div class="hero">
+            <h1>Never Lose Your <span>Reputation</span> Again</h1>
+            <p>Your hard-earned ratings from Vinted, eBay, Depop backed up forever. If the worst happens, you have proof.</p>
+        </div>
+
+        <!-- Solution Card -->
+        <div class="solution-card">
+            <div class="solution-header">
+                <div class="solution-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                </div>
+                <h3>Your Reputation Insurance</h3>
+            </div>
+            <div class="solution-features">
+                <div class="feature-item">
+                    <div class="feature-check">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="feature-text"><strong>Backup your ratings</strong> from all platforms</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-check">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="feature-text"><strong>Verify your identity</strong> once, trusted everywhere</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-check">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="feature-text"><strong>Share your Trust Passport</strong> with buyers</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Supported Platforms -->
+        <div class="platforms">
+            <div class="platform-logo">Vinted</div>
+            <div class="platform-logo">eBay</div>
+            <div class="platform-logo">Depop</div>
+            <div class="platform-logo">Etsy</div>
+            <div class="platform-logo">+12</div>
+        </div>
+
+        <!-- CTA Section -->
+        <div class="cta-section">
+            <button class="btn-primary">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                Protect My Reputation - Free
+            </button>
+            <button class="btn-secondary">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+                </svg>
+                See How It Works
+            </button>
+
+            <div class="trust-badge">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+                <span>Join <strong>50,000+</strong> trusted sellers</span>
+            </div>
+
+            <div class="login-link">
+                Already have an account? <a href="#">Sign in</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

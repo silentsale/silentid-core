@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SilentID - Your Trust Passport</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-purple: #5A3EB8;
+            --primary-purple-light: #7B5FD3;
+            --soft-lilac: #F3F0FF;
+            --text-dark: #1A1A2E;
+            --text-muted: #6B7280;
+            --white: #FFFFFF;
+            --success-green: #10B981;
+            --warning-amber: #F59E0B;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--white);
+            min-height: 100vh;
+            color: var(--text-dark);
+        }
+
+        .container {
+            max-width: 393px;
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            padding: 24px 24px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .header svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .header span {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-purple);
+        }
+
+        /* Trust Passport Preview */
+        .passport-section {
+            padding: 0 24px 24px;
+        }
+
+        .passport-card {
+            background: linear-gradient(145deg, var(--primary-purple) 0%, var(--primary-purple-light) 100%);
+            border-radius: 24px;
+            padding: 24px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .passport-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+
+        .passport-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .passport-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+        .verified-stamp {
+            background: var(--success-green);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .verified-stamp svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .passport-identity {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .avatar {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .identity-info h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .identity-info p {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        .trust-score-display {
+            background: rgba(255,255,255,0.15);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .score-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .score-number {
+            font-size: 32px;
+            font-weight: 800;
+        }
+
+        .score-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .score-level {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .platforms-preview {
+            display: flex;
+            gap: 8px;
+        }
+
+        .platform-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        /* Content Section */
+        .content {
+            padding: 24px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .headline {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .headline h1 {
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1.3;
+            margin-bottom: 10px;
+        }
+
+        .headline h1 .highlight {
+            color: var(--primary-purple);
+        }
+
+        .headline p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Benefits Grid */
+        .benefits {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .benefit {
+            background: var(--soft-lilac);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .benefit-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--white);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+        }
+
+        .benefit-icon svg {
+            width: 22px;
+            height: 22px;
+            color: var(--primary-purple);
+        }
+
+        .benefit h4 {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .benefit p {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Platforms Row */
+        .platforms-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .platform-tag {
+            background: var(--white);
+            border: 1px solid #E5E7EB;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* CTA Section */
+        .cta-section {
+            margin-top: auto;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 20px rgba(90, 62, 184, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(90, 62, 184, 0.45);
+        }
+
+        .btn-primary svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 16px;
+            background: var(--white);
+            color: var(--text-dark);
+            border: 1px solid #E5E7EB;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: var(--soft-lilac);
+            border-color: var(--primary-purple);
+        }
+
+        .footer-text {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .footer-text a {
+            color: var(--primary-purple);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        /* Stars */
+        .stars {
+            display: flex;
+            gap: 2px;
+        }
+
+        .stars svg {
+            width: 14px;
+            height: 14px;
+            color: var(--warning-amber);
+        }
+
+        /* Free tag */
+        .free-tag {
+            background: #ECFDF5;
+            color: var(--success-green);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M24 4L6 12V22C6 33.1 13.64 43.26 24 46C34.36 43.26 42 33.1 42 22V12L24 4Z" fill="#5A3EB8"/>
+                <circle cx="24" cy="22" r="6" fill="white"/>
+                <rect x="21" y="26" width="6" height="10" rx="2" fill="white"/>
+            </svg>
+            <span>SilentID</span>
+        </div>
+
+        <!-- Trust Passport Preview -->
+        <div class="passport-section">
+            <div class="passport-card">
+                <div class="passport-header">
+                    <span class="passport-label">Trust Passport</span>
+                    <span class="verified-stamp">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        ID Verified
+                    </span>
+                </div>
+
+                <div class="passport-identity">
+                    <div class="avatar">YN</div>
+                    <div class="identity-info">
+                        <h3>Your Name</h3>
+                        <p>Trusted seller since 2024</p>
+                        <div class="stars">
+                            <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                            <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                            <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                            <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                            <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="trust-score-display">
+                    <div class="score-info">
+                        <div class="score-number">847</div>
+                        <div>
+                            <div class="score-label">TrustScore</div>
+                            <div class="score-level">Very High</div>
+                        </div>
+                    </div>
+                    <div class="platforms-preview">
+                        <span class="platform-badge">Vinted</span>
+                        <span class="platform-badge">eBay</span>
+                        <span class="platform-badge">+2</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="headline">
+                <h1>One <span class="highlight">Trust Passport</span> for All Your Platforms</h1>
+                <p>Combine your reputation from every marketplace. Share it anywhere. Keep it forever.</p>
+            </div>
+
+            <!-- Benefits Grid -->
+            <div class="benefits">
+                <div class="benefit">
+                    <div class="benefit-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                        </svg>
+                    </div>
+                    <h4>Combined Rating</h4>
+                    <p>One star rating from all platforms</p>
+                </div>
+                <div class="benefit">
+                    <div class="benefit-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <h4>ID Verified</h4>
+                    <p>Prove you're a real person</p>
+                </div>
+                <div class="benefit">
+                    <div class="benefit-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                        </svg>
+                    </div>
+                    <h4>Share Anywhere</h4>
+                    <p>QR code or link to your passport</p>
+                </div>
+                <div class="benefit">
+                    <div class="benefit-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </div>
+                    <h4>Backed Up</h4>
+                    <p>Never lose your reputation</p>
+                </div>
+            </div>
+
+            <!-- Platforms -->
+            <div class="platforms-row">
+                <span class="platform-tag">Vinted</span>
+                <span class="platform-tag">eBay</span>
+                <span class="platform-tag">Depop</span>
+                <span class="platform-tag">Etsy</span>
+                <span class="platform-tag">+12 more</span>
+            </div>
+
+            <!-- CTA Section -->
+            <div class="cta-section">
+                <button class="btn-primary">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    Create My Trust Passport
+                    <span class="free-tag">Free</span>
+                </button>
+
+                <button class="btn-secondary">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Watch How It Works
+                </button>
+
+                <p class="footer-text">
+                    Already have an account? <a href="#">Sign in</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

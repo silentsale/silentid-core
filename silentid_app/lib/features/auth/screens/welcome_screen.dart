@@ -25,59 +25,32 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   bool _isLoading = false;
 
   late AnimationController _fadeController;
-  late AnimationController _pulseController;
-  late AnimationController _counterController;
   late Animation<double> _fadeAnimation;
-  late Animation<double> _pulseAnimation;
-  late Animation<int> _counterAnimation;
 
   @override
   void initState() {
     super.initState();
 
-    // Fade animation
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600),
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
     );
 
-    // Pulse animation for counter card
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.02).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
-    // Counter animation
-    _counterController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    );
-    _counterAnimation = IntTween(begin: 0, end: 50000).animate(
-      CurvedAnimation(parent: _counterController, curve: Curves.easeOut),
-    );
-
     _fadeController.forward();
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _counterController.forward();
-    });
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
-    _pulseController.dispose();
-    _counterController.dispose();
     super.dispose();
   }
 
   Future<void> _handleAppleSignIn() async {
     setState(() => _isLoading = true);
+    AppHaptics.light();
 
     try {
       final isAvailable = await SignInWithApple.isAvailable();
@@ -135,10 +108,14 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
+    AppHaptics.light();
 
     try {
       final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return;
+      if (googleUser == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
 
       final googleAuth = await googleUser.authentication;
 
@@ -175,6 +152,25 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     }
   }
 
+  Future<void> _handlePasskeySignIn() async {
+    AppHaptics.light();
+    // TODO: Implement passkey authentication
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.info_outline, color: Colors.white),
+            const SizedBox(width: 8),
+            Text('Passkey coming soon!', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+          ],
+        ),
+        backgroundColor: AppTheme.primaryPurple,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
   Future<void> _handleDemoMode() async {
     AppHaptics.heavy();
     setState(() => _isLoading = true);
@@ -187,7 +183,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.science_outlined, color: Colors.white),
+                const Icon(Icons.play_circle_outline, color: Colors.white),
                 const SizedBox(width: 8),
                 Text('Demo mode activated!', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
               ],
@@ -207,429 +203,175 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.white,
-              Color(0xFFF8F6FF),
-              AppTheme.softLilac,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 48),
-
-                  // Logo with glow
-                  Center(
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryPurple,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryPurple.withValues(alpha: 0.3),
-                            blurRadius: 24,
-                            spreadRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          'S',
-                          style: GoogleFonts.inter(
-                            fontSize: 40,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Tagline
-                  Text(
-                    'Build Trust. Prove Identity.',
-                    style: GoogleFonts.inter(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.deepBlack,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Trade Safely.',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      color: AppTheme.neutralGray700,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Animated counter card
-                  AnimatedBuilder(
-                    animation: _pulseController,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _pulseAnimation.value,
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppTheme.softLilac,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.people_outline,
-                                color: AppTheme.successGreen,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              AnimatedBuilder(
-                                animation: _counterAnimation,
-                                builder: (context, child) {
-                                  return RichText(
-                                    text: TextSpan(
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppTheme.deepBlack,
-                                      ),
-                                      children: [
-                                        const TextSpan(text: 'Join '),
-                                        TextSpan(
-                                          text: '${_counterAnimation.value.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}+',
-                                          style: GoogleFonts.inter(
-                                            fontWeight: FontWeight.bold,
-                                            color: AppTheme.primaryPurple,
-                                          ),
-                                        ),
-                                        const TextSpan(text: ' trusted users'),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Trust Journey Card
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppTheme.neutralGray300),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Your Trust Journey Starts Here',
-                          style: GoogleFonts.inter(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.deepBlack,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        // Level 1 Badge
-                        Container(
-                          width: 96,
-                          height: 96,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Colors.grey[300]!,
-                                Colors.grey[400]!,
-                              ],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withValues(alpha: 0.3),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'LEVEL',
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              Text(
-                                '1',
-                                style: GoogleFonts.inter(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppTheme.neutralGray700,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            'Starter',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Start at Level 1 and unlock achievements as you build your trust profile',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: AppTheme.neutralGray700,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Benefit Cards
-                  _buildBenefitCard(
-                    icon: Icons.check_circle_outline,
-                    title: 'Verify Your Identity',
-                    description: 'Prove who you are with secure, passwordless verification',
-                    delay: 0,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildBenefitCard(
-                    icon: Icons.flash_on_outlined,
-                    title: 'Build Your Reputation',
-                    description: 'Earn TrustScore points and level up with every achievement',
-                    delay: 1,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildBenefitCard(
-                    icon: Icons.share_outlined,
-                    title: 'Share Your Trust',
-                    description: 'Show your verified profile to trade safely anywhere',
-                    delay: 2,
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Auth Section
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppTheme.neutralGray300),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Get Started',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.deepBlack,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Apple Sign In
-                        _buildAuthButton(
-                          onPressed: _isLoading ? null : _handleAppleSignIn,
-                          icon: Icons.apple,
-                          label: 'Continue with Apple',
-                          isPrimary: true,
-                          backgroundColor: Colors.black,
-                          textColor: Colors.white,
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Google Sign In
-                        _buildAuthButton(
-                          onPressed: _isLoading ? null : _handleGoogleSignIn,
-                          icon: Icons.g_mobiledata_rounded,
-                          label: 'Continue with Google',
-                          isPrimary: false,
-                          backgroundColor: Colors.white,
-                          textColor: AppTheme.deepBlack,
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Email Sign In
-                        _buildAuthButton(
-                          onPressed: _isLoading ? null : () {
-                            AppHaptics.light();
-                            context.push('/email');
-                          },
-                          icon: Icons.email_outlined,
-                          label: 'Continue with Email',
-                          isPrimary: false,
-                          backgroundColor: Colors.white,
-                          textColor: AppTheme.primaryPurple,
-                          borderColor: AppTheme.primaryPurple,
-                        ),
-
-                        const SizedBox(height: 16),
-                        Text(
-                          '100% Passwordless - No passwords required',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: AppTheme.neutralGray700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Demo Mode Section
-                  Row(
-                    children: [
-                      Expanded(child: Divider(color: AppTheme.neutralGray300)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'or for testing',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: AppTheme.neutralGray700,
-                          ),
-                        ),
-                      ),
-                      Expanded(child: Divider(color: AppTheme.neutralGray300)),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Demo Mode Button
-                  OutlinedButton.icon(
-                    onPressed: _isLoading ? null : _handleDemoMode,
-                    icon: const Icon(Icons.science_outlined, color: Color(0xFFE65100)),
-                    label: Text(
-                      'Enter Demo Mode',
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFFE65100),
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFF3E0),
-                      side: const BorderSide(color: Color(0xFFFFB74D), width: 2),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Footer
-                  Text(
-                    'By continuing, you agree to our',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppTheme.neutralGray700,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  Row(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header with logo
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      GestureDetector(
-                        onTap: () {},
-                        child: Text(
-                          'Terms of Service',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: AppTheme.primaryPurple,
-                            decoration: TextDecoration.underline,
-                          ),
+                      Image.asset(
+                        'assets/images/favicon_white.png',
+                        width: 28,
+                        height: 28,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'SilentID',
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.primaryPurple,
                         ),
                       ),
+                    ],
+                  ),
+                ),
+
+                // Hero Section
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+                  child: Column(
+                    children: [
+                      RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          style: GoogleFonts.inter(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            height: 1.25,
+                            color: AppTheme.deepBlack,
+                          ),
+                          children: [
+                            const TextSpan(text: 'Your Ratings. '),
+                            TextSpan(
+                              text: 'Backed Up.',
+                              style: TextStyle(color: AppTheme.primaryPurple),
+                            ),
+                            const TextSpan(text: ' Forever.'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       Text(
-                        ' and ',
+                        'Protect your Vinted, eBay & Depop reputation. Never start from zero again.',
                         style: GoogleFonts.inter(
-                          fontSize: 12,
+                          fontSize: 14,
+                          color: AppTheme.neutralGray700,
+                          height: 1.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Trust Passport Preview Card
+                _buildPassportPreview(),
+
+                // Value Props - Compact
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      _buildValueProp(
+                        icon: Icons.verified_user_outlined,
+                        title: 'Account Banned? You\'re Protected',
+                        description: 'Prove your reputation to buyers on any platform.',
+                      ),
+                      Divider(color: Colors.grey[200], height: 1),
+                      _buildValueProp(
+                        icon: Icons.star_outline_rounded,
+                        title: 'One Combined Star Rating',
+                        description: 'Show your 4.9★ average in one shareable passport.',
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Platforms Strip
+                _buildPlatformsStrip(),
+
+                const SizedBox(height: 16),
+
+                // CTA Section
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      // Demo Button
+                      _buildDemoButton(),
+
+                      const SizedBox(height: 16),
+
+                      // Divider
+                      Row(
+                        children: [
+                          Expanded(child: Divider(color: Colors.grey[300])),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              'Get started',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: AppTheme.neutralGray700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Expanded(child: Divider(color: Colors.grey[300])),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Social Proof
+                      _buildSocialProof(),
+
+                      const SizedBox(height: 12),
+
+                      // Auth Grid
+                      _buildAuthGrid(),
+
+                      const SizedBox(height: 16),
+
+                      // Footer
+                      Text(
+                        'Already have an account? ',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
                           color: AppTheme.neutralGray700,
                         ),
                       ),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          AppHaptics.light();
+                          // TODO: Navigate to sign in
+                        },
                         child: Text(
-                          'Privacy Policy',
+                          'Sign in',
                           style: GoogleFonts.inter(
-                            fontSize: 12,
+                            fontSize: 13,
                             color: AppTheme.primaryPurple,
-                            decoration: TextDecoration.underline,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
+
+                      const SizedBox(height: 24),
                     ],
                   ),
-
-                  const SizedBox(height: 48),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -637,119 +379,517 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     );
   }
 
-  Widget _buildBenefitCard({
-    required IconData icon,
-    required String title,
-    required String description,
-    required int delay,
-  }) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 600 + (delay * 200)),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, 8 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.neutralGray300),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+  Widget _buildPassportPreview() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppTheme.primaryPurple, Color(0xFF7B5FD3)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Passport Row
+          Row(
+            children: [
+              // Avatar
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    width: 2,
                   ),
-                ],
+                ),
+                child: Center(
+                  child: Text(
+                    'YN',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppTheme.softLilac,
-                      borderRadius: BorderRadius.circular(24),
+              const SizedBox(width: 12),
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Your Name',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
-                    child: Icon(
-                      icon,
-                      color: AppTheme.primaryPurple,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 3),
+                    Row(
                       children: [
-                        Text(
-                          title,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.deepBlack,
-                          ),
+                        const Icon(
+                          Icons.star_rounded,
+                          color: Color(0xFFF59E0B),
+                          size: 12,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(width: 5),
                         Text(
-                          description,
+                          '4.9 across 3 platforms',
                           style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: AppTheme.neutralGray700,
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.9),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+              // TrustScore
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '847',
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        height: 1,
+                      ),
+                    ),
+                    Text(
+                      'TRUSTSCORE',
+                      style: GoogleFonts.inter(
+                        fontSize: 8,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        );
-      },
+          const SizedBox(height: 10),
+          // Badges Row
+          Wrap(
+            spacing: 5,
+            runSpacing: 5,
+            children: [
+              // Verified Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.successGreen,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.check, color: Colors.white, size: 10),
+                    const SizedBox(width: 3),
+                    Text(
+                      'ID Verified',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _buildPlatformPill('Vinted'),
+              _buildPlatformPill('eBay'),
+              _buildPlatformPill('Depop'),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildAuthButton({
-    required VoidCallback? onPressed,
+  Widget _buildPlatformPill(String name) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        name,
+        style: GoogleFonts.inter(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildValueProp({
     required IconData icon,
-    required String label,
-    required bool isPrimary,
-    required Color backgroundColor,
-    required Color textColor,
-    Color? borderColor,
+    required String title,
+    required String description,
   }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppTheme.softLilac,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppTheme.primaryPurple, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.deepBlack,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  description,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppTheme.neutralGray700,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlatformsStrip() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          _buildPlatformChip('Vinted'),
+          _buildPlatformChip('eBay'),
+          _buildPlatformChip('Depop'),
+          _buildPlatformChip('Etsy'),
+          _buildPlatformChip('+12 more'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlatformChip(String name) {
+    return Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        name,
+        style: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: AppTheme.deepBlack,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDemoButton() {
     return Material(
-      color: backgroundColor,
+      color: AppTheme.softLilac,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
-        onTap: onPressed,
+        onTap: _isLoading ? null : _handleDemoMode,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: borderColor ?? AppTheme.neutralGray300,
-              width: borderColor != null ? 2 : 1,
-            ),
+            border: Border.all(color: AppTheme.primaryPurple, width: 2),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: textColor, size: 20),
+              Icon(
+                Icons.play_circle_outline,
+                color: AppTheme.primaryPurple,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Text(
-                label,
+                'Try Demo',
                 style: GoogleFonts.inter(
-                  fontSize: 14,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.primaryPurple,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSocialProof() {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFECFDF5),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.check_circle_outline,
+            color: AppTheme.successGreen,
+            size: 14,
+          ),
+          const SizedBox(width: 6),
+          RichText(
+            text: TextSpan(
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: AppTheme.deepBlack,
+              ),
+              children: [
+                TextSpan(
+                  text: '50,000+ ',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                ),
+                const TextSpan(text: 'sellers already protected'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAuthGrid() {
+    return Column(
+      children: [
+        // Passkey Button - Primary (Full Width)
+        _buildPasskeyButton(),
+
+        const SizedBox(height: 10),
+
+        // Apple & Google Row
+        Row(
+          children: [
+            Expanded(child: _buildAppleButton()),
+            const SizedBox(width: 10),
+            Expanded(child: _buildGoogleButton()),
+          ],
+        ),
+
+        const SizedBox(height: 10),
+
+        // Email Button - Full Width
+        _buildEmailButton(),
+      ],
+    );
+  }
+
+  Widget _buildPasskeyButton() {
+    return Material(
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: _isLoading ? null : _handlePasskeySignIn,
+        borderRadius: BorderRadius.circular(12),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppTheme.primaryPurple, Color(0xFF7B5FD3)],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.key, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Continue with Passkey',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Secure',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppleButton() {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: _isLoading ? null : _handleAppleSignIn,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.apple, color: Colors.black, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'Apple',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: textColor,
+                  color: AppTheme.deepBlack,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoogleButton() {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: _isLoading ? null : _handleGoogleSignIn,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.network(
+                'https://www.google.com/favicon.ico',
+                width: 18,
+                height: 18,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.g_mobiledata, size: 18),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Google',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.deepBlack,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmailButton() {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: _isLoading ? null : () {
+          AppHaptics.light();
+          context.push('/email');
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.email_outlined, color: AppTheme.deepBlack, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'Continue with Email',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.deepBlack,
                 ),
               ),
             ],

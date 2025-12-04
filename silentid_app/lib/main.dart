@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
@@ -5,12 +6,19 @@ import 'core/router/app_router.dart';
 import 'core/widgets/share_listener_wrapper.dart';
 import 'services/api_service.dart';
 import 'services/shared_link_controller.dart';
+import 'services/storage_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize API service
   ApiService().initialize();
+
+  // In debug mode, clear auth data on startup so app starts at login screen
+  // This ensures fresh state for development/testing
+  if (kDebugMode) {
+    await StorageService().clearAuthData();
+  }
 
   runApp(
     const ProviderScope(
