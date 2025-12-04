@@ -161,7 +161,7 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen>
         username: _profile!.cleanUsername,
         displayName: _profile!.displayName,
         trustScore: _profile!.trustScoreVisible ? _profile!.trustScore : null,
-        trustScoreLabel: _profile!.trustScoreLabel,
+        trustScoreLabel: _profile!.trustScoreLabel ?? 'Unknown',
         isIdentityVerified: _profile!.identityVerified,
         connectedPlatforms: _profile!.verifiedPlatforms,
       ),
