@@ -197,7 +197,7 @@ https://your-domain.com/v1/webhooks/stripe
 
 **Status:** Placeholder
 **Priority:** HIGH
-**Required For:** Premium/Pro subscription tiers
+**Required For:** Pro subscription tier
 
 ### Configuration Location
 ```
@@ -209,26 +209,23 @@ appsettings.json → Stripe
 {
   "Stripe": {
     "SecretKey": "STRIPE_SECRET_KEY_PLACEHOLDER",
-    "PremiumPriceId": "PREMIUM_PRICE_ID_PLACEHOLDER",
     "ProPriceId": "PRO_PRICE_ID_PLACEHOLDER"
   }
 }
 ```
 
 ### Setup Steps
-1. Create products in Stripe Dashboard:
-   - **SilentID Premium** - Monthly subscription
-   - **SilentID Pro** - Monthly subscription
+1. Create product in Stripe Dashboard:
+   - **SilentID Pro** - Monthly subscription (£4.99/month)
 
-2. Get Price IDs from each product
+2. Get Price ID from the product
 
 3. Update configuration:
 ```json
 {
   "Stripe": {
     "SecretKey": "sk_live_YOUR_SECRET_KEY",
-    "PremiumPriceId": "price_XXXXXXXXXXXXX",
-    "ProPriceId": "price_YYYYYYYYYYYYY"
+    "ProPriceId": "price_XXXXXXXXXXXXX"
   }
 }
 ```

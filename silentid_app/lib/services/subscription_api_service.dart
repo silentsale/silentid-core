@@ -99,32 +99,31 @@ class SubscriptionInfo {
   }
 
   /// Get list of benefits based on tier
+  /// Only two tiers: Free and Pro (£4.99/month)
   List<String> get benefits {
     switch (tier.toLowerCase()) {
       case 'pro':
         return [
-          'Everything in Premium',
-          'Unlimited evidence uploads',
-          'API access for integrations',
-          'White-label passport sharing',
-          'Priority support',
-          '500GB Evidence Vault',
-        ];
-      case 'premium':
-        return [
-          'Unlimited evidence uploads',
-          'Advanced TrustScore breakdown',
-          'Trust Timeline & Analytics',
-          'Premium profile badge',
-          '100GB Evidence Vault',
-          'Priority evidence processing',
+          'Everything in Free',
+          'Unlimited profile connections',
+          'Premium verified badge with QR code',
+          'Combined star rating from all platforms',
+          'Rating drop alerts',
+          'Trust timeline & reputation history',
+          'Dispute evidence pack (legal-ready PDF)',
+          'Platform watchdog alerts',
+          'Manual stats refresh every 7 days',
+          'Custom passport URL',
+          'Priority verification & support',
         ];
       default:
         return [
-          'Basic TrustScore',
-          '10 evidence uploads/month',
-          'Standard processing',
-          '1GB Evidence Vault',
+          'Identity verification via Stripe',
+          'Basic TrustScore (0-1000)',
+          'Connect up to 5 marketplace profiles',
+          'Public Trust Passport URL',
+          'Basic verified badge',
+          'File safety reports',
         ];
     }
   }

@@ -63,6 +63,7 @@ class HelpCenterData {
     _profileLinking,
     _evidence,
     _sharing,
+    _subscription,
     _privacy,
     _troubleshooting,
   ];
@@ -1964,17 +1965,549 @@ A: No, download a new one if your score changes significantly.''',
   );
 
   // ============================================================================
-  // 7. PRIVACY, DATA & CONTROLS
+  // 7. SUBSCRIPTION & PRO FEATURES
+  // ============================================================================
+  static const _subscription = HelpCategory(
+    id: '7',
+    slug: 'subscription',
+    title: 'Subscription & Pro Features',
+    description: 'Understand Free vs Pro and unlock premium features',
+    icon: Icons.star_outlined,
+    articles: [
+      HelpArticle(
+        id: '7.1',
+        slug: 'free-vs-pro',
+        title: 'Free vs Pro Comparison',
+        category: 'Subscription & Pro Features',
+        categorySlug: 'subscription',
+        summary: 'Compare Free and Pro subscription tiers.',
+        screenPath: 'Settings -> Subscription',
+        content: '''SilentID offers two subscription tiers: Free and Pro.
+
+## Free (£0 forever)
+
+**Core Features:**
+- Identity verification via Stripe
+- Basic TrustScore (0-1000)
+- Connect up to 5 marketplace profiles
+- Public Trust Passport URL
+- Basic verified badge for social profiles
+- File safety reports
+- 30-day automatic stats refresh
+
+**Perfect for:** Casual sellers who want basic reputation backup.
+
+## Pro (£4.99/month)
+
+**Everything in Free, plus:**
+- Unlimited profile connections
+- Premium verified badge with QR code and combined star rating
+- Combined star rating across all platforms
+- Rating drop alerts - instant notification when ratings change
+- Trust timeline - historical graph of reputation over time
+- Dispute evidence pack - legal-ready PDF proof
+- Platform watchdog - alerts for mass bans/shutdowns
+- 7-day manual stats refresh (vs 30-day auto)
+- Custom passport URL (silentid.co.uk/your-name)
+- Priority verification & support
+
+**Perfect for:** Serious sellers who depend on their reputation.
+
+## FAQs
+
+**Q: Can I try Pro for free?**
+A: We occasionally offer trials. Check Settings -> Subscription for current offers.
+
+**Q: Can I downgrade from Pro to Free?**
+A: Yes, you can cancel anytime. Pro features remain until your billing period ends.
+
+**Q: What happens to my data if I downgrade?**
+A: Your data is preserved. You just lose access to Pro features.''',
+      ),
+      HelpArticle(
+        id: '7.2',
+        slug: 'combined-star-rating',
+        title: 'Combined Star Rating',
+        category: 'Subscription & Pro Features',
+        categorySlug: 'subscription',
+        summary: 'How the combined star rating aggregates all your marketplace ratings.',
+        infoPointKey: 'combinedStarRating',
+        screenPath: 'Profile -> Combined Rating',
+        content: '''The Combined Star Rating aggregates your ratings from all verified marketplace profiles into one powerful number.
+
+## How it works
+
+1. **Connect profiles** from Vinted, eBay, Depop, Etsy, etc.
+2. **Verify ownership** to unlock rating extraction
+3. **SilentID combines** all your ratings into one weighted average
+4. **Display** shows "4.8★ across 5 platforms"
+
+## The calculation
+
+We use a weighted average based on:
+- Individual platform ratings
+- Number of reviews on each platform
+- Platform credibility weighting
+
+**Example:**
+- Vinted: 4.9★ (127 reviews)
+- eBay: 4.7★ (89 reviews)
+- Depop: 5.0★ (45 reviews)
+- **Combined: 4.85★ across 3 platforms (261 reviews)**
+
+## Why it matters
+
+- **Instant credibility**: One number shows your track record
+- **Cross-platform proof**: Demonstrates consistent quality
+- **Powerful for sharing**: Stands out in bios and listings
+
+## Pro vs Free
+
+- **Free users**: See their own combined rating
+- **Pro users**: Full breakdown by platform + display on public passport + premium badge
+
+## FAQs
+
+**Q: How often is the rating updated?**
+A: Every 7 days for Pro users (manual refresh), 30 days for Free users.
+
+**Q: What if one platform has no rating system?**
+A: We only aggregate from platforms with star/percentage ratings.
+
+**Q: Can I hide individual platform ratings?**
+A: Yes, hide specific profiles while keeping the combined rating.''',
+      ),
+      HelpArticle(
+        id: '7.3',
+        slug: 'rating-drop-alerts',
+        title: 'Rating Drop Alerts',
+        category: 'Subscription & Pro Features',
+        categorySlug: 'subscription',
+        summary: 'Get instant notifications when any of your ratings change.',
+        infoPointKey: 'ratingDropAlerts',
+        screenPath: 'Settings -> Notifications -> Rating Alerts',
+        content: '''Rating Drop Alerts notify you instantly when any of your marketplace ratings change.
+
+## How it works
+
+1. **SilentID monitors** your verified profiles regularly
+2. **Detects changes** - any increase or decrease
+3. **Sends notification** immediately to your device
+4. **Provides context** - which platform, old vs new rating
+
+## Alert types
+
+**Rating Dropped:**
+- "Your Vinted rating dropped from 4.9 to 4.7"
+- "New negative review detected on eBay"
+
+**Rating Increased:**
+- "Great news! Your Depop rating increased to 5.0"
+
+## Why it matters
+
+- **Early warning**: Catch issues before they escalate
+- **Reputation management**: Respond to negative reviews quickly
+- **Peace of mind**: Know your ratings are being watched
+
+## Pro feature
+
+Rating Drop Alerts are a Pro-only feature. Upgrade to enable monitoring across all your verified profiles.
+
+## Notification settings
+
+1. Go to **Settings -> Notifications**
+2. Toggle **Rating Alerts** on
+3. Choose notification preferences:
+   - Push notifications
+   - Email notifications
+   - Both
+
+## FAQs
+
+**Q: How quickly are drops detected?**
+A: Within 24-48 hours of a rating change.
+
+**Q: Can I get alerts for rating increases too?**
+A: Yes, you'll be notified of any rating change.
+
+**Q: What if I get too many notifications?**
+A: Adjust notification preferences in Settings.''',
+      ),
+      HelpArticle(
+        id: '7.4',
+        slug: 'manual-stats-refresh',
+        title: 'Manual Stats Refresh',
+        category: 'Subscription & Pro Features',
+        categorySlug: 'subscription',
+        summary: 'How to manually refresh your profile stats before the automatic cycle.',
+        screenPath: 'Profile -> Connected Profiles -> Refresh',
+        content: '''Manual Stats Refresh lets you update your profile stats on demand instead of waiting for the automatic refresh.
+
+## Refresh intervals
+
+| Plan | Auto Refresh | Manual Refresh |
+|------|--------------|----------------|
+| Free | Every 30 days | Not available |
+| Pro | Every 30 days | Every 7 days |
+
+## How to refresh manually (Pro)
+
+1. Go to **Profile -> Connected Profiles**
+2. Tap the **Refresh** button
+3. Wait for the update (usually a few seconds)
+4. Your latest stats are now visible
+
+## What gets refreshed
+
+- Star ratings / feedback percentages
+- Review counts
+- Transaction counts (where available)
+- Profile status
+
+## When to refresh
+
+- Before an important transaction
+- After receiving new positive reviews
+- When you want the latest stats on your passport
+- Before sharing your passport link
+
+## Cooldown period
+
+After a manual refresh, you'll need to wait 7 days before refreshing again. The cooldown timer is shown in the app.
+
+## FAQs
+
+**Q: What if refresh fails?**
+A: Your last-known stats are preserved. Try again later or check if your profile is still accessible.
+
+**Q: Does manual refresh affect all profiles?**
+A: Yes, one refresh updates all your verified profiles.
+
+**Q: Can I refresh more than every 7 days?**
+A: Not currently. 7 days is the minimum interval for Pro users.''',
+      ),
+      HelpArticle(
+        id: '7.5',
+        slug: 'custom-passport-url',
+        title: 'Custom Passport URL',
+        category: 'Subscription & Pro Features',
+        categorySlug: 'subscription',
+        summary: 'Claim your personalized silentid.co.uk/your-name URL.',
+        screenPath: 'Settings -> Pro Features -> Custom URL',
+        content: '''Pro users can claim a custom passport URL like silentid.co.uk/your-name instead of the default random string.
+
+## What you get
+
+**Free URL:** silentid.co.uk/u/x7k9m2
+**Pro custom URL:** silentid.co.uk/your-name
+
+## How to claim
+
+1. Go to **Settings -> Pro Features**
+2. Tap **Custom Passport URL**
+3. Enter your desired URL (3-30 characters)
+4. Check availability
+5. Confirm to claim
+
+## URL rules
+
+- 3-30 characters
+- Letters, numbers, and hyphens only
+- No spaces or special characters
+- Must be unique (first come, first served)
+- Cannot be offensive or impersonate others
+
+## Reserved URLs
+
+Some URLs are reserved and unavailable:
+- Common names (admin, support, help, etc.)
+- Trademarked terms
+- Offensive words
+
+## Benefits
+
+- **Memorable**: Easy for buyers to remember
+- **Professional**: Looks better in listings and bios
+- **Personal**: Your name or brand
+
+## FAQs
+
+**Q: Can I change my custom URL later?**
+A: Yes, but your old URL becomes available for others.
+
+**Q: What if my preferred URL is taken?**
+A: Try variations like adding numbers or hyphens.
+
+**Q: Does the old URL still work?**
+A: Yes, both URLs work and redirect to your passport.''',
+      ),
+      HelpArticle(
+        id: '7.6',
+        slug: 'trust-timeline',
+        title: 'Trust Timeline',
+        category: 'Subscription & Pro Features',
+        categorySlug: 'subscription',
+        summary: 'View the historical graph of your reputation over time.',
+        screenPath: 'Profile -> Trust Timeline',
+        content: '''The Trust Timeline shows a visual history of your TrustScore and ratings over time.
+
+## What you can see
+
+- **TrustScore graph**: Your score history from account creation
+- **Rating trends**: How each platform rating changed
+- **Key events**: When you verified identity, connected profiles, etc.
+- **Weekly snapshots**: Point-by-point history
+
+## Reading the timeline
+
+- **Upward trends**: Your reputation is growing
+- **Flat lines**: Stable (good, but room to grow)
+- **Dips**: Investigate what caused them
+
+## Pro feature
+
+Trust Timeline is a Pro-only feature that provides:
+- Full historical view (not just recent weeks)
+- Per-platform rating history
+- Exportable data
+- Trend analysis
+
+Free users see only their current score and recent changes.
+
+## Using timeline for disputes
+
+If you ever need to prove your reputation history:
+1. Open Trust Timeline
+2. Take screenshots of relevant periods
+3. Use with Dispute Evidence Pack for complete documentation
+
+## FAQs
+
+**Q: How far back does the timeline go?**
+A: From the day you created your account.
+
+**Q: Can I export my timeline data?**
+A: Yes, Pro users can export timeline data in Settings.
+
+**Q: Why did my score drop on a specific date?**
+A: Tap that point on the graph to see what changed.''',
+      ),
+      HelpArticle(
+        id: '7.7',
+        slug: 'dispute-evidence-pack',
+        title: 'Dispute Evidence Pack',
+        category: 'Subscription & Pro Features',
+        categorySlug: 'subscription',
+        summary: 'Generate legal-ready PDF proof of your reputation history.',
+        infoPointKey: 'disputeEvidencePack',
+        screenPath: 'Profile -> Generate Evidence Pack',
+        content: '''The Dispute Evidence Pack generates a comprehensive, legally-usable PDF documenting your entire reputation history.
+
+## What's included
+
+- **User summary**: Account creation date, verification status
+- **Current TrustScore**: With component breakdown
+- **Combined star rating**: Across all platforms
+- **Verified profiles**: Each platform with ratings and review counts
+- **Verification dates**: When each profile was verified
+- **Historical data**: Rating history over time
+- **Document verification**: Unique ID and verification URL
+
+## When to use
+
+- **Marketplace disputes**: Prove your track record
+- **Account bans**: Show you're a legitimate seller
+- **Legal matters**: Court-admissible documentation
+- **Insurance claims**: Evidence of business reputation
+- **Platform appeals**: Support your case with data
+
+## How to generate
+
+1. Go to **Profile** tab
+2. Tap **Generate Evidence Pack**
+3. Wait for generation (30-60 seconds)
+4. Download or share the PDF
+
+## Pro feature
+
+Dispute Evidence Pack is Pro-only because it requires:
+- Full historical data access
+- Legal formatting and verification
+- Authenticated document generation
+- Unique verification URLs
+
+## Document validity
+
+- **Generated timestamp**: Shows when pack was created
+- **Verification URL**: Third parties can verify authenticity
+- **Expiry**: Pack is valid for 90 days from generation
+- **Unique ID**: For document tracking and verification
+
+## FAQs
+
+**Q: Can I generate multiple evidence packs?**
+A: Yes, generate as many as you need.
+
+**Q: Is the PDF legally admissible?**
+A: Yes, it's designed for legal use with verification.
+
+**Q: What if my stats changed after generating?**
+A: Generate a new pack to get updated information.''',
+      ),
+      HelpArticle(
+        id: '7.8',
+        slug: 'platform-watchdog',
+        title: 'Platform Watchdog',
+        category: 'Subscription & Pro Features',
+        categorySlug: 'subscription',
+        summary: 'Get alerts about marketplace mass bans, shutdowns, and issues.',
+        infoPointKey: 'platformWatchdog',
+        screenPath: 'Settings -> Pro Features -> Platform Watchdog',
+        content: '''Platform Watchdog monitors marketplaces for major incidents that could affect your accounts.
+
+## What we monitor
+
+- **Mass bans**: When platforms ban many accounts at once
+- **Outages**: Platform downtime or issues
+- **Policy changes**: New rules that may affect sellers
+- **Regional issues**: Problems affecting specific countries
+- **Shutdowns**: When platforms close entirely
+
+## Alert types
+
+**Critical:**
+- Mass ban events
+- Platform shutdown announcements
+- Major policy changes
+
+**Warning:**
+- Increased ban activity
+- Service disruptions
+- Regional restrictions
+
+**Info:**
+- Minor policy updates
+- Scheduled maintenance
+- General platform news
+
+## How to subscribe
+
+1. Go to **Settings -> Pro Features**
+2. Tap **Platform Watchdog**
+3. Select platforms to monitor
+4. Enable notifications
+
+## Pro feature
+
+Platform Watchdog is Pro-only, giving you:
+- Real-time incident alerts
+- Historical incident log
+- Platform-specific monitoring
+- Early warning of issues
+
+## Why it matters
+
+- **Protect yourself**: Know when platforms are acting unusually
+- **Stay informed**: Don't be surprised by policy changes
+- **Prepare evidence**: Document issues before they affect you
+- **Act quickly**: Respond to warnings before bans happen
+
+## FAQs
+
+**Q: How quickly are incidents detected?**
+A: We aim to alert within hours of major incidents.
+
+**Q: Can I monitor all platforms?**
+A: Yes, subscribe to all platforms you have profiles on.
+
+**Q: What if there's a false alarm?**
+A: We verify incidents before sending alerts.''',
+      ),
+      HelpArticle(
+        id: '7.9',
+        slug: 'managing-subscription',
+        title: 'Managing Your Subscription',
+        category: 'Subscription & Pro Features',
+        categorySlug: 'subscription',
+        summary: 'How to upgrade, downgrade, or cancel your subscription.',
+        screenPath: 'Settings -> Subscription',
+        content: '''All subscription management happens in Settings -> Subscription.
+
+## Upgrading to Pro
+
+1. Go to **Settings -> Subscription**
+2. Tap **Upgrade to Pro**
+3. Review the features
+4. Complete payment via Stripe
+5. Pro features activate immediately
+
+## Payment methods
+
+- Credit/Debit cards
+- Apple Pay
+- Google Pay
+
+## Billing
+
+- **Monthly**: £4.99/month, billed monthly
+- **Receipts**: Sent to your email
+- **VAT**: Included in the price
+
+## Cancelling
+
+1. Go to **Settings -> Subscription**
+2. Tap **Cancel Subscription**
+3. Confirm cancellation
+4. Pro features remain until billing period ends
+5. You revert to Free tier after that
+
+## What happens when you cancel
+
+- Your data is preserved
+- Pro features deactivate at period end
+- You can re-subscribe anytime
+- No refunds for partial periods
+
+## Troubleshooting
+
+**Payment failed:**
+- Check card details are correct
+- Ensure sufficient funds
+- Try a different payment method
+- Contact your bank if blocked
+
+**Pro features not showing:**
+- Try logging out and back in
+- Check subscription status in Settings
+- Contact support if issues persist
+
+## FAQs
+
+**Q: Can I get a refund?**
+A: Contact support within 7 days of first subscription.
+
+**Q: Is there a family plan?**
+A: Not currently. Each user needs their own subscription.
+
+**Q: Do I lose my data if I cancel?**
+A: No, all data is preserved. You just lose Pro features.''',
+      ),
+    ],
+  );
+
+  // ============================================================================
+  // 8. PRIVACY, DATA & CONTROLS
   // ============================================================================
   static const _privacy = HelpCategory(
-    id: '7',
+    id: '8',
     slug: 'privacy',
     title: 'Privacy, Data & Controls',
     description: 'Manage your data and privacy settings',
     icon: Icons.lock_outlined,
     articles: [
       HelpArticle(
-        id: '7.1',
+        id: '8.1',
         slug: 'data-stored',
         title: 'What Data SilentID Stores',
         category: 'Privacy, Data & Controls',
@@ -2026,7 +2559,7 @@ A: Yes, all data is encrypted at rest and in transit.
 A: Yes, use Data Export in Settings.''',
       ),
       HelpArticle(
-        id: '7.2',
+        id: '8.2',
         slug: 'never-stored',
         title: 'What We Never Store',
         category: 'Privacy, Data & Controls',
@@ -2079,7 +2612,7 @@ A: Security. By not storing them, there's nothing to breach.
 A: We'd refer them to Stripe, as we don't have it.''',
       ),
       HelpArticle(
-        id: '7.3',
+        id: '8.3',
         slug: 'settings',
         title: 'Privacy Settings',
         category: 'Privacy, Data & Controls',
@@ -2121,7 +2654,7 @@ A: Yes, privacy setting changes apply instantly.
 A: Yes, use Private visibility mode and hide all profiles.''',
       ),
       HelpArticle(
-        id: '7.4',
+        id: '8.4',
         slug: 'data-export',
         title: 'Exporting Your Data',
         category: 'Privacy, Data & Controls',
@@ -2164,7 +2697,7 @@ A: Usually a few minutes, depending on how much data you have.
 A: 24 hours. After that, request a new export.''',
       ),
       HelpArticle(
-        id: '7.5',
+        id: '8.5',
         slug: 'delete-account',
         title: 'Deleting Your Account',
         category: 'Privacy, Data & Controls',
@@ -2218,17 +2751,17 @@ A: Contact support before deleting to discuss refunds.''',
   );
 
   // ============================================================================
-  // 8. TROUBLESHOOTING & COMMON ISSUES
+  // 9. TROUBLESHOOTING & COMMON ISSUES
   // ============================================================================
   static const _troubleshooting = HelpCategory(
-    id: '8',
+    id: '9',
     slug: 'troubleshooting',
     title: 'Troubleshooting & Common Issues',
     description: 'Solutions for common problems',
     icon: Icons.help_outline,
     articles: [
       HelpArticle(
-        id: '8.1',
+        id: '9.1',
         slug: 'login-problems',
         title: 'Login Problems',
         category: 'Troubleshooting & Common Issues',
@@ -2286,7 +2819,7 @@ A: Contact support before deleting to discuss refunds.''',
 A: Contact support at support@silentid.co.uk with your email address.''',
       ),
       HelpArticle(
-        id: '8.2',
+        id: '9.2',
         slug: 'verification-issues',
         title: 'Verification Issues',
         category: 'Troubleshooting & Common Issues',
@@ -2341,7 +2874,7 @@ A: Contact support at support@silentid.co.uk with your email address.''',
 A: 3 times per 24 hours for identity verification. Unlimited for profile verification.''',
       ),
       HelpArticle(
-        id: '8.3',
+        id: '9.3',
         slug: 'receipt-issues',
         title: 'Receipt Processing Issues',
         category: 'Troubleshooting & Common Issues',
@@ -2393,7 +2926,7 @@ A: 3 times per 24 hours for identity verification. Unlimited for profile verific
 A: Yes, as long as the receipt is authentic.''',
       ),
       HelpArticle(
-        id: '8.4',
+        id: '9.4',
         slug: 'trustscore-not-updating',
         title: 'TrustScore Not Updating',
         category: 'Troubleshooting & Common Issues',
@@ -2436,7 +2969,7 @@ A: Major changes like identity verification may trigger updates. Otherwise, wait
 A: Yes, if you remove evidence, the associated points are removed.''',
       ),
       HelpArticle(
-        id: '8.5',
+        id: '9.5',
         slug: 'app-performance',
         title: 'App Performance Issues',
         category: 'Troubleshooting & Common Issues',
@@ -2483,7 +3016,7 @@ A: Yes, if you remove evidence, the associated points are removed.''',
 A: Go to Settings -> Feedback or email support@silentid.co.uk''',
       ),
       HelpArticle(
-        id: '8.6',
+        id: '9.6',
         slug: 'contact-support',
         title: 'Contacting Support',
         category: 'Troubleshooting & Common Issues',

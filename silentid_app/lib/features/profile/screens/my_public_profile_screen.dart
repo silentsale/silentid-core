@@ -112,7 +112,7 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen>
             trustScoreLabel: 'Very High',
             identityVerified: true,
             accountAge: '3 months',
-            verifiedPlatforms: ['Vinted', 'eBay'],
+            verifiedPlatforms: ['Vinted', 'eBay', 'Depop'],
             verifiedTransactionCount: 47,
             badges: [
               'Identity Verified',
@@ -131,10 +131,18 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen>
               ),
               PlatformRating(
                 platform: 'eBay',
-                rating: 99.2,
+                rating: 4.7,
                 reviewCount: 19,
-                displayRating: '99.2% positive',
+                displayRating: '4.7 ★',
                 lastUpdated: DateTime.now().subtract(const Duration(days: 5)),
+                isLevel3Verified: true,
+              ),
+              PlatformRating(
+                platform: 'Depop',
+                rating: 4.8,
+                reviewCount: 12,
+                displayRating: '4.8 ★',
+                lastUpdated: DateTime.now().subtract(const Duration(days: 3)),
                 isLevel3Verified: true,
               ),
             ],
@@ -507,6 +515,38 @@ class _MyPublicProfileScreenState extends State<MyPublicProfileScreen>
             fontSize: 16,
             color: AppTheme.primaryPurple,
             fontWeight: FontWeight.w500,
+          ),
+        ),
+
+        // Combined Star Rating (calculated from verified platforms)
+        if (_profile!.hasCombinedStarRating) ...[
+          const SizedBox(height: 8),
+          _buildCombinedStarRating(),
+        ],
+      ],
+    );
+  }
+
+  /// Build combined star rating widget (calculated from verified platforms)
+  Widget _buildCombinedStarRating() {
+    final rating = _profile!.combinedStarRating!;
+    final platformCount = _profile!.combinedRatingPlatformCount;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.star_rounded,
+          color: const Color(0xFFFFC043),
+          size: 20,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '${rating.toStringAsFixed(1)} across $platformCount platforms',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppTheme.neutralGray700,
           ),
         ),
       ],

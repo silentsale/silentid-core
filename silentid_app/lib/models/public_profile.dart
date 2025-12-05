@@ -204,6 +204,29 @@ class PublicProfile {
     if (score >= 401) return '#FFC043'; // Warning Amber
     return '#D04C4C'; // Danger Red
   }
+
+  /// Calculate combined star rating from all Level 3 verified platforms
+  /// Returns average of all platform ratings (on 5-star scale)
+  double? get combinedStarRating {
+    final verified = level3VerifiedRatings;
+    if (verified.isEmpty) return null;
+
+    // Filter only star-based ratings (0-5 scale, not percentage)
+    final starRatings = verified.where((r) => r.rating <= 5.0).toList();
+    if (starRatings.isEmpty) return null;
+
+    final sum = starRatings.fold<double>(0, (prev, r) => prev + r.rating);
+    return sum / starRatings.length;
+  }
+
+  /// Get number of platforms contributing to combined rating
+  int get combinedRatingPlatformCount {
+    return level3VerifiedRatings.where((r) => r.rating <= 5.0).length;
+  }
+
+  /// Check if profile has a combined star rating to show
+  bool get hasCombinedStarRating =>
+      combinedStarRating != null && combinedRatingPlatformCount > 0;
 }
 
 /// Username Availability Response

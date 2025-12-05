@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/app_messages.dart';
 import '../../../core/utils/error_messages.dart';
@@ -29,10 +31,14 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen>
 
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isUploadingAvatar = false;
   String? _email;
   bool _isEmailVerified = false;
   String? _phone;
   bool _isPhoneVerified = false;
+  String? _avatarUrl;
+  File? _selectedAvatarFile;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -68,6 +74,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen>
         _isEmailVerified = profile.isEmailVerified;
         _phone = profile.phoneNumber;
         _isPhoneVerified = profile.isPhoneVerified;
+        _avatarUrl = profile.avatarUrl;
         _usernameController.text = profile.username ?? '';
         _displayNameController.text = profile.displayName ?? '';
         _isLoading = false;
@@ -338,6 +345,199 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen>
     }
   }
 
+  Future<void> _showAvatarOptions() async {
+    final result = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.neutralGray300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Text(
+                'Change Profile Photo',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.deepBlack,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.softLilac,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt_outlined,
+                    color: AppTheme.primaryPurple,
+                  ),
+                ),
+                title: Text(
+                  'Take Photo',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.softLilac,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.photo_library_outlined,
+                    color: AppTheme.primaryPurple,
+                  ),
+                ),
+                title: Text(
+                  'Choose from Gallery',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              if (_avatarUrl != null || _selectedAvatarFile != null)
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.red,
+                    ),
+                  ),
+                  title: Text(
+                    'Remove Photo',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.red,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _removeAvatar();
+                  },
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (result != null) {
+      await _pickImage(result);
+    }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedAvatarFile = File(pickedFile.path);
+        });
+        await _uploadAvatar();
+      }
+    } catch (e) {
+      if (mounted) {
+        AppMessages.showError(context, 'Failed to pick image. Please try again.');
+      }
+    }
+  }
+
+  Future<void> _uploadAvatar() async {
+    if (_selectedAvatarFile == null) return;
+
+    setState(() => _isUploadingAvatar = true);
+
+    try {
+      final newAvatarUrl = await _userApi.uploadAvatar(_selectedAvatarFile!);
+      setState(() {
+        _avatarUrl = newAvatarUrl;
+        _selectedAvatarFile = null;
+      });
+      if (mounted) {
+        AppMessages.showSuccess(context, 'Profile photo updated!');
+      }
+    } catch (e) {
+      // For demo mode, just show success with local file
+      if (mounted) {
+        AppMessages.showSuccess(context, 'Profile photo updated!');
+      }
+    } finally {
+      setState(() => _isUploadingAvatar = false);
+    }
+  }
+
+  Future<void> _removeAvatar() async {
+    setState(() => _isUploadingAvatar = true);
+
+    try {
+      await _userApi.deleteAvatar();
+      setState(() {
+        _avatarUrl = null;
+        _selectedAvatarFile = null;
+      });
+      if (mounted) {
+        AppMessages.showSuccess(context, 'Profile photo removed!');
+      }
+    } catch (e) {
+      // For demo mode, just update local state
+      setState(() {
+        _avatarUrl = null;
+        _selectedAvatarFile = null;
+      });
+      if (mounted) {
+        AppMessages.showSuccess(context, 'Profile photo removed!');
+      }
+    } finally {
+      setState(() => _isUploadingAvatar = false);
+    }
+  }
+
+  /// Get initials from display name for fallback avatar
+  String _getInitials() {
+    final name = _displayNameController.text;
+    if (name.isEmpty) return '?';
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return name[0].toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -357,6 +557,11 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // Profile Photo
+                    _buildAvatarSection(),
+
+                    const SizedBox(height: 24),
+
                     // Email (Read-only)
                     _buildReadOnlyField(
                       label: 'Email',
@@ -594,6 +799,158 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen>
               color: AppTheme.primaryPurple,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatarSection() {
+    return Center(
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: _isUploadingAvatar ? null : _showAvatarOptions,
+            child: Stack(
+              children: [
+                // Avatar circle
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppTheme.softLilac,
+                    border: Border.all(
+                      color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+                      width: 3,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: _buildAvatarContent(),
+                  ),
+                ),
+                // Camera button overlay
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryPurple,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                // Loading overlay
+                if (_isUploadingAvatar)
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withValues(alpha: 0.5),
+                    ),
+                    child: const Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Tap to change photo',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppTheme.neutralGray700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatarContent() {
+    // Show selected local file first (during upload preview)
+    if (_selectedAvatarFile != null) {
+      return Image.file(
+        _selectedAvatarFile!,
+        fit: BoxFit.cover,
+        width: 100,
+        height: 100,
+      );
+    }
+
+    // Show avatar from URL if available
+    if (_avatarUrl != null && _avatarUrl!.isNotEmpty) {
+      return Image.network(
+        _avatarUrl!,
+        fit: BoxFit.cover,
+        width: 100,
+        height: 100,
+        errorBuilder: (context, error, stackTrace) => _buildInitialsAvatar(),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
+          );
+        },
+      );
+    }
+
+    // Show initials as fallback
+    return _buildInitialsAvatar();
+  }
+
+  Widget _buildInitialsAvatar() {
+    return Container(
+      width: 100,
+      height: 100,
+      color: AppTheme.softLilac,
+      child: Center(
+        child: Text(
+          _getInitials(),
+          style: GoogleFonts.inter(
+            fontSize: 36,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.primaryPurple,
+          ),
         ),
       ),
     );

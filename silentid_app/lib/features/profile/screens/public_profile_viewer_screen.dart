@@ -77,10 +77,63 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen>
       // Level 7: Start animation after data loads
       _animController.forward();
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      // Use demo data when API is unavailable for demo user
+      if (widget.username.toLowerCase().contains('demo') && mounted) {
+        setState(() {
+          _profile = PublicProfile(
+            userId: 'demo-user',
+            username: '@demouser',
+            displayName: 'Demo User',
+            trustScore: 752,
+            trustScoreLabel: 'Very High',
+            identityVerified: true,
+            accountAge: '3 months',
+            verifiedPlatforms: ['Vinted', 'eBay', 'Depop'],
+            verifiedTransactionCount: 47,
+            badges: [
+              'Identity Verified',
+              '25+ verified transactions',
+              'Excellent behaviour',
+            ],
+            createdAt: DateTime.now().subtract(const Duration(days: 90)),
+            platformRatings: [
+              PlatformRating(
+                platform: 'Vinted',
+                rating: 4.9,
+                reviewCount: 28,
+                displayRating: '4.9 ★',
+                lastUpdated: DateTime.now().subtract(const Duration(days: 2)),
+                isLevel3Verified: true,
+              ),
+              PlatformRating(
+                platform: 'eBay',
+                rating: 4.7,
+                reviewCount: 19,
+                displayRating: '4.7 ★',
+                lastUpdated: DateTime.now().subtract(const Duration(days: 5)),
+                isLevel3Verified: true,
+              ),
+              PlatformRating(
+                platform: 'Depop',
+                rating: 4.8,
+                reviewCount: 12,
+                displayRating: '4.8 ★',
+                lastUpdated: DateTime.now().subtract(const Duration(days: 3)),
+                isLevel3Verified: true,
+              ),
+            ],
+            trustScoreVisible: true,
+            connectedProfiles: [],
+          );
+          _isLoading = false;
+        });
+        _animController.forward();
+      } else {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -229,6 +282,12 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen>
                     color: AppTheme.neutralGray700,
                   ),
                 ),
+
+                // Combined Star Rating (calculated from verified platforms)
+                if (profile.hasCombinedStarRating) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildCombinedStarRating(profile),
+                ],
               ],
             ),
           ),
@@ -596,6 +655,56 @@ class _PublicProfileViewerScreenState extends State<PublicProfileViewerScreen>
             style: GoogleFonts.inter(
               fontSize: 12,
               color: AppTheme.neutralGray700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build combined star rating widget (calculated from verified platforms)
+  Widget _buildCombinedStarRating(PublicProfile profile) {
+    final rating = profile.combinedStarRating!;
+    final platformCount = profile.combinedRatingPlatformCount;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.warningAmber.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Star icons
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(5, (index) {
+              final filled = index < rating.round();
+              return Icon(
+                filled ? Icons.star : Icons.star_border,
+                size: 16,
+                color: AppTheme.warningAmber,
+              );
+            }),
+          ),
+          const SizedBox(width: 6),
+          // Rating value
+          Text(
+            rating.toStringAsFixed(1),
+            style: GoogleFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF92400E), // Amber dark
+            ),
+          ),
+          const SizedBox(width: 4),
+          // Platform count
+          Text(
+            'from $platformCount platform${platformCount > 1 ? 's' : ''}',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xFFA16207), // Amber medium
             ),
           ),
         ],

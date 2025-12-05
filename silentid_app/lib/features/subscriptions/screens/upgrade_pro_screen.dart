@@ -225,7 +225,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen>
 
                   // Description
                   Text(
-                    'Built for power sellers and community leaders',
+                    'Full Reputation Protection',
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
@@ -237,7 +237,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen>
                   const SizedBox(height: AppSpacing.md),
 
                   Text(
-                    'Manage risk at scale, present a professional trust profile, and export organised evidence packs when you need them.',
+                    'Back up unlimited profiles, get rating alerts, access your trust timeline, and generate legal-ready evidence packs when you need them.',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       color: AppTheme.neutralGray700,
@@ -248,7 +248,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen>
 
                   const SizedBox(height: AppSpacing.xl),
 
-                  // Everything in Premium
+                  // Everything in Free
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
@@ -259,7 +259,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Everything in Premium',
+                          'Everything in Free',
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -268,7 +268,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen>
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          'Unlimited evidence, advanced analytics, 100GB vault, priority processing, premium badge',
+                          'Identity verification, Basic TrustScore, 5 profile connections, Public passport URL, Basic badge',
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             color: AppTheme.neutralGray700,
@@ -280,9 +280,9 @@ class _UpgradeProScreenState extends State<UpgradeProScreen>
 
                   const SizedBox(height: AppSpacing.lg),
 
-                  // Pro-Exclusive Benefits
+                  // Pro Features
                   Text(
-                    'Pro-Exclusive Features',
+                    'Pro Features',
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -293,39 +293,63 @@ class _UpgradeProScreenState extends State<UpgradeProScreen>
                   const SizedBox(height: AppSpacing.md),
 
                   _buildBenefitItem(
-                    icon: Icons.groups_outlined,
-                    title: 'Bulk Profile Checks',
-                    subtitle: 'Check up to 50 SilentID profiles at once',
+                    icon: Icons.all_inclusive,
+                    title: 'Unlimited Profile Connections',
+                    subtitle: 'Connect all your marketplace and social profiles',
+                  ),
+
+                  _buildBenefitItem(
+                    icon: Icons.qr_code_2,
+                    title: 'Premium Verified Badge with QR',
+                    subtitle: 'Scannable badge showing your combined star rating',
+                  ),
+
+                  _buildBenefitItem(
+                    icon: Icons.star,
+                    title: 'Combined Star Rating',
+                    subtitle: 'Aggregate rating from all your platforms (e.g., 4.8★)',
+                  ),
+
+                  _buildBenefitItem(
+                    icon: Icons.notifications_active,
+                    title: 'Rating Drop Alerts',
+                    subtitle: 'Instant notification if any rating changes',
+                  ),
+
+                  _buildBenefitItem(
+                    icon: Icons.timeline,
+                    title: 'Trust Timeline',
+                    subtitle: 'Historical graph of your reputation over time',
                   ),
 
                   _buildBenefitItem(
                     icon: Icons.description_outlined,
-                    title: 'Dispute & Evidence Pack Generator',
-                    subtitle: 'PDF report for marketplace support or legal use',
+                    title: 'Dispute Evidence Pack',
+                    subtitle: 'Legal-ready PDF proof of your reputation history',
                   ),
 
                   _buildBenefitItem(
-                    icon: Icons.verified_outlined,
-                    title: 'Trust Certificate Export',
-                    subtitle: 'Branded PDF for landlord references and external markets',
+                    icon: Icons.shield_outlined,
+                    title: 'Platform Watchdog',
+                    subtitle: 'Alerts when markets have mass bans or shutdowns',
                   ),
 
                   _buildBenefitItem(
-                    icon: Icons.business_outlined,
-                    title: 'White-Label Profile Option',
-                    subtitle: 'Remove branding on external materials',
+                    icon: Icons.refresh,
+                    title: 'Manual Stats Refresh',
+                    subtitle: 'Refresh profile stats every 7 days (vs 30-day auto)',
                   ),
 
                   _buildBenefitItem(
-                    icon: Icons.storage_outlined,
-                    title: '500GB Evidence Vault',
-                    subtitle: 'Store comprehensive evidence archives',
+                    icon: Icons.link,
+                    title: 'Custom Passport URL',
+                    subtitle: 'silentid.co.uk/your-name',
                   ),
 
                   _buildBenefitItem(
                     icon: Icons.support_agent_outlined,
-                    title: 'Priority Support',
-                    subtitle: 'Dedicated support channel',
+                    title: 'Priority Verification & Support',
+                    subtitle: 'Faster processing and dedicated support',
                   ),
 
                   const SizedBox(height: AppSpacing.xl),
@@ -342,10 +366,10 @@ class _UpgradeProScreenState extends State<UpgradeProScreen>
 
                   const SizedBox(height: AppSpacing.md),
 
-                  _buildIdealForItem('High-volume sellers'),
-                  _buildIdealForItem('Landlords and property managers'),
-                  _buildIdealForItem('Community group admins'),
-                  _buildIdealForItem('Professional service providers'),
+                  _buildIdealForItem('Serious marketplace sellers'),
+                  _buildIdealForItem('Multi-platform resellers'),
+                  _buildIdealForItem('Full-time online sellers'),
+                  _buildIdealForItem('Anyone protecting their reputation'),
 
                   const SizedBox(height: AppSpacing.xl),
 

@@ -135,11 +135,10 @@ See: `CLAUDE.md Section 9 - API Endpoints`
 
 ## Subscription Tiers
 
-| Tier | Price | Vault | Key Features |
-|------|-------|-------|--------------|
-| Free | £0 | 250MB | 10 receipts, 5 screenshots, 2 profiles |
-| Premium | £4.99/mo | 100GB | Unlimited evidence, analytics |
-| Pro | £14.99/mo | 500GB | Bulk checks, evidence packs, certificates |
+| Tier | Price | Key Features |
+|------|-------|--------------|
+| Free | £0 | Basic TrustScore, up to 5 profile connections, basic verified badge |
+| Pro | £4.99/mo | Unlimited profile connections, premium verified badge with QR, combined star rating, trust timeline, rating alerts, dispute evidence pack, priority support |
 
 See: `CLAUDE.md Section 12 & 16 - Monetisation`
 

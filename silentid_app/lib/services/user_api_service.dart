@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import '../core/constants/api_constants.dart';
 import 'api_service.dart';
 import 'trustscore_api_service.dart';
@@ -62,6 +64,30 @@ class UserApiService {
     );
     return UserData.fromJson(response.data);
   }
+
+  /// Upload user avatar image
+  /// Returns the new avatar URL
+  Future<String> uploadAvatar(File imageFile) async {
+    final fileName = imageFile.path.split('/').last;
+    final formData = FormData.fromMap({
+      'avatar': await MultipartFile.fromFile(
+        imageFile.path,
+        filename: fileName,
+      ),
+    });
+
+    final response = await _api.uploadMultipart(
+      ApiConstants.userAvatar,
+      formData: formData,
+    );
+
+    return response.data['avatarUrl'] ?? '';
+  }
+
+  /// Delete user avatar
+  Future<void> deleteAvatar() async {
+    await _api.delete(ApiConstants.userAvatar);
+  }
 }
 
 /// Basic user data from /users/me endpoint
@@ -71,6 +97,7 @@ class UserData {
   final String? username;
   final String? displayName;
   final String? phoneNumber;
+  final String? avatarUrl;
   final bool isEmailVerified;
   final bool isPhoneVerified;
   final bool isPasskeyEnabled;
@@ -84,6 +111,7 @@ class UserData {
     this.username,
     this.displayName,
     this.phoneNumber,
+    this.avatarUrl,
     required this.isEmailVerified,
     required this.isPhoneVerified,
     required this.isPasskeyEnabled,
@@ -99,6 +127,7 @@ class UserData {
       username: json['username'],
       displayName: json['displayName'],
       phoneNumber: json['phoneNumber'],
+      avatarUrl: json['avatarUrl'],
       isEmailVerified: json['isEmailVerified'] ?? false,
       isPhoneVerified: json['isPhoneVerified'] ?? false,
       isPasskeyEnabled: json['isPasskeyEnabled'] ?? false,
@@ -116,6 +145,7 @@ class UserProfile {
   final String? username;
   final String? displayName;
   final String? phoneNumber;
+  final String? avatarUrl;
   final bool isEmailVerified;
   final bool isPhoneVerified;
   final bool isPasskeyEnabled;
@@ -133,6 +163,7 @@ class UserProfile {
     this.username,
     this.displayName,
     this.phoneNumber,
+    this.avatarUrl,
     required this.isEmailVerified,
     required this.isPhoneVerified,
     required this.isPasskeyEnabled,

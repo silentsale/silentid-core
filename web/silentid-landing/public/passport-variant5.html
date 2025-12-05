@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sarah Mitchell (@sarahmitchell) | SilentID</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #F5F5F5;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* App Bar */
+        .app-bar {
+            background: white;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #E5E5E5;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .app-bar-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1A1A1A;
+        }
+
+        .app-bar-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #525252;
+        }
+
+        .icon-btn:hover {
+            background: #F5F5F5;
+        }
+
+        /* Container */
+        .container {
+            padding: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Profile Header - Centered */
+        .profile-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #E8E0F7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .avatar-letter {
+            font-size: 36px;
+            font-weight: 600;
+            color: #5A3EB8;
+        }
+
+        .display-name {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1A1A1A;
+            margin-bottom: 4px;
+        }
+
+        .username {
+            font-size: 16px;
+            font-weight: 400;
+            color: #737373;
+            margin-bottom: 12px;
+        }
+
+        /* NEW: Combined Rating - Added under username */
+        .combined-rating {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #FEF3C7;
+            padding: 8px 14px;
+            border-radius: 20px;
+        }
+
+        .combined-rating .stars {
+            display: flex;
+            gap: 2px;
+        }
+
+        .combined-rating .star {
+            width: 16px;
+            height: 16px;
+            color: #F59E0B;
+        }
+
+        .combined-rating .rating-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #92400E;
+        }
+
+        .combined-rating .rating-text {
+            font-size: 14px;
+            color: #A16207;
+        }
+
+        /* TrustScore Card - Purple Gradient */
+        .trustscore-card {
+            background: linear-gradient(135deg, #5A3EB8, #462F8F);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(90, 62, 184, 0.3);
+        }
+
+        .trustscore-label {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 16px;
+        }
+
+        .trustscore-value {
+            font-size: 64px;
+            font-weight: 700;
+            color: white;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .trustscore-tier {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 12px;
+        }
+
+        .trustscore-stars {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .trustscore-stars .star {
+            width: 24px;
+            height: 24px;
+            color: white;
+        }
+
+        /* Section Title */
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1A1A1A;
+            margin-bottom: 16px;
+        }
+
+        /* Badges */
+        .badges-section {
+            margin-bottom: 24px;
+        }
+
+        .badges-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #1A1A1A;
+        }
+
+        .badge.purple {
+            background: rgba(90, 62, 184, 0.1);
+            border-color: rgba(90, 62, 184, 0.3);
+        }
+
+        .badge.amber {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .badge svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .badge.green svg { color: #22C55E; }
+        .badge.purple svg { color: #5A3EB8; }
+        .badge.amber svg { color: #F59E0B; }
+
+        /* Connected Profiles */
+        .connected-profiles-section {
+            margin-bottom: 24px;
+        }
+
+        .profiles-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .profile-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: white;
+            border: 1px solid #E5E5E5;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #1A1A1A;
+        }
+
+        .profile-chip .platform-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .profile-chip .verified-icon {
+            width: 14px;
+            height: 14px;
+            color: #22C55E;
+        }
+
+        /* Activity Metrics */
+        .metrics-section {
+            margin-bottom: 24px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .metric-card {
+            background: white;
+            border: 1px solid #E5E5E5;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .metric-icon {
+            width: 28px;
+            height: 28px;
+            color: #5A3EB8;
+            margin: 0 auto 8px;
+        }
+
+        .metric-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1A1A1A;
+            margin-bottom: 2px;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #737373;
+        }
+
+        /* QR Code Section */
+        .qr-section {
+            margin-bottom: 24px;
+        }
+
+        .qr-card {
+            background: white;
+            border: 1px solid #E5E5E5;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .qr-code {
+            width: 200px;
+            height: 200px;
+            background: #F5F5F5;
+            border-radius: 8px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-code img {
+            width: 180px;
+            height: 180px;
+        }
+
+        .qr-text {
+            font-size: 12px;
+            color: #737373;
+        }
+
+        /* Privacy Notice */
+        .privacy-notice {
+            background: #E8E0F7;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .privacy-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .privacy-header svg {
+            width: 20px;
+            height: 20px;
+            color: #5A3EB8;
+        }
+
+        .privacy-header span {
+            font-size: 14px;
+            font-weight: 600;
+            color: #5A3EB8;
+        }
+
+        .privacy-text {
+            font-size: 12px;
+            color: #737373;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- App Bar -->
+    <div class="app-bar">
+        <span class="app-bar-title">Profile</span>
+        <div class="app-bar-actions">
+            <button class="icon-btn">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                </svg>
+            </button>
+            <button class="icon-btn">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="avatar">
+                <span class="avatar-letter">S</span>
+            </div>
+            <h1 class="display-name">Sarah Mitchell</h1>
+            <p class="username">@sarahmitchell</p>
+
+            <!-- NEW: Combined Rating (Only addition to original design) -->
+            <div class="combined-rating">
+                <div class="stars">
+                    <svg class="star" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                    <svg class="star" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                    <svg class="star" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                    <svg class="star" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                    <svg class="star" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                </div>
+                <span class="rating-value">4.9</span>
+                <span class="rating-text">from 5 platforms</span>
+            </div>
+        </div>
+
+        <!-- TrustScore Card (Purple Gradient) -->
+        <div class="trustscore-card">
+            <p class="trustscore-label">TrustScore</p>
+            <p class="trustscore-value">892</p>
+            <p class="trustscore-tier">Exceptional</p>
+            <div class="trustscore-stars">
+                <svg class="star" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+                <svg class="star" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+                <svg class="star" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+                <svg class="star" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+                <svg class="star" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Badges Section -->
+        <div class="badges-section">
+            <h2 class="section-title">Badges</h2>
+            <div class="badges-list">
+                <span class="badge green">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                    Identity Verified
+                </span>
+                <span class="badge purple">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    50+ transactions
+                </span>
+                <span class="badge amber">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                    </svg>
+                    Excellent behaviour
+                </span>
+            </div>
+        </div>
+
+        <!-- Connected Profiles Section -->
+        <div class="connected-profiles-section">
+            <h2 class="section-title">Connected Profiles</h2>
+            <div class="profiles-list">
+                <div class="profile-chip">
+                    <span>Vinted</span>
+                    <svg class="verified-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="profile-chip">
+                    <span>eBay</span>
+                    <svg class="verified-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="profile-chip">
+                    <span>Depop</span>
+                    <svg class="verified-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="profile-chip">
+                    <span>Instagram</span>
+                    <svg class="verified-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="profile-chip">
+                    <span>Etsy</span>
+                    <svg class="verified-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Metrics -->
+        <div class="metrics-section">
+            <h2 class="section-title">Activity Metrics</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <svg class="metric-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    <p class="metric-value">247</p>
+                    <p class="metric-label">Receipts</p>
+                </div>
+                <div class="metric-card">
+                    <svg class="metric-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                    <p class="metric-value">5</p>
+                    <p class="metric-label">Platforms</p>
+                </div>
+                <div class="metric-card">
+                    <svg class="metric-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    <p class="metric-value">5</p>
+                    <p class="metric-label">Platforms</p>
+                </div>
+                <div class="metric-card">
+                    <svg class="metric-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <p class="metric-value">2 years</p>
+                    <p class="metric-label">Account Age</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Share Profile / QR Code -->
+        <div class="qr-section">
+            <h2 class="section-title">Share Profile</h2>
+            <div class="qr-card">
+                <div class="qr-code">
+                    <!-- QR Code placeholder -->
+                    <svg width="180" height="180" viewBox="0 0 180 180" fill="none">
+                        <rect width="180" height="180" fill="#F5F5F5"/>
+                        <rect x="20" y="20" width="40" height="40" fill="#1A1A1A"/>
+                        <rect x="120" y="20" width="40" height="40" fill="#1A1A1A"/>
+                        <rect x="20" y="120" width="40" height="40" fill="#1A1A1A"/>
+                        <rect x="30" y="30" width="20" height="20" fill="#F5F5F5"/>
+                        <rect x="130" y="30" width="20" height="20" fill="#F5F5F5"/>
+                        <rect x="30" y="130" width="20" height="20" fill="#F5F5F5"/>
+                        <rect x="35" y="35" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="135" y="35" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="35" y="135" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="70" y="20" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="90" y="20" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="70" y="40" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="80" y="50" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="70" y="70" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="80" y="80" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="90" y="90" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="100" y="70" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="20" y="70" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="40" y="80" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="50" y="70" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="130" y="70" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="150" y="80" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="70" y="100" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="90" y="110" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="110" y="100" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="130" y="110" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="150" y="130" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="70" y="130" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="70" y="150" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="90" y="140" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="110" y="130" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="130" y="150" width="10" height="10" fill="#1A1A1A"/>
+                        <rect x="150" y="150" width="10" height="10" fill="#1A1A1A"/>
+                    </svg>
+                </div>
+                <p class="qr-text">Scan to view this SilentID profile</p>
+            </div>
+        </div>
+
+        <!-- Privacy Notice -->
+        <div class="privacy-notice">
+            <div class="privacy-header">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>Privacy Protected</span>
+            </div>
+            <p class="privacy-text">
+                This public profile only shows display name, username, TrustScore, and general activity metrics.
+                Full legal name, email, phone, address, and ID documents are never shown.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

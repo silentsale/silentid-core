@@ -184,9 +184,8 @@ Store proof of trustworthy behaviour:
 
 | Tier | Price | Features |
 |------|-------|----------|
-| **Free** | £0 | Basic TrustScore, 10 receipts, 5 screenshots, 250MB vault |
-| **Premium** | £4.99/mo | Unlimited evidence, advanced analytics, 100GB vault, breach monitoring |
-| **Pro** | £14.99/mo | Bulk checks (50 profiles), dispute tools, 500GB vault, white-label options |
+| **Free** | £0 | Basic TrustScore, up to 5 profile connections, basic verified badge |
+| **Pro** | £4.99/mo | Unlimited profile connections, premium verified badge with QR, combined star rating, trust timeline, rating alerts, dispute evidence pack, priority support |
 
 > **Note:** Paid subscriptions do **NOT** increase TrustScore or override safety systems.
 

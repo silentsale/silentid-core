@@ -24,6 +24,7 @@ class ApiConstants {
 
   // User endpoints
   static String get userMe => '$apiBaseUrl/users/me';
+  static String get userAvatar => '$apiBaseUrl/users/me/avatar';
 
   // TrustScore endpoints
   static String get trustScoreMe => '$apiBaseUrl/trustscore/me';

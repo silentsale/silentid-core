@@ -297,8 +297,8 @@ class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen>
                 ),
               ),
 
-            // Upgrade Option (if Premium, show Pro upgrade)
-            if (currentPlan.toLowerCase() == "premium" && !isCancelled)
+            // Upgrade Option (if Free, show Pro upgrade)
+            if (currentPlan.toLowerCase() == "free" && !isCancelled)
               OutlinedButton(
                 onPressed: () {
                   context.push('/subscriptions/pro');
@@ -306,7 +306,8 @@ class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen>
                 child: const Text('Upgrade to Pro'),
               ),
 
-            const SizedBox(height: AppSpacing.md),
+            if (currentPlan.toLowerCase() == "free" && !isCancelled)
+              const SizedBox(height: AppSpacing.md),
 
             // Manage Subscription
             OutlinedButton(
@@ -594,7 +595,7 @@ class _SubscriptionOverviewScreenState extends State<SubscriptionOverviewScreen>
                           ),
                           const SizedBox(height: AppSpacing.xs),
                           Text(
-                            'Upgrade to Premium or Pro to start building history',
+                            'Upgrade to Pro to start building history',
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               color: AppTheme.neutralGray700,

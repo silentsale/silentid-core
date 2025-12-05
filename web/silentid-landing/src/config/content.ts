@@ -24,7 +24,7 @@ export const hero = {
 };
 
 export const problem = {
-  title: 'The Problem Every Seller Faces',
+  title: 'The Problem Every Marketplace User Faces',
   subtitle: 'Your reputation is at risk—and most people don\'t realize until it\'s too late',
   stats: [
     {
@@ -39,7 +39,7 @@ export const problem = {
     },
     {
       value: '89%',
-      label: 'Of sellers never recover their ratings',
+      label: 'Of users never recover their ratings',
       icon: 'trending-down',
     },
   ],
@@ -142,7 +142,7 @@ export const appWalkthrough = {
       id: 'horror-stats',
       title: 'The Risk Is Real',
       description: 'First, we show you why reputation protection matters. These numbers are real.',
-      highlight: 'Did you know 89% of sellers never recover their ratings after a ban?',
+      highlight: 'Did you know 89% of users never recover their ratings after a ban?',
     },
     {
       id: 'solution',
@@ -257,7 +257,7 @@ export const pricing = {
       name: 'Pro',
       price: '£4.99',
       period: 'per month',
-      description: 'Full reputation protection for serious sellers',
+      description: 'Full reputation protection for serious marketplace users',
       features: [
         'Everything in Free',
         'Unlimited profile connections',
@@ -287,12 +287,12 @@ export const faq = {
   questions: [
     {
       question: 'What is SilentID?',
-      answer: 'SilentID is a reputation backup service for online sellers. It saves your hard-earned ratings from platforms like Vinted, eBay, Depop, Instagram, and others into one secure profile. If your account gets banned, the platform shuts down, or you move to a new marketplace, you have permanent proof of your reputation. SilentID also creates a TrustScore (0-1000) that combines all your ratings into one number, plus a verified badge you can share anywhere.',
-      keywords: ['reputation backup', 'online sellers', 'Vinted', 'eBay', 'Depop', 'TrustScore'],
+      answer: 'SilentID is a reputation backup service for marketplace users—both buyers and sellers. It saves your hard-earned ratings from platforms like Vinted, eBay, Depop, Instagram, and others into one secure profile. If your account gets banned, the platform shuts down, or you move to a new marketplace, you have permanent proof of your reputation. SilentID also creates a TrustScore (0-1000) that combines all your ratings into one number, plus a verified badge you can share anywhere.',
+      keywords: ['reputation backup', 'marketplace users', 'buyers', 'sellers', 'Vinted', 'eBay', 'Depop', 'TrustScore'],
     },
     {
       question: 'What happens if my Vinted or eBay account gets banned?',
-      answer: 'If your marketplace account gets banned, your years of hard-earned feedback typically disappear forever—89% of sellers never recover their ratings. With SilentID, your reputation is already backed up. You have proof of your rating history, verified identity, and TrustScore. You can show new platforms, buyers, or anyone that you were a trusted seller before the ban. Your Trust Passport and verified badge serve as portable proof that follows you everywhere.',
+      answer: 'If your marketplace account gets banned, your years of hard-earned feedback typically disappear forever—89% of users never recover their ratings. With SilentID, your reputation is already backed up. You have proof of your rating history, verified identity, and TrustScore. You can show new platforms or anyone that you were a trusted user before the ban. Your Trust Passport and verified badge serve as portable proof that follows you everywhere.',
       keywords: ['Vinted banned', 'eBay banned', 'account suspended', 'lost ratings', 'reputation backup'],
     },
     {
@@ -302,7 +302,7 @@ export const faq = {
     },
     {
       question: 'Is SilentID free?',
-      answer: 'Yes, SilentID has a free tier that includes identity verification, basic TrustScore, connecting up to 5 profiles, a public Trust Passport URL, basic verified badge, and the ability to file safety reports. For serious sellers who want complete protection features, Pro costs £4.99/month and adds unlimited profile connections, rating drop alerts, trust timeline history, dispute evidence pack generator, platform watchdog alerts, and priority support.',
+      answer: 'Yes, SilentID has a free tier that includes identity verification, basic TrustScore, connecting up to 5 profiles, a public Trust Passport URL, basic verified badge, and the ability to file safety reports. For serious marketplace users who want complete protection, Pro costs £4.99/month and adds unlimited profile connections, rating drop alerts, trust timeline history, dispute evidence pack generator, platform watchdog alerts, and priority support.',
       keywords: ['free', 'pricing', 'Pro subscription', 'cost'],
     },
     {
@@ -364,7 +364,7 @@ export const faq = {
 };
 
 export const testimonials = {
-  title: 'Trusted by Sellers Who\'ve Been There',
+  title: 'Trusted by Users Who\'ve Been There',
   subtitle: 'Real stories from people who understand the value of reputation protection',
   reviews: [
     {
@@ -424,32 +424,32 @@ export const footer = {
 // SEO Metadata - Optimized for search engines and AI
 export const metadata = {
   title: 'SilentID - Never Lose Your Online Reputation Again | Reputation Backup',
-  description: 'SilentID backs up your hard-earned ratings from Vinted, eBay, Depop & more. Protect your seller reputation with portable proof. Verify your identity, share trust anywhere. 100% passwordless.',
+  description: 'SilentID backs up your hard-earned ratings from Vinted, eBay, Depop & more. Protect your marketplace reputation—whether you\'re a buyer or seller—with portable proof. Verify your identity, share trust anywhere. 100% passwordless.',
   keywords: [
     // Primary keywords
     'reputation backup',
-    'online seller protection',
-    'marketplace reputation backup',
+    'marketplace user protection',
+    'buyer seller reputation backup',
     'TrustScore',
-    'verified seller badge',
+    'verified user badge',
     // Platform keywords
     'Vinted verification',
-    'eBay seller badge',
+    'eBay buyer seller badge',
     'Depop trust',
     'marketplace trust',
     // Problem keywords
     'Vinted account banned',
-    'lost seller ratings',
+    'lost marketplace ratings',
     'recover marketplace reputation',
-    'backup seller reviews',
+    'backup buyer seller reviews',
     // Feature keywords
     'passwordless identity',
     'digital trust passport',
     'verified badge generator',
     'cross-platform reputation',
-    'seller identity verification',
+    'marketplace identity verification',
     // Action keywords
-    'protect seller account',
+    'protect marketplace account',
     'backup online ratings',
     'share trust profile',
   ],
@@ -472,7 +472,7 @@ export const structuredData = {
     legalName: 'SILENTSALE LTD',
     url: 'https://www.silentid.co.uk',
     logo: 'https://www.silentid.co.uk/logo.png',
-    description: 'Reputation backup for online sellers. Back up your ratings from Vinted, eBay, Depop and more.',
+    description: 'Reputation backup for marketplace users—buyers and sellers. Back up your ratings from Vinted, eBay, Depop and more.',
     foundingDate: '2024',
     address: {
       '@type': 'PostalAddress',

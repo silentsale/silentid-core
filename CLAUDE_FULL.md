@@ -1229,19 +1229,12 @@ Review carefully before proceeding.
 
 ### Subscriptions
 
-**Premium Paywall:**
-- Title: "Upgrade to SilentID Premium"
-- Body: "Get deeper insights into your trust profile, a larger evidence vault, and powerful tools to prove your reliability everywhere you trade."
-- Bullets: Evidence Vault (100GB), Unlimited screenshots and receipts, Detailed TrustScore breakdown, Trust analytics & timeline, Premium profile badge
-- Button: "Get Premium — £4.99/month"
-- Subtext: "You can cancel anytime. Your plan will stay active until the end of the current billing period."
-
 **Pro Paywall:**
-- Title: "SilentID Pro — Built for power sellers and community leaders"
-- Body: "Manage risk at scale, present a professional trust profile, and export organised evidence packs when you need them."
-- Bullets: Everything in Premium, Bulk profile checks, Dispute & evidence pack generator, Trust certificate PDF, White-label sharing options, 500GB Evidence Vault
-- Button: "Get Pro — £14.99/month"
-- Subtext: "Ideal for high-volume sellers, landlords, and group admins."
+- Title: "Upgrade to SilentID Pro"
+- Body: "Full reputation protection. Never lose your hard-earned ratings again."
+- Bullets: Unlimited profile connections, Premium verified badge with QR code, Combined star rating from all platforms, Rating drop alerts, Trust timeline & analytics, Dispute evidence pack (legal-ready PDF), Platform watchdog alerts, Manual stats refresh (every 7 days), Custom passport URL, Priority support
+- Button: "Get Pro — £4.99/month"
+- Subtext: "You can cancel anytime. Your plan will stay active until the end of the current billing period."
 
 ---
 
@@ -1404,7 +1397,7 @@ If user attempts to fake any component:
 - PhoneNumber (string, nullable)
 - IsEmailVerified, IsPhoneVerified, IsPasskeyEnabled (bool)
 - AccountStatus (enum: Active, Suspended, UnderReview)
-- AccountType (enum: Free, Premium, Pro)
+- AccountType (enum: Free, Pro)
 - SignupIP, SignupDeviceId (string, for risk analysis)
 - CreatedAt, UpdatedAt (datetime)
 
@@ -1512,7 +1505,7 @@ If user attempts to fake any component:
 **13. Subscriptions**
 - Id (UUID, PK)
 - UserId (UUID, FK)
-- Tier (enum: Free, Premium, Pro)
+- Tier (enum: Free, Pro)
 - RenewalDate (datetime)
 - CancelAt (datetime, nullable)
 - CreatedAt (datetime)
@@ -1674,7 +1667,7 @@ Flutter with Material 3 theming, Custom SilentID theme, Dark & light mode suppor
 
 **Security Module (4):** SecurityCenter, LoginActivity, SecurityAlerts, SecurityRisk
 
-**Settings & Account (10):** SettingsHome, AccountDetails, PrivacySettings, ConnectedDevices, DataExport, DeleteAccount, SubscriptionOverview, UpgradeToPremium, UpgradeToPro, LegalDocs
+**Settings & Account (9):** SettingsHome, AccountDetails, PrivacySettings, ConnectedDevices, DataExport, DeleteAccount, SubscriptionOverview, UpgradeToPro, LegalDocs
 
 ### Design Guidelines
 1. **Consistent theming:** primaryColor = #5A3EB8, bank-grade neutrals, reuse common components
@@ -1784,7 +1777,7 @@ Flutter with Material 3 theming, Custom SilentID theme, Dark & light mode suppor
 
 **Phase 15 — Subscriptions & Monetisation**
 - Integrate Stripe Billing (upgrade/cancel endpoints)
-- Implement upgrade screens (Premium/Pro)
+- Implement upgrade screen (Pro)
 - Reflect subscription tier in UI
 - Checkpoint: Test user can fake upgrade in sandbox
 
@@ -1810,10 +1803,9 @@ Every phase ends with:
 
 ## SECTION 12: MONETISATION
 
-### 3 Pricing Tiers
+### 2 Pricing Tiers
 1. **Free** (default)
-2. **Premium – £4.99/month**
-3. **Pro – £14.99/month**
+2. **Pro – £4.99/month**
 
 **Prices are base UK figures; must be configurable, NOT hard-coded.**
 
@@ -1822,47 +1814,37 @@ Every phase ends with:
 - Create account
 - Verify identity via Stripe (basic)
 - Set username and display name
-- Add limited evidence: up to 10 manual receipts, up to 5 screenshots, up to 2 public profile links
+- Connect up to 5 marketplace profiles
 - Get TrustScore (0-1000)
 - See simple breakdown
-- Create and confirm mutual verifications (up to 20 total)
 - Have public profile URL
+- Basic verified badge for social profiles
 - File safety reports
 - See if other profiles have safety concerns
 
 **Limits:**
-- Evidence Vault: 250MB total
-- No automatic inbox scanning
+- Limited profile connections (5 max)
 - High-level TrustScore view only
-- No bulk checks
-- No exportable PDF trust certificate
+- No trust timeline or analytics
+- No dispute evidence pack
 
-### Premium Tier (£4.99/month)
+### Pro Tier (£4.99/month)
 **Entitlements:**
-1. Evidence Vault – 100GB
-2. Unlimited Evidence Sources
-3. Advanced TrustScore Breakdown (detailed reasons, component analysis)
-4. Trust Timeline & Analytics (graphs, platform-by-platform stats)
-5. Premium Badge (subtle "SilentID Premium Member" - NOT implying safer by default)
-6. Priority Evidence Processing (soft)
+1. Unlimited profile connections
+2. Premium verified badge with QR code and combined star rating
+3. Combined star rating from all platforms (e.g., "4.8★ across 5 platforms")
+4. Rating drop alerts - instant notification if any rating changes
+5. Trust timeline - historical graph of your reputation over time
+6. Dispute evidence pack - legal-ready PDF proof of your reputation history
+7. Platform watchdog - alerts when markets have mass bans/shutdowns
+8. Manual Profile Stats Refresh ("Refresh Now" – once every 7 days per profile)
+9. Custom passport URL (silentid.co.uk/your-name)
+10. Priority verification & support
 
 **Conditions:**
 - Billed monthly, auto-renew
 - Cancel anytime; continues until period end
 - No refunds for partial months
-- Upgrades immediate; downgrades at end of cycle
-
-### Pro Tier (£14.99/month)
-**Entitlements (All Premium +):**
-1. Bulk Checks (up to 50 SilentID profiles at once)
-2. Dispute & Evidence Pack Generator (PDF report for marketplace support/legal use)
-3. Trust Certificate Export (branded PDF for landlord references, external markets)
-4. White-Label Profile Option (remove branding on external materials, NOT core UI)
-5. Higher Evidence Vault Limit (500GB)
-6. Priority Support
-
-**Conditions:**
-- Same billing as Premium
 - High RiskScore or fraud flags → Pro features may be throttled/removed even if user pays
 
 **"Paid subscription does NOT override risk and safety systems."**
@@ -1874,9 +1856,8 @@ Every phase ends with:
 **Refund Policy:** NO automatic refunds for partial months
 
 ### Free Trials & Promotions
-- 7-14 day free Premium trial (new users only)
-- Pro trial for high-value users (e.g., 30 days for communities)
-- Referral Rewards (e.g., "Refer 3, get 3 months Premium free")
+- 7-14 day free Pro trial (new users only)
+- Referral Rewards (e.g., "Refer 3, get 3 months Pro free")
 - Implemented as optional flags & features, NOT hard-coded
 
 ### Anti-Fraud Rules for Subscriptions
@@ -1888,8 +1869,7 @@ Every phase ends with:
 **"Money does not buy safety."**
 
 ### UI Paywall Copy (Exact Examples Provided in Section 6)
-- Premium: Focus on insights, vault, tools to prove reliability
-- Pro: Focus on scale, professional profile, evidence packs
+- Pro: Focus on unlimited profiles, trust timeline, evidence packs, rating alerts
 - Legal footer: "SilentID provides evidence-based trust signals and tools to help you make safer decisions. It does not guarantee outcomes or provide legal advice."
 
 ---
@@ -1906,7 +1886,7 @@ Every phase ends with:
 7. ✅ Anti-Fraud Engine with device fingerprinting, risk scoring, collusion detection
 8. ✅ Public, shareable SilentID profile with privacy controls
 9. ✅ Safety Reports with evidence and admin review
-10. ✅ Subscriptions: Free, Premium £4.99/month, Pro £14.99/month, no free trial at launch, Stripe Billing only
+10. ✅ Subscriptions: Free, Pro £4.99/month, no free trial at launch, Stripe Billing only
 11. ✅ Flutter mobile app (iOS + Android first)
 12. ✅ UI design: Bank-grade, royal purple #5A3EB8, clean, secure, serious
 13. ✅ Multi-phase build plan (17 phases), No SilentSale integration yet
@@ -1950,7 +1930,7 @@ Every phase ends with:
 
 **Monetisation:**
 - No free trial at launch
-- £4.99 Premium / £14.99 Pro (static UK pricing)
+- £4.99 Pro (static UK pricing)
 - Stripe card payments only (no App Store billing yet)
 
 **SilentSale:**
@@ -1976,7 +1956,7 @@ Every phase ends with:
 
 **Subscriptions:**
 9. Stripe Billing only for MVP?
-10. Static prices (£4.99 / £14.99)?
+10. Static price (£4.99 Pro)?
 
 **Profile:**
 11. Username globally unique?
@@ -2024,23 +2004,22 @@ Once you answer questions:
 | 71-100 | Critical | Account frozen, admin notified, user must provide additional evidence |
 
 ### Subscription Features Matrix
-| Feature | Free | Premium | Pro |
-|---------|------|---------|-----|
-| Create account | ✅ | ✅ | ✅ |
-| Basic ID verification | ✅ | ✅ | ✅ |
-| TrustScore | ✅ | ✅ | ✅ |
-| Manual receipts | 10 max | Unlimited | Unlimited |
-| Screenshots | 5 max | Unlimited | Unlimited |
-| Public profile links | 2 max | Unlimited | Unlimited |
-| Evidence Vault | 250MB | 100GB | 500GB |
-| Advanced TrustScore breakdown | ❌ | ✅ | ✅ |
-| Trust Timeline & Analytics | ❌ | ✅ | ✅ |
-| Premium Badge | ❌ | ✅ | ✅ |
-| Bulk Checks (50 profiles) | ❌ | ❌ | ✅ |
-| Evidence Pack Generator | ❌ | ❌ | ✅ |
-| Trust Certificate PDF | ❌ | ❌ | ✅ |
-| White-label options | ❌ | ❌ | ✅ |
-| Priority Support | ❌ | ❌ | ✅ |
+| Feature | Free | Pro |
+|---------|------|-----|
+| Create account | ✅ | ✅ |
+| Basic ID verification | ✅ | ✅ |
+| TrustScore | ✅ | ✅ |
+| Profile connections | 5 max | Unlimited |
+| Basic verified badge | ✅ | ✅ |
+| Premium verified badge with QR | ❌ | ✅ |
+| Combined star rating display | ❌ | ✅ |
+| Rating drop alerts | ❌ | ✅ |
+| Trust Timeline & Analytics | ❌ | ✅ |
+| Dispute evidence pack (PDF) | ❌ | ✅ |
+| Platform watchdog alerts | ❌ | ✅ |
+| Manual stats refresh (7 days) | ❌ | ✅ |
+| Custom passport URL | ❌ | ✅ |
+| Priority Support | ❌ | ✅ |
 
 ---
 
@@ -2074,7 +2053,7 @@ The Admin Dashboard is a **separate web application** for internal SilentID staf
 **Database Changes Required:**
 ```sql
 -- Add Admin to AccountType enum in Users table
-AccountType (enum: Free, Premium, Pro, Admin)
+AccountType (enum: Free, Pro, Admin)
 
 -- New table for admin-specific auth
 CREATE TABLE AdminUsers (
@@ -2090,7 +2069,7 @@ CREATE TABLE AdminUsers (
 #### Admin Dashboard Sections
 
 **1. Dashboard Overview**
-- Total users (Free, Premium, Pro)
+- Total users (Free, Pro)
 - Active reports (Pending, Under Review)
 - High-risk accounts (RiskScore > 70)
 - Recent admin actions
@@ -2220,7 +2199,7 @@ Admin dashboard must **NEVER** show:
 
 **4. Internal Staff Only**
 Admin dashboard is **not** for:
-- Premium/Pro users
+- Pro users
 - "Community moderators"
 - External partners
 - AI agents or bots
@@ -2624,11 +2603,11 @@ All new endpoints must:
 
 ## SECTION 16: MONETIZATION — SECURITY CENTER INTEGRATION
 
-### SilentID Premium & Pro — Security Center Integration
+### SilentID Pro — Security Center Integration
 
-#### Premium Tier Security Features (£4.99/month)
+#### Pro Tier Security Features (£4.99/month)
 
-In addition to existing Premium features, Premium users get:
+In addition to existing Free features, Pro users get:
 
 **1. Real-Time Breach Monitoring**
 - Automatic breach scanning (weekly checks)
@@ -2650,14 +2629,8 @@ In addition to existing Premium features, Premium users get:
 - Real-time suspicious login alerts
 - Device change alerts
 
-**5. Evidence Vault Storage**
-- Already included: 100GB storage
-- Adds: Evidence integrity monitoring
-- Automated evidence backup verification
-
-#### Pro Tier Security Features (£14.99/month)
-
-In addition to all Premium features, Pro users get:
+**5. Advanced Security Features**
+Pro users also get:
 
 **1. Full RiskScore Insights**
 - Detailed breakdown of all RiskSignals
@@ -2685,34 +2658,32 @@ In addition to all Premium features, Pro users get:
 - Export risk comparison reports
 
 **5. Priority Security Alerts**
-- Instant alerts (vs delayed for Free/Premium)
+- Instant alerts (vs delayed for Free)
 - SMS/Email backup alerts
 - Dedicated security support contact
 
 #### Subscription Tier Matrix (Updated)
 
-| Security Feature | Free | Premium (£4.99/mo) | Pro (£14.99/mo) |
-|------------------|------|-------------------|-----------------|
-| Email Breach Check (Manual) | ✅ | ✅ | ✅ |
-| Real-Time Breach Monitoring | ❌ | ✅ | ✅ |
-| Device Integrity Check | ✅ Basic | ✅ Advanced | ✅ Advanced |
-| Login History | 3 months | 12 months | Unlimited |
-| Identity Status View | ✅ | ✅ | ✅ |
-| RiskScore Summary | Basic | Detailed | Full Insights |
-| Security Alerts | In-app only | Push + In-app | Push + SMS/Email |
-| Evidence Vault Health | Manual | Automated | Automated + Backup |
-| Social Engineering Warnings | Basic | Advanced | Advanced + Network Analysis |
-| Exportable Security Report | ❌ | ❌ | ✅ PDF |
-| Investigation Toolkit | ❌ | ❌ | ✅ 50 profiles |
+| Security Feature | Free | Pro (£4.99/mo) |
+|------------------|------|----------------|
+| Email Breach Check (Manual) | ✅ | ✅ |
+| Real-Time Breach Monitoring | ❌ | ✅ |
+| Device Integrity Check | ✅ Basic | ✅ Advanced |
+| Login History | 3 months | 12 months |
+| Identity Status View | ✅ | ✅ |
+| RiskScore Summary | Basic | Full Insights |
+| Security Alerts | In-app only | Push + SMS/Email |
+| Social Engineering Warnings | Basic | Advanced |
+| Exportable Security Report | ❌ | ✅ PDF |
 
 #### Stripe Billing Integration
 
 **No New Stripe Products Required:**
-- Security Center features tied to existing Premium/Pro subscriptions
+- Security Center features tied to existing Pro subscription
 - Use same Stripe account (SILENTSALE LTD)
 - Feature flags control access:
   ```
-  if (user.AccountType === 'Premium' || user.AccountType === 'Pro') {
+  if (user.AccountType === 'Pro') {
     enableRealtimeBreachMonitoring();
   }
   ```
@@ -2720,7 +2691,7 @@ In addition to all Premium features, Pro users get:
 **Implementation Notes:**
 - Security Center features are **enhancements** to existing tiers
 - No separate "Security Center" subscription
-- Premium/Pro already defined in Stripe
+- Pro already defined in Stripe
 - Backend checks user's AccountType to enable features
 
 ---
@@ -2863,7 +2834,7 @@ SILENTSALE LTD (UK registered company)
 
 **Stripe Account:**
 - Single Stripe account for SILENTSALE LTD
-- Handles both SilentID billing (Premium/Pro subscriptions)
+- Handles SilentID billing (Pro subscriptions)
 - Handles SilentSale payments (future)
 
 **Important:**
@@ -2989,7 +2960,7 @@ The Help Center must:
   - "Why doesn't SilentID have passwords?"
   - "What's the difference between TrustScore and RiskScore?"
   - "Can I use SilentID on multiple devices?"
-  - "How do I cancel Premium/Pro subscription?"
+  - "How do I cancel Pro subscription?"
 
 **7) Glossary**
 - Definitions for technical terms:
@@ -2999,7 +2970,7 @@ The Help Center must:
   - **Passkey:** Biometric authentication using WebAuthn/FIDO2
   - **Evidence Vault:** Storage for receipts, screenshots, profile links
   - **Mutual Verification:** Both parties confirm a transaction occurred
-  - **AccountType:** Free, Premium (£4.99/mo), Pro (£14.99/mo), Admin
+  - **AccountType:** Free, Pro (£4.99/mo), Admin
 
 #### 4. Article Format Requirements
 
@@ -3622,7 +3593,7 @@ Before deletion, user receives:
     "username": "@johndoe",
     "display_name": "John D.",
     "created_at": "2025-01-15",
-    "account_type": "Premium"
+    "account_type": "Pro"
   },
   "identity_verification": {
     "status": "Verified",
@@ -4610,7 +4581,7 @@ CREATE TABLE AgeExceptions (
 - User notified via email + in-app notification
 
 **Step 2: Grace Period (7 Days)**
-- User retains Premium/Pro features
+- User retains Pro features
 - Banner shown: "Payment failed - please update payment method"
 - Stripe automatically retries payment:
   - Day 3
@@ -4619,7 +4590,7 @@ CREATE TABLE AgeExceptions (
 
 **Step 3: Retry Schedule**
 - If payment succeeds during grace period:
-  - User remains Premium/Pro
+  - User remains Pro
   - No interruption
 - If all retries fail:
   - Downgrade to Free tier
@@ -4628,10 +4599,10 @@ CREATE TABLE AgeExceptions (
 
 **Step 4: Feature Access After Downgrade**
 - User immediately loses:
-  - Premium badge
-  - Bulk checks
-  - Advanced analytics
-  - Evidence vault over 250MB (read-only until space freed)
+  - Pro badge
+  - Trust timeline & analytics
+  - Custom passport URL
+  - Unlimited profile connections (capped at 5)
 - User retains:
   - Existing TrustScore (read-only)
   - Existing evidence (cannot add more until Free limits)
@@ -4661,13 +4632,13 @@ Subject: Action Required: SilentID Payment Failed
 
 Hi [Name],
 
-We couldn't process your SilentID Premium payment.
+We couldn't process your SilentID Pro payment.
 
 Reason: [Card declined / Insufficient funds / etc.]
 
 What happens next:
 - You have 7 days to update your payment method
-- Your Premium features remain active during this time
+- Your Pro features remain active during this time
 - We'll automatically retry your payment
 
 To update: https://silentid.co.uk/settings/subscription
@@ -4681,7 +4652,7 @@ SilentID Team
 **In-App Banner:**
 ```
 ⚠️ Payment Failed
-Your Premium subscription payment couldn't be processed.
+Your Pro subscription payment couldn't be processed.
 [Update Payment Method] [Dismiss]
 ```
 
@@ -4707,7 +4678,7 @@ POST /v1/subscriptions/update-payment-method (User)
 ##### Exceptions (Case-by-Case)
 
 **Exception 1: Failed Verification (No Fault of User)**
-- User paid for Premium to unlock verification
+- User paid for Pro to unlock verification
 - Stripe verification repeatedly fails due to technical issues
 - User unable to use primary value proposition
 - **Action:** Refund subscription fee for that month
@@ -4794,8 +4765,7 @@ POST /v1/admin/refunds/{id}/deny (Admin)
 
 **Displayed Prices (VAT Inclusive):**
 - Free: £0.00
-- Premium: £4.99/month (£4.16 + £0.83 VAT)
-- Pro: £14.99/month (£12.49 + £2.50 VAT)
+- Pro: £4.99/month (£4.16 + £0.83 VAT)
 
 **Stripe Configuration:**
 ```json
@@ -4831,7 +4801,7 @@ SILENTSALE LTD
 VAT No: GB123456789
 [Company Address]
 
-Description: SilentID Premium Subscription
+Description: SilentID Pro Subscription
 Period: 21 Nov 2025 - 21 Dec 2025
 
 Subtotal: £4.16
@@ -4987,7 +4957,7 @@ Common questions with answers from `claude.md`:
 - "How does SilentID protect me from scams?" → Identity verification + evidence
 - "Which platforms can I use SilentID on?" → Anywhere (link/QR/badge)
 - "Do I have to show my real name?" → NO (display name only, e.g., "Sarah M.")
-- "How does SilentID make money?" → Free, Premium (£4.99/mo), Pro (£14.99/mo)
+- "How does SilentID make money?" → Free + Pro (£4.99/mo)
 
 **8. Footer**
 - Legal: "SilentID is a product of SILENTSALE LTD. Company No. 16457502. Registered in England & Wales."
@@ -6773,7 +6743,7 @@ Define structure and requirements for all legal documents required by SilentID.
 - Account termination conditions
 - Limitation of liability
 - Dispute resolution (UK jurisdiction)
-- Subscription terms (Free, Premium, Pro)
+- Subscription terms (Free, Pro)
 - Refund policy
 - Changes to terms
 - Contact information
@@ -6833,7 +6803,7 @@ Legal documents MUST reflect actual system behaviour as defined in `CLAUDE.md`.
 **Examples:**
 - If Section 4 says "SilentID stores only verification status", Privacy Policy must match
 - If Section 5 says "100% passwordless", Terms must prohibit password creation
-- If Section 12 says "£4.99/month Premium", Terms must reflect exact pricing
+- If Section 12 says "£4.99/month Pro", Terms must reflect exact pricing
 
 **Conflict Resolution:**
 - If legal text conflicts with `CLAUDE.md`, update legal text to match
@@ -7586,7 +7556,7 @@ The Profile/Settings area is the **control centre** for a user's identity, trust
 - Risk & Security Center access
 - Evidence Vault management
 - Devices & login methods (passkeys, Apple/Google, email OTP)
-- Subscriptions (Free / Premium / Pro)
+- Subscriptions (Free / Pro)
 - Privacy, data export, account deletion
 - Help, support, and safety reporting
 
@@ -7664,13 +7634,12 @@ All Profile/Settings items must be grouped into these **7 sections** in this **e
 
 #### **4. Subscriptions & Billing**
 - Current plan
-  - Free / Premium / Pro badge
+  - Free / Pro badge
   - Benefits summary
 - Subscription management
-  - CTA: "Upgrade to Premium" (if Free)
-  - CTA: "Upgrade to Pro" (if Premium)
-  - CTA: "Manage subscription" (if Premium/Pro)
-- Billing history (Premium/Pro only)
+  - CTA: "Upgrade to Pro" (if Free)
+  - CTA: "Manage subscription" (if Pro)
+- Billing history (Pro only)
 
 #### **5. Privacy & Data**
 - Connected services
@@ -7721,7 +7690,7 @@ All Profile/Settings items must be grouped into these **7 sections** in this **e
 │            @sarahtrusted                    │
 │            ✅ Identity Verified             │
 │            🎯 TrustScore: 847 (High)        │
-│            💎 Premium Member                │
+│            💎 Pro Member                    │
 ├─────────────────────────────────────────────┤
 │  [Primary CTA: Improve TrustScore]          │
 │  [Secondary CTA: Open Security Center]      │
@@ -7735,14 +7704,14 @@ All Profile/Settings items must be grouped into these **7 sections** in this **e
 4. **Trust Badges** (1-3 badges max):
    - Identity Verified ✅
    - TrustScore level 🎯
-   - Subscription tier 💎 (if Premium/Pro)
+   - Subscription tier 💎 (if Pro)
 5. **Primary CTA Button** (full-width or 90% width):
    - Text: Dynamic based on user state
    - Examples:
      - "Verify your identity" (if not verified)
      - "Improve your TrustScore" (if verified but score < 800)
      - "Open Security Center" (if risk alerts active)
-     - "Upgrade to Premium" (if Free tier)
+     - "Upgrade to Pro" (if Free tier)
 6. **Secondary CTA Button** (optional, text button style):
    - Examples:
      - "View public profile"
@@ -7800,7 +7769,7 @@ All Profile/Settings items must be grouped into these **7 sections** in this **e
 | **Security & Risk** | Security Center | shield | purple (alerts) / gray (safe) |
 | | Devices | smartphone | gray |
 | | Login methods | key | gray |
-| **Subscriptions** | Current plan | credit-card | purple (Premium/Pro) / gray (Free) |
+| **Subscriptions** | Current plan | credit-card | purple (Pro) / gray (Free) |
 | | Upgrade | arrow-up-circle | purple |
 | **Privacy & Data** | Connected services | link | gray |
 | | Data export | download | gray |
@@ -8402,17 +8371,17 @@ Evidence Vault ⓘ
   ```
 - **Link:** "Learn More" → Help Center: "Safety Reports & Warnings"
 
-#### **7. Subscriptions (Free / Premium / Pro)**
+#### **7. Subscriptions (Free / Pro)**
 
 **Subscription Tiers:**
 - **Title:** "What's the difference?"
 - **Body:**
   ```
-  Free: Basic TrustScore, limited evidence (10 receipts, 5 screenshots)
+  Free: Basic TrustScore, up to 5 profile connections, basic verified badge
 
-  Premium (£4.99/mo): Unlimited evidence, advanced analytics, 100GB vault
-
-  Pro (£14.99/mo): Everything in Premium + bulk checks, dispute tools, 500GB vault
+  Pro (£4.99/mo): Unlimited profile connections, premium verified badge with QR,
+  combined star rating, trust timeline, rating alerts, dispute evidence pack,
+  custom passport URL, priority support
   ```
 - **Link:** "Learn More" → Help Center: "Subscription Plans"
 - **Action:** "Upgrade Now"
@@ -8423,9 +8392,9 @@ Evidence Vault ⓘ
   ```
   NO.
 
-  Paying for Premium or Pro does NOT directly increase your TrustScore or override safety systems.
+  Paying for Pro does NOT directly increase your TrustScore or override safety systems.
 
-  Subscriptions only unlock features like larger Evidence Vault and analytics.
+  Subscriptions only unlock features like unlimited profiles and analytics.
   ```
 - **Link:** "Learn More" → Help Center: "How Subscriptions Work"
 
@@ -9238,7 +9207,7 @@ Users are protected by:
 - Electronic Commerce (EC Directive) Regulations 2002
 
 **Right to Cancel:**
-Users may cancel Premium or Pro subscriptions at any time. Subscription access continues until the end of the current billing period. No refunds for partial months.
+Users may cancel Pro subscriptions at any time. Subscription access continues until the end of the current billing period. No refunds for partial months.
 
 **Right to Complain:**
 Users may complain to:
@@ -9437,8 +9406,7 @@ All evidence is subject to automated integrity checks. Tampered, fake, or fraudu
 
 **6.3 Storage Limits:**
 - **Free:** 250MB
-- **Premium (£4.99/month):** 100GB
-- **Pro (£14.99/month):** 500GB
+- **Pro (£4.99/month):** 100GB
 
 **6.4 What SilentID Stores:**
 - Summary of transactions (date, amount, platform, item)
@@ -9488,9 +9456,8 @@ You can hide your Public Profile in Settings. This will prevent others from view
 ### 8. SUBSCRIPTIONS & BILLING
 
 **8.1 Subscription Tiers:**
-- **Free:** Basic features, limited evidence storage (250MB)
-- **Premium (£4.99/month):** Unlimited evidence, advanced analytics, 100GB storage
-- **Pro (£14.99/month):** All Premium features + bulk checks, dispute tools, 500GB storage
+- **Free:** Basic features, limited evidence storage (250MB), up to 5 profile connections
+- **Pro (£4.99/month):** Unlimited profile connections, premium verified badge with QR, combined star rating, trust timeline, rating alerts, dispute evidence pack, custom passport URL, priority support
 
 **8.2 Payment Processing:**
 All payments are processed by **Stripe**. SilentID does NOT store your credit card details.
@@ -13820,15 +13787,16 @@ Show upgrade modal only when user hits real value points:
 
 #### 50.4.2 Clear Value Proposition
 Before showing prices, display:
-- Free tier benefits
-- Premium tier:
-  - Unlimited external connections
-  - Larger evidence vault
+- Free tier benefits (basic TrustScore, up to 5 profile connections, basic verified badge)
+- Pro tier (£4.99/month):
+  - Unlimited profile connections
+  - Premium verified badge with QR
+  - Combined star rating display
+  - Rating drop alerts
+  - Trust timeline & analytics
+  - Dispute evidence pack
+  - Custom passport URL
   - Priority support
-- Pro tier:
-  - API access
-  - Advanced analytics
-  - Custom trust profiles
 
 #### 50.4.3 Soft Limits (Freemium Lock-In)
 Free tier keeps:
@@ -16647,6 +16615,299 @@ Share import works with any supported platform including:
 
 **END OF SECTION 55**
 
+---
+
+## SECTION 56 — Profile Stats Capture, Refresh & Display (Playwright + OCR)
+
+### 56.1 Purpose
+
+This section defines how SilentID captures, stores, refreshes, and displays external profile statistics (ratings, review counts, join dates) using the Playwright Capture Service with OCR extraction. It establishes the rules for automatic refresh, manual refresh (paid tiers only), ownership re-verification, and the preservation of last-known stats.
+
+**Key Principles:**
+- Stats are captured via screenshot + OCR (no direct data access)
+- Ownership must be verified before any stats extraction
+- Last-known stats are ALWAYS preserved and displayed
+- Refresh failures NEVER penalize users or remove data
+- Manual "Refresh Now" is a paid tier exclusive feature
+
+---
+
+### 56.2 Initial Stats Capture (After Level 3 Verification)
+
+Stats capture occurs **ONLY** after profile ownership is verified via:
+- **Share-Intent** (Primary method)
+- **Token-in-Bio** (Secondary method)
+- **Admin confirmation** (Fallback for edge cases)
+
+**Capture Process:**
+1. Playwright Capture Service loads the external profile page
+2. Minimal navigation allowed (scroll to reveal stats, click to expand if needed)
+3. Up to **3 screenshots** captured per extraction attempt
+4. OCR processes screenshots to extract:
+   - **Rating** (e.g., 4.8 stars)
+   - **Review count** (e.g., 127 reviews)
+   - **Profile join date** (if visible)
+
+**Data Storage in ProfileLinkEvidence:**
+```
+PlatformRating: decimal (e.g., 4.8)
+ReviewCount: integer (e.g., 127)
+ProfileJoinDate: datetime (nullable)
+ExtractionMethod: "PlaywrightScreenshot"
+ExtractionConfidence: decimal (0.0-1.0)
+LastStatsUpdateAt: datetime
+StatsUnavailableReason: string (nullable)
+```
+
+**CRITICAL RULE:** Stats extraction is FORBIDDEN before ownership verification. The system must reject any attempt to capture stats for unverified profiles.
+
+---
+
+### 56.3 Automatic Refresh (All Users — Free + Paid)
+
+SilentID automatically refreshes stats for each Level 3 verified profile:
+- **Frequency:** At most once every **30 days** per profile
+- **Scope:** Refresh is per-profile, not global account-wide
+
+**Automatic Refresh Process:**
+1. Background job identifies profiles due for refresh (LastStatsUpdateAt > 30 days ago)
+2. Playwright takes up to 3 new screenshots
+3. OCR attempts extraction
+
+**On Success:**
+- Update `PlatformRating`, `ReviewCount`, `ProfileJoinDate`
+- Update `LastStatsUpdateAt` to current timestamp
+- Clear `StatsUnavailableReason`
+
+**On Failure:**
+- **KEEP** all previous stats unchanged
+- Record failure reason in `StatsUnavailableReason`:
+  - "Profile page unavailable"
+  - "Stats not visible"
+  - "OCR extraction failed"
+  - "Platform blocked access"
+- **NEVER** remove or downgrade the profile
+- **NEVER** clear existing stats
+- **NEVER** reduce TrustScore due to refresh failure
+
+**UI Display After Failure:**
+- Continue showing last-known stats
+- Add label: **"Last updated on {date}"**
+- No error message shown to user (silent preservation)
+
+---
+
+### 56.4 Manual "Refresh Now" (Paid Tiers Only)
+
+Manual refresh is available **exclusively to Pro (£4.99/month) subscribers**.
+
+**Refresh Limits:**
+- **Pro users:** Once every **7 days** per profile
+- **Free users:** Not available (rely on 30-day automatic refresh)
+
+**Manual Refresh Process:**
+1. User taps "Refresh Now" button on profile detail screen
+2. System validates:
+   - User has active paid subscription
+   - 7 days have passed since last manual refresh for this profile
+3. Same process as automatic refresh (Playwright + OCR + up to 3 screenshots)
+
+**On Success:**
+- Update stats + `LastStatsUpdateAt`
+- Show success message: "Stats updated successfully"
+- Reset 7-day cooldown timer
+
+**On Failure:**
+- Keep previous stats
+- Show neutral message: "Stats could not be updated. Your previous stats are still shown."
+- Do NOT reset cooldown (user can retry in 7 days)
+
+**Free User Experience:**
+- "Refresh Now" button visible but disabled
+- Tooltip: "Upgrade to Premium to refresh stats every 7 days"
+- Free users see: "Stats update automatically every 30 days"
+
+---
+
+### 56.5 Level 3 Ownership Re-Verification (Every 90 Days)
+
+Level 3 ownership must be re-verified every **90 days** to maintain verified status.
+
+**Re-Verification Methods:**
+- **Share-Intent:** User shares profile link from platform app
+- **Token-in-Bio:** User adds verification code to profile, SilentID confirms via screenshot/OCR
+
+**Re-Verification Success:**
+- Reset 90-day timer
+- Profile remains Level 3 Verified
+- Full TrustScore contribution maintained
+
+**Re-Verification Failure or Expiry:**
+- Profile downgrades from Level 3 → Level 2 ("Linked" only)
+- **DO NOT** delete the profile link
+- **DO NOT** delete last-known stats
+- Stats remain visible with "Last updated on {date}" label
+- TrustScore adjusts to Level 2 contribution (reduced but not zero)
+
+**User Notification:**
+- 14 days before expiry: "Your {Platform} verification expires soon. Re-verify to keep full trust benefits."
+- On expiry: "Your {Platform} profile is now Linked only. Re-verify to restore Verified status."
+
+---
+
+### 56.6 Universal Rule — Last-Known Stats Are Never Deleted Automatically
+
+This rule applies to **ALL platforms** without exception:
+
+**What Must Be Preserved:**
+- Profile link record
+- Rating (PlatformRating)
+- Review count (ReviewCount)
+- Join date (ProfileJoinDate)
+- All historical snapshots
+
+**Conditions That Do NOT Trigger Deletion:**
+- Automatic refresh failures
+- Manual refresh failures
+- Platform blocking access
+- OCR extraction errors
+- Timeouts or network failures
+- Level 3 → Level 2 downgrade
+
+**Conditions That MAY Trigger Removal:**
+- User-initiated unlinking (explicit action)
+- Admin action for fraud/abuse
+- User account deletion (GDPR request)
+
+**UI Display Rule:**
+- Always show last-known stats
+- Always show "Last updated on {date}" label
+- Never show "Stats unavailable" if previous stats exist
+
+---
+
+### 56.7 TrustScore Integration
+
+**Weekly TrustScore Regeneration:**
+- TrustScore calculation uses last-known stats at regeneration time
+- TrustScore engine does NOT call Playwright
+- TrustScore engine does NOT trigger new extractions
+
+**Scoring Rules:**
+
+**If Stats Exist (Level 3 Verified):**
+- Apply full Evidence points based on rating/review count
+- Example: 4.5+ rating with 100+ reviews = maximum platform contribution
+
+**If Stats Unavailable But Ownership Verified (Level 3):**
+- Apply ownership verification points
+- Reduced/no rating-based points (no rating data to score)
+- Profile still contributes to "verified platforms count"
+
+**If Level 3 Ownership Expired (Level 2 Linked):**
+- Remove Level 3 bonus points
+- Apply Level 2 "Linked" points (lower than verified)
+- Stats remain stored but have reduced TrustScore influence
+- Profile still visible on Trust Passport as "Linked"
+
+---
+
+### 56.8 Fallback & Recovery
+
+**Repeated Playwright Failures:**
+If automatic refresh fails 3+ consecutive times:
+1. Keep last-known stats (no deletion)
+2. Flag profile for manual review queue
+3. Allow user to upload screenshots (max 3) for manual extraction
+4. Admin may manually update stats if user provides valid evidence
+
+**User-Submitted Screenshot Flow:**
+1. User taps "Having trouble? Submit screenshots"
+2. User captures up to 3 screenshots of their profile
+3. Screenshots queued for OCR + admin review
+4. On successful extraction: update stats + timestamp
+5. On failure: stats unchanged, user notified
+
+**Admin Override:**
+- Admins can manually update stats with audit log entry
+- Admin actions require reason documentation
+- Manual updates recorded with `ExtractionMethod: "AdminManual"`
+
+---
+
+### 56.9 Database Schema Additions
+
+Add to `ProfileLinkEvidence` table:
+```sql
+-- Stats capture fields
+PlatformRating DECIMAL(3,2) NULL,
+ReviewCount INT NULL,
+ProfileJoinDate DATETIME NULL,
+ExtractionMethod VARCHAR(50) NOT NULL DEFAULT 'PlaywrightScreenshot',
+ExtractionConfidence DECIMAL(3,2) NULL,
+LastStatsUpdateAt DATETIME NULL,
+StatsUnavailableReason VARCHAR(255) NULL,
+
+-- Manual refresh tracking
+LastManualRefreshAt DATETIME NULL,
+ManualRefreshCount INT NOT NULL DEFAULT 0,
+
+-- Re-verification tracking
+OwnershipVerifiedAt DATETIME NOT NULL,
+OwnershipExpiresAt DATETIME NOT NULL, -- OwnershipVerifiedAt + 90 days
+OwnershipReverificationReminder DATETIME NULL -- 14 days before expiry
+```
+
+---
+
+### 56.10 API Endpoints
+
+**GET /api/profiles/{profileId}/stats**
+- Returns current stats with last update timestamp
+- Includes `canManualRefresh` boolean (based on subscription + cooldown)
+- Includes `nextManualRefreshAt` datetime (if on cooldown)
+
+**POST /api/profiles/{profileId}/refresh**
+- Triggers manual refresh (paid users only)
+- Returns 403 if free user
+- Returns 429 if on cooldown (< 7 days since last refresh)
+- Returns updated stats on success
+
+**POST /api/profiles/{profileId}/screenshots**
+- User uploads screenshots for manual extraction
+- Returns job ID for status tracking
+
+---
+
+### 56.11 Summary
+
+| Feature | Free | Premium | Pro |
+|---------|------|---------|-----|
+| Automatic Stats Refresh | 30 days | 30 days | 30 days |
+| Manual "Refresh Now" | ❌ | Every 7 days | Every 7 days |
+| Last-Known Stats Preserved | ✅ | ✅ | ✅ |
+| Screenshot Upload Fallback | ✅ | ✅ | ✅ |
+| Ownership Re-Verification | 90 days | 90 days | 90 days |
+
+---
+
+### 56.12 Integration with Existing Sections
+
+**Section 56 integrates with:**
+
+- **Section 3 (TrustScore Engine):** Stats feed into TrustScore calculation
+- **Section 5 (Core Features):** Level 3 verification triggers initial stats capture
+- **Section 7 (Anti-Fraud Engine):** Stats anomalies flagged for review
+- **Section 8 (Database Schema):** New fields added to ProfileLinkEvidence
+- **Section 12 (Monetisation):** Manual refresh as Premium/Pro feature
+- **Section 47 (Trust Passport):** Stats displayed on public passport
+- **Section 48 (Platform Configuration):** Per-platform stats selectors
+- **Section 49 (Level 3 Verification):** Stats captured after verification
+- **Section 52 (Profile Linking):** Stats enhance linked profile value
+
+---
+
+**END OF SECTION 56**
 
 ---
 ## END OF MASTER SPECIFICATION
@@ -16696,6 +16957,7 @@ This document contains the complete, authoritative specification for SilentID.
 - **Section 53:** SilentID UI Design Language & Style Rules (Locked Design System) — NEW
 - **Section 54:** Login, Devices & Session Security (Passwordless Rules) — NEW
 - **Section 55:** Share Target Integration (Native Share Import) — NEW
+- **Section 56:** Profile Stats Capture, Refresh & Display (Playwright + OCR) — NEW
 
 
 

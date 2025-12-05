@@ -36,6 +36,7 @@ const pricingTiers = [
       'Trust timeline—see your reputation history over time',
       'Dispute evidence pack—legal-ready PDF proof of your history',
       'Platform watchdog—alerts when markets have mass bans',
+      'Manual stats refresh every 7 days (vs 30-day auto)',
       'Custom passport URL (silentid.co.uk/your-name)',
       'Priority verification & support'
     ],

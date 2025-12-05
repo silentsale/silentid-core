@@ -105,6 +105,7 @@ TrustScore = Identity + Profiles + Behaviour (max 1000)
 - **Trust timeline** - historical graph of your reputation over time
 - **Dispute evidence pack** - legal-ready PDF proof of your reputation history
 - **Platform watchdog** - alerts when markets have mass bans/shutdowns
+- **Manual stats refresh** - refresh profile stats every 7 days (vs. 30-day auto)
 - Custom passport URL (silentid.co.uk/your-name)
 - Priority verification & support
 
@@ -134,6 +135,13 @@ SilentID lets users connect any external profile (Instagram, TikTok, LinkedIn, D
 - **Professional:** GitHub, Behance, Dribbble
 - **Gaming:** Discord, Twitch, Steam
 - **Community:** Reddit, other platforms
+
+**Profile Stats Refresh:**
+- Stats captured via screenshots + OCR after Level 3 verification.
+- Automatic refresh every 30 days (all users).
+- Paid tiers can manually refresh stats every 7 days.
+- Last-known stats are always preserved and shown even if refresh fails.
+- Ownership must be re-verified every 90 days; failure downgrades profile to Level 2 but does not delete stats.
 
 ### 7. SILENTID UI DESIGN LANGUAGE
 
