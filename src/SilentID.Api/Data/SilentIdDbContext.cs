@@ -62,6 +62,11 @@ public class SilentIdDbContext : DbContext
     public DbSet<OtpCode> OtpCodes { get; set; } = null!;
     public DbSet<OtpRateLimit> OtpRateLimits { get; set; } = null!;
 
+    // Pro Features tables
+    public DbSet<RatingChangeHistory> RatingChangeHistories { get; set; } = null!;
+    public DbSet<PlatformIncident> PlatformIncidents { get; set; } = null!;
+    public DbSet<WatchdogSubscription> WatchdogSubscriptions { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -730,6 +735,29 @@ public class SilentIdDbContext : DbContext
             entity.Property(e => e.Email)
                 .IsRequired()
                 .HasMaxLength(255);
+        });
+
+        // RatingChangeHistory configuration (Pro Features)
+        modelBuilder.Entity<RatingChangeHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.ProfileLinkId);
+            entity.HasIndex(e => e.CreatedAt);
+
+            entity.Property(e => e.Platform)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ProfileLink)
+                .WithMany()
+                .HasForeignKey(e => e.ProfileLinkId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         }

@@ -65,6 +65,7 @@ builder.Services.AddScoped<ISoftLimitsService, SoftLimitsService>();
 builder.Services.AddScoped<IQrBadgeService, QrBadgeService>();
 builder.Services.AddScoped<IAccountRecoveryService, AccountRecoveryService>();
 builder.Services.AddScoped<IAnomalyDetectionService, AnomalyDetectionService>();
+builder.Services.AddScoped<IProFeaturesService, ProFeaturesService>();
 
 // Add Profile Concern and Support Ticket services
 builder.Services.AddScoped<ProfileConcernService>();

@@ -11,11 +11,16 @@ namespace SilentID.Api.Controllers;
 public class TrustScoreController : ControllerBase
 {
     private readonly ITrustScoreService _trustScoreService;
+    private readonly IProFeaturesService _proFeaturesService;
     private readonly ILogger<TrustScoreController> _logger;
 
-    public TrustScoreController(ITrustScoreService trustScoreService, ILogger<TrustScoreController> logger)
+    public TrustScoreController(
+        ITrustScoreService trustScoreService,
+        IProFeaturesService proFeaturesService,
+        ILogger<TrustScoreController> logger)
     {
         _trustScoreService = trustScoreService;
+        _proFeaturesService = proFeaturesService;
         _logger = logger;
     }
 
@@ -142,7 +147,8 @@ public class TrustScoreController : ControllerBase
     }
 
     /// <summary>
-    /// GET /v1/trustscore/me/history - Get TrustScore history
+    /// GET /v1/trustscore/me/history - Get TrustScore history (Pro feature)
+    /// Trust Timeline is a Pro-only feature that shows historical reputation data.
     /// </summary>
     [HttpGet("me/history")]
     public async Task<IActionResult> GetMyTrustScoreHistory([FromQuery] int months = 6)
@@ -155,6 +161,18 @@ public class TrustScoreController : ControllerBase
         try
         {
             var userId = GetUserId();
+
+            // Pro-only feature: Trust Timeline
+            if (!await _proFeaturesService.IsProUserAsync(userId))
+            {
+                return StatusCode(403, new
+                {
+                    error = "pro_required",
+                    message = "Trust Timeline is a Pro feature. Upgrade to see your reputation history over time.",
+                    upgradeUrl = "/subscriptions/pro"
+                });
+            }
+
             var snapshots = await _trustScoreService.GetTrustScoreHistoryAsync(userId, months);
 
             return Ok(new
